@@ -1,0 +1,6 @@
+{
+  "name": "Remix Proyek SAPA",
+  "description": "Aplikasi manajemen Proyek SAPA, Transaksi S-SALUR, dan Identitas relawan/donatur dengan fitur audit log Edit Identitas dan dashboard Merge Duplicates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
