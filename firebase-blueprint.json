@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "erpEntity": {
+      "title": "ErpEntity",
+      "description": "YPPLN ERP document state with JSON payload and metadata",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the entity"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        },
+        "data": {
+          "type": "string",
+          "description": "JSON serialized data of the entity"
+        }
+      },
+      "required": ["id", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/erp_state/{docId}": {
+      "schema": "erpEntity",
+      "description": "Real-time synchronized ERP dataset across all devices and Vercel instances"
+    }
+  }
+}

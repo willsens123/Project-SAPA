@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
+import { useCloudSyncManager } from './firebase/useCloudSyncManager';
 import { TableToolbar } from './components/TableToolbar';
 import { ProjectTable } from './components/ProjectTable';
 import { FormProyekSapa } from './components/FormProyekSapa';
@@ -2362,6 +2363,31 @@ export default function App() {
     } catch {}
   };
   const [returnViewAfterAdd, setReturnViewAfterAdd] = useState<AppView | null>(null);
+
+  // Real-Time Cloud Synchronization Manager across all Vercel instances
+  const { syncStatus, lastSyncedAt, forceManualSync } = useCloudSyncManager({
+    identitasList,
+    mutasiItems,
+    salurOrders,
+    donasiOrders,
+    transaksiAjarList,
+    pengeluaranList,
+    posKeuanganList,
+    coaList,
+    projects,
+    organisasiList,
+
+    setIdentitasList,
+    setMutasiItems,
+    setSalurOrders,
+    setDonasiOrders,
+    setTransaksiAjarList,
+    setPengeluaranList,
+    setPosKeuanganList,
+    setCoaList,
+    setProjects,
+    setOrganisasiList,
+  });
   const [projectFormReturnView, setProjectFormReturnView] = useState<'table' | 'timelineProyekSapa'>('table');
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null);
   const [viewingProject, setViewingProject] = useState<ProjectItem | null>(null);
@@ -4003,6 +4029,8 @@ export default function App() {
             title={getHeaderTitle()}
             currentView={currentView}
             onSelectView={(view) => setCurrentView(view)}
+            syncStatus={syncStatus}
+            onManualSync={forceManualSync}
             onBackToTable={
               currentView === 'formTransaksiAjar'
                 ? () => {

@@ -4,6 +4,8 @@ import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
 import { AppView } from '../types';
+import { CloudSyncIndicator } from './CloudSyncIndicator';
+import { SyncStatus } from '../firebase/syncService';
 
 interface HeaderProps {
   title?: string;
@@ -13,6 +15,8 @@ interface HeaderProps {
   onResetData?: () => void;
   onExportData?: () => void;
   onToggleMobileSidebar?: () => void;
+  syncStatus?: SyncStatus;
+  onManualSync?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
   onResetData,
   onExportData,
   onToggleMobileSidebar,
+  syncStatus = 'synced',
+  onManualSync,
 }) => {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
@@ -160,8 +166,10 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* Right Group: Clock, Date & Options */}
+      {/* Right Group: Cloud Sync Indicator, Clock, Date & Options */}
       <div className="flex items-center gap-3 sm:gap-4 self-end md:self-auto">
+        <CloudSyncIndicator status={syncStatus} onManualSync={onManualSync} />
+
         <div className="flex flex-col items-end">
           <div
             id="header-clock"
