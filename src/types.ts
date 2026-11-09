@@ -656,6 +656,7 @@ export interface ColumnVisibility {
   divisi: boolean;
   lokasi: boolean;
   status: boolean;
+  projectedRevenue?: boolean;
 }
 
 export interface JenisItemSalurItem {

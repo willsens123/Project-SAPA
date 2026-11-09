@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download } from 'lucide-react';
 import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
@@ -14,6 +14,7 @@ interface HeaderProps {
   onBackToTable?: () => void;
   onResetData?: () => void;
   onExportData?: () => void;
+  onDownloadAllData?: () => void;
   onToggleMobileSidebar?: () => void;
   syncStatus?: SyncStatus;
   onManualSync?: () => void;
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   onBackToTable,
   onResetData,
   onExportData,
+  onDownloadAllData,
   onToggleMobileSidebar,
   syncStatus = 'synced',
   onManualSync,
@@ -166,9 +168,21 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* Right Group: Cloud Sync Indicator, Clock, Date & Options */}
-      <div className="flex items-center gap-3 sm:gap-4 self-end md:self-auto">
+      {/* Right Group: Cloud Sync Indicator, Download All Data, Clock, Date & Options */}
+      <div className="flex items-center gap-2.5 sm:gap-3.5 self-end md:self-auto">
         <CloudSyncIndicator status={syncStatus} onManualSync={onManualSync} />
+
+        {onDownloadAllData && (
+          <button
+            type="button"
+            onClick={onDownloadAllData}
+            title="Unduh & Cadangkan Seluruh Data YPPLN (JSON / CSV)"
+            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200/90 hover:border-teal-400 text-slate-700 hover:text-[#008993] shadow-2xs hover:bg-teal-50/50 transition-all cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-[#008993]" />
+            <span>Unduh Semua Data</span>
+          </button>
+        )}
 
         <div className="flex flex-col items-end">
           <div
@@ -307,6 +321,25 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
 
+              {onDownloadAllData && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDownloadAllData();
+                    setShowOptions(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-[#008993] hover:bg-teal-50 flex items-center justify-between font-semibold border-t border-slate-100 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Download className="w-4 h-4 text-[#008993]" />
+                    Unduh Semua Data (Backup)
+                  </span>
+                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-teal-100 text-[#008993]">
+                    JSON / CSV
+                  </span>
+                </button>
+              )}
+
               {onExportData && (
                 <button
                   type="button"
@@ -314,9 +347,9 @@ export const Header: React.FC<HeaderProps> = ({
                     onExportData();
                     setShowOptions(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
-                  Ekspor Data Proyek (CSV)
+                  Ekspor Data Proyek SAPA (CSV)
                 </button>
               )}
 

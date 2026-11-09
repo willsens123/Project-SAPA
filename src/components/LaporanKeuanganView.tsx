@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { ModalExportPdfLaporanKeuangan } from './ModalExportPdfLaporanKeuangan';
 import { RingkasanJurnalConsolidatedView } from './RingkasanJurnalConsolidatedView';
+import { DashboardArusKas } from './DashboardArusKas';
 import { MutasiItem, PengeluaranItem, ProjectItem, JenisProyekItem } from '../types';
 import { PosKeuanganItem } from '../posKeuanganData';
 import { SalurOrder } from '../salurData';
@@ -71,7 +72,7 @@ interface LaporanKeuanganViewProps {
   projects?: ProjectItem[];
   jenisProyekList?: JenisProyekItem[];
   coaList?: CoaAccount[];
-  initialTab?: 'coa' | 'jurnal' | 'ringkasanJurnal' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
+  initialTab?: 'coa' | 'jurnal' | 'ringkasanJurnal' | 'arusKas' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
   onUpdateCoaList?: (items: CoaAccount[]) => void;
   onNavigateToCoa?: () => void;
   onNavigateToMutasi?: (bankAccount: string) => void;
@@ -97,9 +98,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
   onNavigateToMutasi,
   onNavigateToPengeluaran,
 }) => {
-  // Navigation Tabs: COA, Jurnal, Ringkasan Jurnal, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
+  // Navigation Tabs: COA, Jurnal, Ringkasan Jurnal, ARUS KAS, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
   const [activeTab, setActiveTab] = useState<
-    'coa' | 'jurnal' | 'ringkasanJurnal' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
+    'coa' | 'jurnal' | 'ringkasanJurnal' | 'arusKas' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
   >(initialTab);
 
   React.useEffect(() => {
@@ -795,6 +796,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
           {/* Action buttons based on active tab */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('app-open-download-all-data'))}
+              title="Unduh & Cadangkan Seluruh Data YPPLN (JSON / CSV Archive)"
+              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-[#05828e]" />
+              <span className="hidden sm:inline">Backup Semua Data</span>
+              <span className="sm:hidden">Backup</span>
+            </button>
 
             {activeTab === 'ringkasanJurnal' ? (
               <>
@@ -858,6 +869,23 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   </button>
                 )}
               </>
+            ) : activeTab === 'arusKas' ? (
+              <>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Visualisasi Arus Kas Dinamis</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsExportPdfModalOpen(true)}
+                  title="Ekspor Laporan Keuangan ke format PDF"
+                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+              </>
             ) : activeTab === 'coa' ? (
               <>
                 <button
@@ -910,6 +938,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           { key: 'coa', label: 'COA', desc: 'Daftar Akun', badge: coaList.length },
           { key: 'jurnal', label: 'Jurnal Umum Otomatis', desc: 'Rekap Transaksi & COA', badge: journalEntries.length },
           { key: 'ringkasanJurnal', label: 'Ringkasan Jurnal', desc: 'Konsolidasi Debet-Kredit Mutasi & Transaksi', badge: journalEntries.length },
+          { key: 'arusKas', label: 'Arus Kas (Cash Flow)', desc: 'Dashboard Visualisasi Recharts', badge: 'Grafik' },
           { key: 'manajemen', label: 'MANAJEMEN', desc: 'Kinerja Keuangan' },
           { key: 'summary', label: 'SUMMARY', desc: 'Ringkasan Laporan' },
           { key: 'saldoAkhir', label: 'SALDO AKHIR', desc: 'Kategori Dana' },
@@ -1693,6 +1722,31 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
           </div>
 
+          {/* Quick link banner to Dashboard Arus Kas Recharts */}
+          <div className="bg-linear-to-r from-teal-50 via-white to-emerald-50 border border-teal-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-xs">
+                <TrendingUp className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">
+                  Dashboard Visualisasi Arus Kas (Recharts)
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Pantau tren perbandingan arus kas masuk (pemasukan) dan keluar (pengeluaran) per bulan secara dinamis.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('arusKas')}
+              className="bg-[#05828e] hover:bg-[#046c76] text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+            >
+              <span>Buka Grafik Arus Kas</span>
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {/* Performance & Program Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left: Program Realization */}
@@ -2177,7 +2231,21 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
         </div>
       )}
 
-
+      {/* ============================================================== */}
+      {/* TAB 7: DASHBOARD ARUS KAS (CASH FLOW) DENGAN RECHARTS */}
+      {/* ============================================================== */}
+      {activeTab === 'arusKas' && (
+        <DashboardArusKas
+          mutasiItems={mutasiItems}
+          pengeluaranList={pengeluaranList}
+          salurOrders={salurOrders}
+          donasiOrders={donasiOrders}
+          transaksiAjarList={transaksiAjarList}
+          journalEntries={journalEntries}
+          coaList={computedCoaList}
+          isPrivacyMasked={isPrivacyMasked}
+        />
+      )}
 
       {/* ============================================================== */}
       {/* MODAL: Tambah Akun COA Baru */}

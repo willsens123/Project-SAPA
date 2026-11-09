@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ChevronLeft,
   Search,
@@ -12,6 +12,19 @@ import {
   Check,
   ChevronDown,
   Filter,
+  Calendar,
+  Tag,
+  ArrowUpRight,
+  Download,
+  Copy,
+  GitCommit,
+  CheckCircle2,
+  AlertCircle,
+  Layers,
+  Sparkles,
+  User,
+  ArrowDownUp,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { IdentitasItem } from '../identitasData';
 import { IdentitasChangeLog } from '../types';
@@ -51,6 +64,47 @@ const AVAILABLE_FIELDS: { key: string; label: string; placeholder: string }[] = 
   { key: 'keterangan', label: 'Keterangan Tambahan', placeholder: 'Catatan tambahan...' },
 ];
 
+/**
+ * Parses diverse timestamp strings (Indonesian locale or ISO) into millisecond timestamps for sorting
+ */
+function parseLogTimestamp(ts?: string): number {
+  if (!ts) return 0;
+  const parsed = Date.parse(ts);
+  if (!isNaN(parsed)) return parsed;
+
+  const monthMap: Record<string, number> = {
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    mei: 4,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    agu: 7,
+    aug: 7,
+    sep: 8,
+    okt: 9,
+    oct: 9,
+    nov: 10,
+    des: 11,
+    dec: 11,
+  };
+
+  const parts = ts.toLowerCase().match(/(\d{1,2})\s+([a-z]{3,4})\s+(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (parts) {
+    const day = parseInt(parts[1], 10);
+    const mStr = parts[2].slice(0, 3);
+    const month = monthMap[mStr] ?? 0;
+    const year = parseInt(parts[3], 10);
+    const hour = parts[4] ? parseInt(parts[4], 10) : 0;
+    const min = parts[5] ? parseInt(parts[5], 10) : 0;
+    return new Date(year, month, day, hour, min).getTime();
+  }
+
+  return 0;
+}
+
 export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   item,
   allIdentitasList,
@@ -80,15 +134,23 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   const [openDropdownRowId, setOpenDropdownRowId] = useState<string | null>(null);
   const [fieldSearchQuery, setFieldSearchQuery] = useState('');
 
-  // Table filter options
+  // Audit Log UI View Mode: 'timeline' (visual chronological flow) vs 'table' (structured grid)
+  const [auditViewMode, setAuditViewMode] = useState<'timeline' | 'table'>('timeline');
+
+  // Chronological order: 'desc' (Newest first) vs 'asc' (Oldest first)
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+  // Table & Timeline filter options
   const [historyFilter, setHistoryFilter] = useState<'current' | 'all'>('current');
   const [tableSearchQuery, setTableSearchQuery] = useState('');
+  const [selectedFieldFilter, setSelectedFieldFilter] = useState<string>('ALL');
+  const [selectedActionFilter, setSelectedActionFilter] = useState<string>('ALL');
 
   // Add another field row
   const handleAddFieldRow = () => {
-    const unusedField = AVAILABLE_FIELDS.find(
-      (f) => !fieldRows.some((r) => r.fieldKey === f.key)
-    ) || AVAILABLE_FIELDS[0];
+    const unusedField =
+      AVAILABLE_FIELDS.find((f) => !fieldRows.some((r) => r.fieldKey === f.key)) ||
+      AVAILABLE_FIELDS[0];
 
     const currentVal = (selectedIdentity as Record<string, unknown>)[unusedField.key];
     const initialVal = typeof currentVal === 'string' ? currentVal : '';
@@ -107,7 +169,6 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   // Remove a field row
   const handleRemoveFieldRow = (rowId: string) => {
     if (fieldRows.length === 1) {
-      // Clear the row instead of removing last one
       setFieldRows([{ ...fieldRows[0], newValue: '' }]);
       return;
     }
@@ -186,29 +247,150 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
     onSave(updatedItem, newLogs);
     setSelectedIdentity(updatedItem);
     setAlasan('');
-    onShowToast(`${newLogs.length} perubahan data berhasil disimpan dan dicatat ke riwayat`);
+    onShowToast(`${newLogs.length} perubahan data berhasil disimpan dan dicatat ke riwayat audit`);
   };
 
-  // Filter change logs
-  const relevantLogs = changeLogs.filter((log) => {
-    if (historyFilter === 'current' && log.identitasId !== selectedIdentity.id) {
-      return false;
+  // Filter and sort change logs chronologically
+  const relevantLogs = useMemo(() => {
+    const filtered = changeLogs.filter((log) => {
+      if (historyFilter === 'current' && log.identitasId !== selectedIdentity.id) {
+        return false;
+      }
+      if (selectedActionFilter !== 'ALL' && log.actionType !== selectedActionFilter) {
+        return false;
+      }
+      if (selectedFieldFilter !== 'ALL' && log.field !== selectedFieldFilter) {
+        return false;
+      }
+      if (!tableSearchQuery.trim()) return true;
+      const q = tableSearchQuery.toLowerCase();
+      return (
+        log.namaLengkap.toLowerCase().includes(q) ||
+        log.codeId.toLowerCase().includes(q) ||
+        log.field.toLowerCase().includes(q) ||
+        log.oldValue.toLowerCase().includes(q) ||
+        log.newValue.toLowerCase().includes(q) ||
+        log.alasan.toLowerCase().includes(q)
+      );
+    });
+
+    // Chronological sorting
+    return filtered.sort((a, b) => {
+      const timeA = parseLogTimestamp(a.timestamp);
+      const timeB = parseLogTimestamp(b.timestamp);
+      if (timeA !== 0 && timeB !== 0) {
+        return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+      }
+      // Fallback by ID string comparison
+      return sortOrder === 'desc'
+        ? b.id.localeCompare(a.id)
+        : a.id.localeCompare(b.id);
+    });
+  }, [
+    changeLogs,
+    historyFilter,
+    selectedIdentity.id,
+    selectedActionFilter,
+    selectedFieldFilter,
+    tableSearchQuery,
+    sortOrder,
+  ]);
+
+  // Unique list of fields present in current user's logs for quick chips
+  const availableLogFields = useMemo(() => {
+    const base = historyFilter === 'current'
+      ? changeLogs.filter((l) => l.identitasId === selectedIdentity.id)
+      : changeLogs;
+    const set = new Set<string>();
+    base.forEach((l) => {
+      if (l.field) set.add(l.field);
+    });
+    return Array.from(set);
+  }, [changeLogs, historyFilter, selectedIdentity.id]);
+
+  // Summary statistics for audit KPI cards
+  const auditStats = useMemo(() => {
+    const userLogs = changeLogs.filter((l) => l.identitasId === selectedIdentity.id);
+    const fieldCounts: Record<string, number> = {};
+    userLogs.forEach((l) => {
+      fieldCounts[l.field] = (fieldCounts[l.field] || 0) + 1;
+    });
+
+    let topField = '-';
+    let topCount = 0;
+    Object.entries(fieldCounts).forEach(([field, count]) => {
+      if (count > topCount) {
+        topCount = count;
+        topField = field;
+      }
+    });
+
+    const lastChange = userLogs[0]?.timestamp || '-';
+
+    return {
+      totalChanges: userLogs.length,
+      topField: topCount > 0 ? `${topField} (${topCount}x)` : '-',
+      lastChange,
+    };
+  }, [changeLogs, selectedIdentity.id]);
+
+  // Copy log detail to clipboard
+  const handleCopyLog = (log: IdentitasChangeLog) => {
+    const text = `[AUDIT LOG] ${log.timestamp} | ${log.codeId} ${log.namaLengkap} | Field: ${log.field} | Lama: "${log.oldValue}" -> Baru: "${log.newValue}" | Alasan: ${log.alasan}`;
+    navigator.clipboard.writeText(text);
+    onShowToast('Detail log berhasil disalin ke clipboard');
+  };
+
+  // Export audit logs of current view as CSV
+  const handleExportCsv = () => {
+    if (relevantLogs.length === 0) {
+      onShowToast('Tidak ada data log untuk diekspor');
+      return;
     }
-    if (!tableSearchQuery.trim()) return true;
-    const q = tableSearchQuery.toLowerCase();
-    return (
-      log.namaLengkap.toLowerCase().includes(q) ||
-      log.codeId.toLowerCase().includes(q) ||
-      log.field.toLowerCase().includes(q) ||
-      log.oldValue.toLowerCase().includes(q) ||
-      log.newValue.toLowerCase().includes(q) ||
-      log.alasan.toLowerCase().includes(q)
+
+    const headers = [
+      'ID Log',
+      'Timestamp',
+      'Kode Identitas',
+      'Nama Lengkap',
+      'Aksi',
+      'Field Diubah',
+      'Nilai Sebelumnya',
+      'Nilai Baru',
+      'Alasan Perubahan',
+    ];
+
+    const rows = relevantLogs.map((l) => [
+      `"${l.id}"`,
+      `"${l.timestamp}"`,
+      `"${l.codeId || ''}"`,
+      `"${(l.namaLengkap || '').replace(/"/g, '""')}"`,
+      `"${l.actionType}"`,
+      `"${l.field}"`,
+      `"${(l.oldValue || '').replace(/"/g, '""')}"`,
+      `"${(l.newValue || '').replace(/"/g, '""')}"`,
+      `"${(l.alasan || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `Audit_Log_${selectedIdentity.codeId || 'Profile'}_${Date.now()}.csv`
     );
-  });
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    onShowToast('Audit Log CSV berhasil diunduh');
+  };
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-200">
-      {/* Top Controls Bar matching Image 1: Right aligned icons + Add */}
+      {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
@@ -220,23 +402,30 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="text-xs text-slate-400 font-medium">Mengedit Identitas</div>
+            <div className="text-xs text-slate-400 font-medium">Mengedit Identitas & Audit Trail</div>
             <div className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <span>{selectedIdentity.codeId}</span>
+              <span className="font-mono text-[#05828e] bg-teal-50 px-2 py-0.5 rounded text-xs font-semibold border border-teal-200">
+                {selectedIdentity.codeId || 'ID'}
+              </span>
               <span>{selectedIdentity.namaLengkap}</span>
               <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                {selectedIdentity.bhanteLay}
+                {selectedIdentity.bhanteLay || 'Lay'}
               </span>
+              {selectedIdentity.status && selectedIdentity.status !== '-' && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  {selectedIdentity.status}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Tools Group matching Image 1: EyeOff, Search, Filter, + Add */}
+        {/* Right Tools Group */}
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => onShowToast('Fitur visibilitas kolom')}
-            title="Sembunyikan / Tampilkan Kolom"
+            onClick={() => onShowToast('Audit trail aktif')}
+            title="Audit trail aktif"
             className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer"
           >
             <EyeOff className="w-5 h-5 stroke-[1.8]" />
@@ -280,12 +469,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             className="bg-[#05828e] text-white px-4 py-1.5 rounded-lg font-semibold text-sm hover:bg-[#046c76] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add</span>
+            <span>Add Field</span>
           </button>
         </div>
       </div>
 
-      {/* Main Edit Form Container matching Image 1 */}
+      {/* Main Edit Form Container */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 sm:p-8">
         <div className="space-y-6 max-w-4xl">
           {/* Row 1: Field yang ingin diubah */}
@@ -302,7 +491,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                   key={row.id}
                   className="flex flex-wrap sm:flex-nowrap items-center gap-3"
                 >
-                  {/* Dropdown Selector matching Image 1: [Search... v] */}
+                  {/* Dropdown Selector */}
                   <div className="relative min-w-[220px] sm:w-[240px]">
                     <button
                       type="button"
@@ -357,12 +546,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     )}
                   </div>
 
-                  {/* Arrow Indicator matching Image 1: [->] */}
+                  {/* Arrow Indicator */}
                   <div className="w-7 h-7 rounded-full bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-xs">
                     <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
                   </div>
 
-                  {/* Input Text matching Image 1: [Input Text...] */}
+                  {/* Input Text */}
                   <div className="flex-1 min-w-[200px]">
                     <input
                       type="text"
@@ -378,7 +567,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     />
                   </div>
 
-                  {/* Clear / Delete row button matching Image 1: [X] */}
+                  {/* Clear / Delete row button */}
                   <button
                     type="button"
                     onClick={() => handleRemoveFieldRow(row.id)}
@@ -388,7 +577,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     <X className="w-4 h-4" />
                   </button>
 
-                  {/* Plus button matching Image 1: [+] (shows on the last row or always) */}
+                  {/* Plus button */}
                   {idx === fieldRows.length - 1 && (
                     <button
                       type="button"
@@ -404,7 +593,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             })}
           </div>
 
-          {/* Row 2: Alasan Hapus/Ubah matching Image 1 */}
+          {/* Row 2: Alasan Hapus/Ubah */}
           <div className="space-y-2 pt-2">
             <label className="block text-sm font-semibold text-slate-700">
               Alasan Hapus/Ubah
@@ -413,12 +602,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               type="text"
               value={alasan}
               onChange={(e) => setAlasan(e.target.value)}
-              placeholder="Input Text..."
+              placeholder="Contoh: Perubahan nomor WhatsApp aktif donatur / update alamat domisili..."
               className="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#05828e] focus:ring-2 focus:ring-[#05828e]/20 transition-all"
             />
           </div>
 
-          {/* Row 3: Action Buttons matching Image 1: Cancel & Save */}
+          {/* Row 3: Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-4">
             <button
               type="button"
@@ -430,46 +619,165 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="px-8 py-2 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-sm font-semibold transition-colors cursor-pointer shadow-xs"
+              className="px-8 py-2 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-sm font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
             >
-              Save
+              <Check className="w-4 h-4 stroke-[2.5]" />
+              <span>Simpan Perubahan</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* New Table for storing all change history, reason, and timestamp */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#05828e]/10 text-[#05828e] flex items-center justify-center">
-              <History className="w-4 h-4" />
+      {/* SECTION: Visualisasi Riwayat Perubahan (Audit Log) */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-5">
+        {/* Header Audit Log */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#05828e] to-teal-700 text-white flex items-center justify-center shadow-xs">
+              <History className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800">
-                Riwayat Perubahan Data Identitas
-              </h2>
-              <p className="text-xs text-slate-500">
-                Mencatat semua perubahan data, alasan modifikasi, dan timestamp secara otomatis
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-slate-800">
+                  Visualisasi Riwayat Perubahan (Audit Log)
+                </h2>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#05828e] border border-teal-200">
+                  {relevantLogs.length} Entri
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Audit trail kronologis mencatat riwayat perubahan data profil, nilai sebelum & sesudah, serta alasan perubahan admin.
               </p>
             </div>
           </div>
 
-          {/* Search & Filter Controls */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                id="search-history-input"
-                type="text"
-                placeholder="Cari di riwayat perubahan..."
-                value={tableSearchQuery}
-                onChange={(e) => setTableSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-[#05828e]"
-              />
+          {/* View Mode & Export Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* View Mode Switcher */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setAuditViewMode('timeline')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  auditViewMode === 'timeline'
+                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <GitCommit className="w-3.5 h-3.5" />
+                <span>Alur Visual (Timeline)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuditViewMode('table')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  auditViewMode === 'table'
+                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Tabel Rinci</span>
+              </button>
             </div>
 
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-medium shrink-0">
+            {/* Sort Chronological Order Toggle */}
+            <button
+              type="button"
+              onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+              title={`Urutan: ${sortOrder === 'desc' ? 'Terbaru ke Terlama' : 'Terlama ke Terbaru'}`}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <ArrowDownUp className="w-3.5 h-3.5 text-slate-400" />
+              <span>{sortOrder === 'desc' ? 'Terbaru Dulu' : 'Terlama Dulu'}</span>
+            </button>
+
+            {/* CSV Export Button */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              title="Unduh Audit Log dalam format CSV"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:text-[#05828e] text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#05828e]" />
+              <span>Unduh CSV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Audit Metrics / KPI Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Total Perubahan Profil Ini
+              </div>
+              <div className="text-xl font-bold text-slate-800 mt-0.5">
+                {auditStats.totalChanges} kali
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#05828e] flex items-center justify-center">
+              <History className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Field Paling Sering Diubah
+              </div>
+              <div className="text-sm font-bold text-slate-800 mt-0.5 truncate max-w-[180px]">
+                {auditStats.topField}
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Tag className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                Terakhir Dimodifikasi
+              </div>
+              <div className="text-xs font-semibold text-slate-700 mt-0.5 truncate max-w-[190px]">
+                {auditStats.lastChange}
+              </div>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Quick Filters Toolbar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          {/* Search Box */}
+          <div className="relative flex-1 sm:max-w-md">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              id="search-history-input"
+              type="text"
+              placeholder="Cari field, nilai lama/baru, alasan perubahan..."
+              value={tableSearchQuery}
+              onChange={(e) => setTableSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:bg-white focus:border-[#05828e] transition-all"
+            />
+            {tableSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setTableSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Scope & Action Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Scope Filter */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setHistoryFilter('current')}
@@ -479,7 +787,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Orang Ini
+                Profil Ini ({changeLogs.filter((l) => l.identitasId === selectedIdentity.id).length})
               </button>
               <button
                 type="button"
@@ -490,81 +798,284 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Semua ({changeLogs.length})
+                Semua Profil ({changeLogs.length})
               </button>
             </div>
+
+            {/* Action Type Dropdown */}
+            <select
+              value={selectedActionFilter}
+              onChange={(e) => setSelectedActionFilter(e.target.value)}
+              className="text-xs border border-slate-200 rounded-xl px-2.5 py-1.5 bg-slate-50 text-slate-700 outline-none focus:border-[#05828e] cursor-pointer"
+            >
+              <option value="ALL">Semua Aksi</option>
+              <option value="Ubah">Aksi: Ubah</option>
+              <option value="Merge">Aksi: Merge</option>
+              <option value="Hapus">Aksi: Hapus</option>
+            </select>
           </div>
         </div>
 
-        {/* Change Logs Table */}
-        <div className="overflow-x-auto mt-4">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="border-b border-slate-200/80 text-[12px] font-semibold text-slate-500 uppercase tracking-wider">
-                <th className="py-3 px-4 w-[180px]">Timestamp</th>
-                <th className="py-3 px-4">Identitas</th>
-                <th className="py-3 px-4">Field yang Diubah</th>
-                <th className="py-3 px-4">Nilai Sebelumnya</th>
-                <th className="py-3 px-4">Nilai Baru</th>
-                <th className="py-3 px-4">Alasan Hapus/Ubah</th>
-                <th className="py-3 px-4 text-center w-[90px]">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-[13px] text-slate-700">
-              {relevantLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{log.timestamp}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-slate-400 font-mono">
-                        {log.codeId || '-'}
-                      </span>
-                      <span>{log.namaLengkap}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 font-semibold text-[#05828e]">
-                    {log.field}
-                  </td>
-                  <td className="py-3 px-4 text-slate-500 max-w-[200px] truncate" title={log.oldValue}>
-                    {log.oldValue || '-'}
-                  </td>
-                  <td className="py-3 px-4 text-emerald-700 font-medium max-w-[200px] truncate" title={log.newValue}>
-                    {log.newValue}
-                  </td>
-                  <td className="py-3 px-4 text-slate-700 max-w-[250px] truncate" title={log.alasan}>
-                    {log.alasan}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                        log.actionType === 'Merge'
-                          ? 'bg-amber-100 text-amber-800'
-                          : log.actionType === 'Hapus'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-[#05828e]/10 text-[#05828e]'
-                      }`}
-                    >
-                      {log.actionType}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+        {/* Quick Field Filter Pills */}
+        {availableLogFields.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase mr-1 whitespace-nowrap">
+              Filter Field:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedFieldFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                selectedFieldFilter === 'ALL'
+                  ? 'bg-[#05828e] text-white font-medium'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Semua Field
+            </button>
+            {availableLogFields.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setSelectedFieldFilter(f)}
+                className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                  selectedFieldFilter === f
+                    ? 'bg-[#05828e] text-white font-medium'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
 
-              {relevantLogs.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-slate-400 text-sm">
-                    Belum ada riwayat perubahan yang tercatat.
-                  </td>
+        {/* VIEW 1: Visual Timeline Mode (Alur Waktu Kronologis) */}
+        {auditViewMode === 'timeline' && (
+          <div className="pt-2">
+            {relevantLogs.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 text-xs sm:text-sm bg-slate-50/60 rounded-xl border border-dashed border-slate-200 p-8">
+                <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <div className="font-semibold text-slate-600">Belum ada riwayat perubahan yang sesuai</div>
+                <p className="text-slate-400 mt-1 max-w-sm mx-auto">
+                  Setiap kali admin mengubah data profil donatur atau relawan melalui formulir di atas dan menekan tombol Simpan, detail perubahan akan tampil di sini secara kronologis.
+                </p>
+              </div>
+            ) : (
+              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-linear-to-b before:from-teal-300 before:via-slate-200 before:to-slate-100">
+                {relevantLogs.map((log, idx) => {
+                  const isMerge = log.actionType === 'Merge';
+                  const isHapus = log.actionType === 'Hapus';
+
+                  return (
+                    <div
+                      key={log.id}
+                      className="relative group transition-all"
+                    >
+                      {/* Timeline Node Icon */}
+                      <div
+                        className={`absolute -left-6 sm:-left-8 top-1 w-6 sm:w-8 h-6 sm:h-8 rounded-full flex items-center justify-center ring-4 ring-white shadow-xs transition-transform group-hover:scale-110 ${
+                          isMerge
+                            ? 'bg-amber-500 text-white'
+                            : isHapus
+                            ? 'bg-rose-500 text-white'
+                            : 'bg-[#05828e] text-white'
+                        }`}
+                      >
+                        {isMerge ? (
+                          <Layers className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                        ) : isHapus ? (
+                          <X className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                        ) : (
+                          <GitCommit className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                        )}
+                      </div>
+
+                      {/* Timeline Card */}
+                      <div className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:border-teal-300">
+                        {/* Top Bar of the Entry */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200/60">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Action badge */}
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                                isMerge
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  : isHapus
+                                  ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                                  : 'bg-teal-50 text-[#05828e] border border-teal-200'
+                              }`}
+                            >
+                              {log.actionType} Data
+                            </span>
+
+                            {/* Field Name badge */}
+                            <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                              {log.field}
+                            </span>
+
+                            {/* Profil tag (if viewing all) */}
+                            {historyFilter === 'all' && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-mono bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600">
+                                <User className="w-3 h-3 text-slate-400" />
+                                {log.codeId} • {log.namaLengkap}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{log.timestamp}</span>
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLog(log)}
+                              title="Salin detail log"
+                              className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-white transition-colors cursor-pointer"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Diff Box: Nilai Lama vs Nilai Baru */}
+                        <div className="mt-3.5 grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {/* Old Value */}
+                          <div className="bg-rose-50/60 border border-rose-200/80 rounded-xl p-3">
+                            <div className="flex items-center justify-between text-[11px] font-semibold text-rose-700 uppercase tracking-wider mb-1">
+                              <span>Sebelumnya</span>
+                              <span className="text-[10px] text-rose-500 font-normal">Nilai Lama</span>
+                            </div>
+                            <div className="text-xs sm:text-sm text-rose-900 font-mono break-all line-through decoration-rose-400/80">
+                              {log.oldValue || '-'}
+                            </div>
+                          </div>
+
+                          {/* New Value */}
+                          <div className="bg-teal-50/70 border border-teal-200/90 rounded-xl p-3">
+                            <div className="flex items-center justify-between text-[11px] font-semibold text-[#05828e] uppercase tracking-wider mb-1">
+                              <span>Menjadi</span>
+                              <span className="text-[10px] text-teal-600 font-normal">Nilai Baru</span>
+                            </div>
+                            <div className="text-xs sm:text-sm text-teal-950 font-mono font-semibold break-all">
+                              {log.newValue}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Alasan Perubahan Callout */}
+                        {log.alasan && (
+                          <div className="mt-3 flex items-start gap-2 bg-white border border-slate-200/80 rounded-xl p-3 text-xs">
+                            <span className="font-semibold text-slate-600 shrink-0">
+                              Alasan Admin:
+                            </span>
+                            <span className="text-slate-700 italic">
+                              "{log.alasan}"
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW 2: Structured Table Mode */}
+        {auditViewMode === 'table' && (
+          <div className="overflow-x-auto pt-1">
+            <table className="w-full text-left border-collapse min-w-[850px]">
+              <thead>
+                <tr className="border-b border-slate-200 text-[12px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/50">
+                  <th className="py-3 px-4 w-[190px]">Waktu Perubahan</th>
+                  <th className="py-3 px-4">Identitas</th>
+                  <th className="py-3 px-4">Aksi</th>
+                  <th className="py-3 px-4">Field</th>
+                  <th className="py-3 px-4">Nilai Sebelumnya</th>
+                  <th className="py-3 px-4">Nilai Baru</th>
+                  <th className="py-3 px-4">Alasan Modifikasi</th>
+                  <th className="py-3 px-2 w-10 text-center"></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-[13px] text-slate-700">
+                {relevantLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>{log.timestamp}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-[#05828e] font-mono bg-teal-50 px-1.5 py-0.5 rounded">
+                          {log.codeId || '-'}
+                        </span>
+                        <span>{log.namaLengkap}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                          log.actionType === 'Merge'
+                            ? 'bg-amber-100 text-amber-800'
+                            : log.actionType === 'Hapus'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-[#05828e]/10 text-[#05828e]'
+                        }`}
+                      >
+                        {log.actionType}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                      {log.field}
+                    </td>
+                    <td
+                      className="py-3 px-4 text-rose-600 font-mono text-xs line-through max-w-[180px] truncate"
+                      title={log.oldValue}
+                    >
+                      {log.oldValue || '-'}
+                    </td>
+                    <td
+                      className="py-3 px-4 text-[#05828e] font-mono text-xs font-semibold max-w-[180px] truncate"
+                      title={log.newValue}
+                    >
+                      {log.newValue}
+                    </td>
+                    <td
+                      className="py-3 px-4 text-slate-600 max-w-[220px] truncate"
+                      title={log.alasan}
+                    >
+                      {log.alasan || '-'}
+                    </td>
+                    <td className="py-3 px-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLog(log)}
+                        title="Salin detail log"
+                        className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {relevantLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center text-slate-400 text-sm">
+                      Belum ada riwayat perubahan yang sesuai kriteria pencarian.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

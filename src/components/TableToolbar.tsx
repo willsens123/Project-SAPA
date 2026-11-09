@@ -39,6 +39,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     { key: 'divisi', label: 'Divisi' },
     { key: 'lokasi', label: 'Lokasi' },
     { key: 'status', label: 'Status' },
+    { key: 'projectedRevenue', label: 'Proyeksi Pendapatan' },
   ];
 
   const hasActiveFilter = selectedDivisi !== 'ALL' || selectedStatus !== 'ALL';

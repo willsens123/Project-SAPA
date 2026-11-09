@@ -243,6 +243,8 @@ import { FormListGroupFunneling } from './components/FormListGroupFunneling';
 import { JenisGroupFunnelingTable } from './components/JenisGroupFunnelingTable';
 import { AddEditJenisGroupFunnelingModal } from './components/AddEditJenisGroupFunnelingModal';
 import { ModalTambahKeGroupFunnelingExisting, TargetMemberItem } from './components/ModalTambahKeGroupFunnelingExisting';
+import { ModalDownloadAllData } from './components/ModalDownloadAllData';
+import { buildAllApplicationData } from './utils/exportAllDataHelper';
 import {
   loadJenisGroupFunneling,
   saveJenisGroupFunneling,
@@ -2324,6 +2326,7 @@ export default function App() {
     divisi: true,
     lokasi: true,
     status: true,
+    projectedRevenue: true,
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -2421,6 +2424,7 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [modalTambahExistingOpen, setModalTambahExistingOpen] = useState(false);
+  const [isDownloadAllDataOpen, setIsDownloadAllDataOpen] = useState(false);
   const [modalTambahExistingTargets, setModalTambahExistingTargets] = useState<TargetMemberItem[]>([]);
   const [funnelingInitialIdentitasIds, setFunnelingInitialIdentitasIds] = useState<string[]>([]);
 
@@ -3845,6 +3849,78 @@ export default function App() {
     showToast('File CSV berhasil diunduh');
   };
 
+  // Listen to global event to open Download All Data modal from anywhere
+  useEffect(() => {
+    const handleOpen = () => setIsDownloadAllDataOpen(true);
+    window.addEventListener('app-open-download-all-data', handleOpen);
+    return () => window.removeEventListener('app-open-download-all-data', handleOpen);
+  }, []);
+
+  // Comprehensive unified backup state for JSON/CSV download
+  const allApplicationData = useMemo(() => {
+    return buildAllApplicationData({
+      currentUser,
+      projects,
+      jenisProyekList,
+      identitasList,
+      changeLogs,
+      organisasiList,
+      mutasiItems,
+      salurOrders,
+      salurItems,
+      donasiOrders,
+      transaksiAjarList,
+      pengeluaranList,
+      posKeuanganList: reconciledPosKeuanganList,
+      coaList,
+      dharmaPatronList,
+      karyawanList,
+      cutiKaryawanList,
+      kumpulanRekeningList,
+      rekeningList,
+      kebutuhanPengeluaranList,
+      posPengeluaranList,
+      posPemasukanList,
+      todoTasks: projectTodos,
+      complaints,
+      quickReplyList,
+      faqList,
+      listPMList,
+      volunteerSSebarList,
+      volunteerAJarList,
+    });
+  }, [
+    currentUser,
+    projects,
+    jenisProyekList,
+    identitasList,
+    changeLogs,
+    organisasiList,
+    mutasiItems,
+    salurOrders,
+    salurItems,
+    donasiOrders,
+    transaksiAjarList,
+    pengeluaranList,
+    reconciledPosKeuanganList,
+    coaList,
+    dharmaPatronList,
+    karyawanList,
+    cutiKaryawanList,
+    kumpulanRekeningList,
+    rekeningList,
+    kebutuhanPengeluaranList,
+    posPengeluaranList,
+    posPemasukanList,
+    projectTodos,
+    complaints,
+    quickReplyList,
+    faqList,
+    listPMList,
+    volunteerSSebarList,
+    volunteerAJarList,
+  ]);
+
   // Filter projects based on search query, divisi, and status
   const filteredProjects = projects.filter((item) => {
     // Search query filter
@@ -4200,6 +4276,7 @@ export default function App() {
             }
             onResetData={handleResetData}
             onExportData={handleExportCSV}
+            onDownloadAllData={() => setIsDownloadAllDataOpen(true)}
             onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
           />
 
@@ -4288,6 +4365,9 @@ export default function App() {
                     setCurrentView('formTodoList');
                   }}
                   onKirimHadiah={handleKirimHadiah}
+                  salurOrders={salurOrders}
+                  salurProducts={salurItems}
+                  donasiOrders={donasiOrders}
                 />
               </div>
             </>
@@ -7188,6 +7268,14 @@ export default function App() {
           const ids = modalTambahExistingTargets.map((t) => t.identitasId || t.id).filter(Boolean);
           handleNavigateToCreateGroupFunneling(ids);
         }}
+      />
+
+      {/* Modal Download All Data (Full Backup JSON / CSV) */}
+      <ModalDownloadAllData
+        isOpen={isDownloadAllDataOpen}
+        onClose={() => setIsDownloadAllDataOpen(false)}
+        allData={allApplicationData}
+        onShowToast={(msg) => showToast(msg)}
       />
     </div>
   );
