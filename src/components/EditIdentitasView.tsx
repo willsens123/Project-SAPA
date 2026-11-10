@@ -44,6 +44,7 @@ interface EditIdentitasViewProps {
   onSave: (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => void;
   onShowToast: (msg: string) => void;
   onOpenAddModal?: () => void;
+  onNavigateToCentralAudit?: () => void;
 }
 
 const AVAILABLE_FIELDS: { key: string; label: string; placeholder: string }[] = [
@@ -113,6 +114,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   onSave,
   onShowToast,
   onOpenAddModal,
+  onNavigateToCentralAudit,
 }) => {
   // Current selected identity (can switch between identities if needed)
   const [selectedIdentity, setSelectedIdentity] = useState<IdentitasItem>(item);
@@ -461,6 +463,18 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           >
             <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
           </button>
+
+          {onNavigateToCentralAudit && (
+            <button
+              type="button"
+              onClick={onNavigateToCentralAudit}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              title="Buka Audit Log Pusat (S-SALUR, Donasi, Ajar, Identitas)"
+            >
+              <History className="w-3.5 h-3.5 text-[#05828e]" />
+              <span className="hidden sm:inline">Audit Log Pusat</span>
+            </button>
+          )}
 
           <button
             id="btn-edit-identitas-add"

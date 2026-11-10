@@ -34,6 +34,16 @@ import { FormItemSalur } from './components/FormItemSalur';
 import { IdentitasDashboard } from './components/IdentitasDashboard';
 import { FormIdentitas } from './components/FormIdentitas';
 import { EditIdentitasView } from './components/EditIdentitasView';
+import { CentralAuditLogView } from './components/CentralAuditLogView';
+import {
+  loadCentralAuditLogs,
+  saveCentralAuditLogs,
+  subscribeAuditEvent,
+  dispatchAuditEvent,
+  auditDiffSalurOrders,
+  auditDiffDonasiOrders,
+  auditDiffTransaksiAjar,
+} from './utils/auditEventBus';
 import { MergeDuplicatesView } from './components/MergeDuplicatesView';
 import { OrganisasiDashboard } from './components/OrganisasiDashboard';
 import { FormOrganisasi } from './components/FormOrganisasi';
@@ -405,6 +415,7 @@ import {
   ViaTransaksiSalurItem,
   JenisViaSalurItem,
   ComplaintItem,
+  CentralAuditLogEntry,
 } from './types';
 import { ComplaintView } from './components/ComplaintView';
 import { FormComplaint } from './components/FormComplaint';
@@ -1306,7 +1317,57 @@ export default function App() {
     return INITIAL_TRANSAKSI_AJAR_LIST;
   });
 
+  // Central Audit Log State & Event Listener
+  const [centralAuditLogs, setCentralAuditLogs] = useState<CentralAuditLogEntry[]>(() => {
+    return loadCentralAuditLogs();
+  });
+
+  useEffect(() => {
+    const unsubscribe = subscribeAuditEvent((newEntry) => {
+      setCentralAuditLogs((prev) => {
+        if (prev.some((e) => e.id === newEntry.id)) return prev;
+        const updated = [newEntry, ...prev];
+        saveCentralAuditLogs(updated);
+        return updated;
+      });
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleUpdateSalurOrders = (updated: SalurOrder[]) => {
+    try {
+      auditDiffSalurOrders(salurOrders, updated, 'Admin S-SALUR');
+    } catch (e) {
+      console.error('Audit diff error on Salur orders:', e);
+    }
+    setSalurOrders(updated);
+    try {
+      localStorage.setItem(SALUR_ORDERS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUpdateDonasiOrders = (updated: DonasiOrder[]) => {
+    try {
+      auditDiffDonasiOrders(donasiOrders, updated, 'Admin Donasi');
+    } catch (e) {
+      console.error('Audit diff error on Donasi orders:', e);
+    }
+    setDonasiOrders(updated);
+    try {
+      localStorage.setItem(DONASI_ORDERS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleUpdateTransaksiAjar = (updated: TransaksiAjarItem[]) => {
+    try {
+      auditDiffTransaksiAjar(transaksiAjarList, updated, 'Admin Ajar');
+    } catch (e) {
+      console.error('Audit diff error on Transaksi Ajar:', e);
+    }
     setTransaksiAjarList(updated);
     try {
       localStorage.setItem('yppln_transaksi_ajar_list', JSON.stringify(updated));
@@ -3201,6 +3262,27 @@ export default function App() {
     );
     setChangeLogs((prev) => [...newLogs, ...prev]);
 
+    // Dispatch central audit log event for each identitas change via event listener
+    if (newLogs && newLogs.length > 0) {
+      newLogs.forEach((log) => {
+        dispatchAuditEvent({
+          module: 'IDENTITAS',
+          actionType: (log.actionType as any) || 'Ubah',
+          recordId: log.codeId || updatedItem.id,
+          recordTitle: updatedItem.namaLengkap,
+          field: log.field,
+          oldValue: log.oldValue,
+          newValue: log.newValue,
+          alasan: log.alasan || 'Pembaruan data profil identitas',
+          author: 'Admin Identitas',
+          metadata: {
+            codeId: log.codeId || updatedItem.id,
+            details: `Perubahan field "${log.field}" pada profil ${updatedItem.namaLengkap} (${log.codeId || updatedItem.id})`,
+          },
+        });
+      });
+    }
+
     // If name changed, update all related projects and salur orders
     if (editingIdentitas && editingIdentitas.namaLengkap !== updatedItem.namaLengkap) {
       setProjects((prev) =>
@@ -4061,6 +4143,7 @@ export default function App() {
     if (currentView === 'jenisNonProyekTodoList') return 'Jenis Non-Proyek To-do List';
     if (currentView === 'timelineProyekSapa') return 'Timeline Proyek SAPA';
     if (currentView === 'reportNamaPelimpahanJasaDonasi') return 'Report Nama Pelimpahan Jasa D-DONASI';
+    if (currentView === 'auditLog') return 'Audit Log Pusat';
     return 'Proyek SAPA';
   };
 
@@ -5441,7 +5524,7 @@ export default function App() {
                 orders={salurOrders}
                 mutasiItems={mutasiItems}
                 rekeningList={rekeningList}
-                onUpdateOrders={(updated) => setSalurOrders(updated)}
+                onUpdateOrders={handleUpdateSalurOrders}
                 onUpdateMutasiItems={(updated) => setMutasiItems(updated)}
                 onAddNew={() => {
                   setEditingSalurOrder(null);
@@ -5471,12 +5554,7 @@ export default function App() {
                 transaksiAjarList={INITIAL_TRANSAKSI_AJAR_LIST}
                 onSaveOrder={(newOrder, sendResiNow) => {
                   const updatedOrders = [newOrder, ...salurOrders];
-                  setSalurOrders(updatedOrders);
-                  try {
-                    localStorage.setItem(SALUR_ORDERS_STORAGE_KEY, JSON.stringify(updatedOrders));
-                  } catch (e) {
-                    console.error('Failed saving salur orders:', e);
-                  }
+                  handleUpdateSalurOrders(updatedOrders);
                   if (sendResiNow && newOrder.ekspedisi?.noResi) {
                     handleAutoInputOnResiSaved(newOrder, newOrder.ekspedisi.noResi);
                   }
@@ -5614,7 +5692,7 @@ export default function App() {
                     costBreakdown: newOrder.costBreakdown,
                     keterangan: newOrder.keterangan,
                   };
-                  setSalurOrders((prev) => [fullOrder, ...prev]);
+                  handleUpdateSalurOrders([fullOrder, ...salurOrders]);
                   if (fullOrder.ekspedisi?.noResi && fullOrder.ekspedisi.noResi !== '-') {
                     syncStockInOutFromSalurOrder(fullOrder, fullOrder.ekspedisi.noResi);
                   }
@@ -5683,7 +5761,7 @@ export default function App() {
                     isHadiah: true,
                   };
 
-                  setSalurOrders((prev) => [fullOrder, ...prev]);
+                  handleUpdateSalurOrders([fullOrder, ...salurOrders]);
                   if (fullOrder.ekspedisi?.noResi && fullOrder.ekspedisi.noResi !== '-') {
                     syncStockInOutFromSalurOrder(fullOrder, fullOrder.ekspedisi.noResi);
                   }
@@ -6009,7 +6087,7 @@ export default function App() {
                 rekeningList={rekeningList}
                 mutasiItems={mutasiItems}
                 onUpdateMutasiItems={(updated) => setMutasiItems(updated)}
-                onUpdateOrders={(updated) => setDonasiOrders(updated)}
+                onUpdateOrders={handleUpdateDonasiOrders}
                 onAddNew={() => setCurrentView('formTransaksiDonasi')}
                 onNavigateToReportPelimpahanJasa={() => setCurrentView('reportNamaPelimpahanJasaDonasi')}
                 onShowToast={(msg) => showToast(msg)}
@@ -6067,7 +6145,7 @@ export default function App() {
                     totalDana: newOrder.totalDana || 'Rp100.080',
                     notesText: '',
                   };
-                  setDonasiOrders((prev) => [fullOrder, ...prev]);
+                  handleUpdateDonasiOrders([fullOrder, ...donasiOrders]);
                   showToast('Transaksi D-DONASI berhasil disimpan!');
                   setCurrentView('transaksiDonasi');
                 }}
@@ -6706,6 +6784,34 @@ export default function App() {
                   setEditingIdentitas(null);
                   setCurrentView('formIdentitas');
                 }}
+                onNavigateToCentralAudit={() => setCurrentView('auditLog')}
+              />
+            </div>
+          )}
+
+          {/* View: Central Audit Log Module (Event Listener & Chronological History across all modules) */}
+          {currentView === 'auditLog' && (
+            <div className="mt-2 sm:mt-4">
+              <CentralAuditLogView
+                logs={centralAuditLogs}
+                onClearLogs={() => {
+                  setCentralAuditLogs([]);
+                  saveCentralAuditLogs([]);
+                  showToast('Semua riwayat audit log telah dibersihkan');
+                }}
+                onShowToast={(msg) => showToast(msg)}
+                onNavigateToIdentitas={(codeId) => {
+                  const target = identitasList.find((it) => it.codeId === codeId || it.id === codeId);
+                  if (target) {
+                    setEditingIdentitas(target);
+                    setCurrentView('editIdentitas');
+                  } else {
+                    setCurrentView('identitas');
+                  }
+                }}
+                onNavigateToSalur={() => setCurrentView('transaksiSalur')}
+                onNavigateToDonasi={() => setCurrentView('transaksiDonasi')}
+                onNavigateToAjar={() => setCurrentView('transaksiAjar')}
               />
             </div>
           )}

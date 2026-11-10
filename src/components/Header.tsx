@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History } from 'lucide-react';
 import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
@@ -304,6 +304,23 @@ export const Header: React.FC<HeaderProps> = ({
                       Report Customer S-SALUR
                     </span>
                     {currentView === 'reportCustomerSalur' && <Check className="w-4 h-4 text-[#05828e]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectView('auditLog');
+                      setShowOptions(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between hover:bg-slate-50 cursor-pointer ${
+                      currentView === 'auditLog' ? 'text-[#05828e] font-semibold bg-slate-50/50' : 'text-slate-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <History className="w-4 h-4 text-[#05828e]" />
+                      Audit Log Pusat
+                    </span>
+                    {currentView === 'auditLog' && <Check className="w-4 h-4 text-[#05828e]" />}
                   </button>
 
                   <div className="my-1 border-t border-slate-100" />

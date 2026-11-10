@@ -155,7 +155,8 @@ export type AppView =
   | 'jenisNonProyekTodoList'
   | 'timelineProyekSapa'
   | 'complaint'
-  | 'formComplaint';
+  | 'formComplaint'
+  | 'auditLog';
 
 export interface ComplaintItem {
   id: string;
@@ -591,6 +592,32 @@ export interface IdentitasChangeLog {
   newValue: string;
   alasan: string;
   actionType: 'Ubah' | 'Hapus' | 'Merge';
+}
+
+export type AuditModule =
+  | 'S-SALUR'
+  | 'DONASI'
+  | 'AJAR'
+  | 'IDENTITAS'
+  | 'PROYEK'
+  | 'PENGELUARAN'
+  | 'MUTASI';
+
+export interface CentralAuditLogEntry {
+  id: string;
+  timestamp: string;
+  isoTimestamp?: string;
+  module: AuditModule;
+  recordId: string;
+  recordTitle: string;
+  actionType: 'Tambah' | 'Ubah' | 'Hapus' | 'Status Bayar' | 'Pengiriman' | 'Resi' | 'Merge' | string;
+  field: string;
+  oldValue: string;
+  newValue: string;
+  alasan?: string;
+  author?: string;
+  badgeColor?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface DuplicatePair {
