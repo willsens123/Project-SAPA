@@ -44,6 +44,11 @@ import {
   auditDiffDonasiOrders,
   auditDiffTransaksiAjar,
 } from './utils/auditEventBus';
+import {
+  auditAnomalyWorker,
+  saveAnomalyStatusOverride,
+  simulateSuspiciousIdentitasUpdates,
+} from './utils/auditAnomalyDetector';
 import { MergeDuplicatesView } from './components/MergeDuplicatesView';
 import { OrganisasiDashboard } from './components/OrganisasiDashboard';
 import { FormOrganisasi } from './components/FormOrganisasi';
@@ -416,6 +421,7 @@ import {
   JenisViaSalurItem,
   ComplaintItem,
   CentralAuditLogEntry,
+  AuditAnomalyJobReport,
 } from './types';
 import { ComplaintView } from './components/ComplaintView';
 import { FormComplaint } from './components/FormComplaint';
@@ -1322,8 +1328,14 @@ export default function App() {
     return loadCentralAuditLogs();
   });
 
+  // Security & Anomaly Detector Background Job State
+  const [anomalyReport, setAnomalyReport] = useState<AuditAnomalyJobReport>(() => {
+    return auditAnomalyWorker.getReport(loadCentralAuditLogs());
+  });
+
   useEffect(() => {
-    const unsubscribe = subscribeAuditEvent((newEntry) => {
+    // 1. Subscribe to real-time audit event listener for all modules
+    const unsubscribeAudit = subscribeAuditEvent((newEntry) => {
       setCentralAuditLogs((prev) => {
         if (prev.some((e) => e.id === newEntry.id)) return prev;
         const updated = [newEntry, ...prev];
@@ -1331,8 +1343,21 @@ export default function App() {
         return updated;
       });
     });
-    return unsubscribe;
-  }, []);
+
+    // 2. Start recurring background worker (scans Identitas changes > 3x/month every 30s)
+    const cleanupWorker = auditAnomalyWorker.start(
+      () => centralAuditLogs,
+      (rep) => {
+        setAnomalyReport(rep);
+      },
+      30
+    );
+
+    return () => {
+      unsubscribeAudit();
+      cleanupWorker();
+    };
+  }, [centralAuditLogs]);
 
   const handleUpdateSalurOrders = (updated: SalurOrder[]) => {
     try {
@@ -6774,6 +6799,7 @@ export default function App() {
                 item={editingIdentitas || identitasList[0]}
                 allIdentitasList={identitasList}
                 changeLogs={changeLogs}
+                suspiciousFlags={anomalyReport?.flags || []}
                 onBack={() => {
                   setCurrentView('identitas');
                   setEditingIdentitas(null);
@@ -6789,11 +6815,29 @@ export default function App() {
             </div>
           )}
 
-          {/* View: Central Audit Log Module (Event Listener & Chronological History across all modules) */}
+          {/* View: Central Audit Log Module (Event Listener, Anomaly Background Job & Chronological History) */}
           {currentView === 'auditLog' && (
             <div className="mt-2 sm:mt-4">
               <CentralAuditLogView
                 logs={centralAuditLogs}
+                anomalyReport={anomalyReport}
+                onTriggerJobScan={() => {
+                  const rep = auditAnomalyWorker.runScan();
+                  setAnomalyReport(rep);
+                  showToast('Pemeriksaan background job anomali selesai dijalankan');
+                }}
+                onUpdateAnomalyStatus={(flagId, status, notes) => {
+                  saveAnomalyStatusOverride(flagId, status, notes);
+                  const rep = auditAnomalyWorker.runScan();
+                  setAnomalyReport(rep);
+                  showToast(`Status peringatan anomali diperbarui menjadi: ${status}`);
+                }}
+                onSimulateAnomaly={(codeId, name, field) => {
+                  simulateSuspiciousIdentitasUpdates(codeId, name, field);
+                  const rep = auditAnomalyWorker.runScan();
+                  setAnomalyReport(rep);
+                  showToast('Simulasi 4x perubahan field identitas berhasil dikirim! Background job telah mendeteksi anomali.');
+                }}
                 onClearLogs={() => {
                   setCentralAuditLogs([]);
                   saveCentralAuditLogs([]);

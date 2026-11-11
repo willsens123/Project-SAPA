@@ -620,6 +620,40 @@ export interface CentralAuditLogEntry {
   metadata?: Record<string, any>;
 }
 
+export type SuspiciousSeverity = 'WARNING' | 'HIGH' | 'CRITICAL';
+export type SuspiciousStatus = 'ACTIVE' | 'INVESTIGATED' | 'DISMISSED';
+
+export interface SuspiciousAuditFlag {
+  id: string;
+  recordId: string;
+  recordTitle: string;
+  field: string;
+  normalizedField: string;
+  changeCount: number;
+  windowStart: string;
+  windowEnd: string;
+  windowDays: number;
+  severity: SuspiciousSeverity;
+  status: SuspiciousStatus;
+  reason: string;
+  matchingLogs: CentralAuditLogEntry[];
+  detectedAt: string;
+  investigatedAt?: string;
+  investigatedBy?: string;
+  notes?: string;
+}
+
+export interface AuditAnomalyJobReport {
+  lastRunAt: string | null;
+  runCount: number;
+  scannedLogsCount: number;
+  scannedIdentitasCount: number;
+  activeFlagsCount: number;
+  flags: SuspiciousAuditFlag[];
+  isJobRunning: boolean;
+  intervalSeconds: number;
+}
+
 export interface DuplicatePair {
   id: string;
   item1: IdentitasItem;

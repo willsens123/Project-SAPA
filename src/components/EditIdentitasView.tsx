@@ -25,9 +25,11 @@ import {
   User,
   ArrowDownUp,
   FileSpreadsheet,
+  AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
 import { IdentitasItem } from '../identitasData';
-import { IdentitasChangeLog } from '../types';
+import { IdentitasChangeLog, SuspiciousAuditFlag } from '../types';
 
 interface EditFieldRow {
   id: string;
@@ -40,6 +42,7 @@ interface EditIdentitasViewProps {
   item: IdentitasItem;
   allIdentitasList: IdentitasItem[];
   changeLogs: IdentitasChangeLog[];
+  suspiciousFlags?: SuspiciousAuditFlag[];
   onBack: () => void;
   onSave: (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => void;
   onShowToast: (msg: string) => void;
@@ -115,9 +118,23 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   onShowToast,
   onOpenAddModal,
   onNavigateToCentralAudit,
+  suspiciousFlags = [],
 }) => {
   // Current selected identity (can switch between identities if needed)
   const [selectedIdentity, setSelectedIdentity] = useState<IdentitasItem>(item);
+
+  // Filter suspicious flags for this identity
+  const relevantSuspiciousFlags = useMemo(() => {
+    if (!suspiciousFlags || suspiciousFlags.length === 0) return [];
+    return suspiciousFlags.filter((f) => {
+      const matchId =
+        f.recordId === selectedIdentity.codeId ||
+        f.recordId === selectedIdentity.id ||
+        (selectedIdentity.namaLengkap &&
+          f.recordTitle.toLowerCase().includes(selectedIdentity.namaLengkap.toLowerCase()));
+      return matchId && f.status === 'ACTIVE';
+    });
+  }, [suspiciousFlags, selectedIdentity]);
 
   // Field edit rows matching Image 1
   const [fieldRows, setFieldRows] = useState<EditFieldRow[]>([
@@ -404,19 +421,25 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="text-xs text-slate-400 font-medium">Mengedit Identitas & Audit Trail</div>
-            <div className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <span className="font-mono text-[#05828e] bg-teal-50 px-2 py-0.5 rounded text-xs font-semibold border border-teal-200">
-                {selectedIdentity.codeId || 'ID'}
-              </span>
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              Profil Identitas & Audit Trail
+            </div>
+            <div className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap">
               <span>{selectedIdentity.namaLengkap}</span>
-              <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+              <span className="font-mono text-xs font-semibold text-slate-400">
+                #{selectedIdentity.codeId || 'ID'}
+              </span>
+              <span className="text-slate-300">·</span>
+              <span className="text-xs font-normal text-slate-500">
                 {selectedIdentity.bhanteLay || 'Lay'}
               </span>
               {selectedIdentity.status && selectedIdentity.status !== '-' && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                  {selectedIdentity.status}
-                </span>
+                <>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded">
+                    {selectedIdentity.status}
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -487,6 +510,45 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Suspicious Anomaly Alert Banner (Flags > 3 changes to same field in a month) */}
+      {relevantSuspiciousFlags.length > 0 && (
+        <div className="bg-amber-50/50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-150">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-bold text-slate-900 text-sm">
+                  Peringatan Deteksi Anomali
+                </span>
+                <span className="text-slate-300">·</span>
+                <span className="font-semibold text-rose-700">
+                  {relevantSuspiciousFlags[0].changeCount}x Perubahan dalam sebulan
+                </span>
+                <span className="text-slate-300">·</span>
+                <span className="text-slate-500">
+                  Field: <strong className="font-semibold text-slate-800">{relevantSuspiciousFlags[0].field}</strong>
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                {relevantSuspiciousFlags[0].reason}
+              </p>
+            </div>
+          </div>
+          {onNavigateToCentralAudit && (
+            <button
+              type="button"
+              onClick={onNavigateToCentralAudit}
+              className="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-2xs transition-colors shrink-0 cursor-pointer flex items-center gap-1.5 self-start md:self-center"
+            >
+              <span>Buka di Audit Log Pusat</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Edit Form Container */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 sm:p-8">
