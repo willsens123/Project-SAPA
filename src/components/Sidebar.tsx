@@ -729,8 +729,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         id: 'nav-jurnal-umum',
-        title: 'Jurnal Umum',
-        subtitle: 'Jurnal Berpasangan Otomatis Mutasi',
+        title: 'Jurnal Umum & Buku Besar',
+        subtitle: 'General Ledger Rekap 5 Modul Otomatis',
         view: 'jurnalUmum',
         icon: Receipt,
       },
@@ -1216,26 +1216,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand Section */}
         <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div
-              id="sidebar-lotus-logo"
-              className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#05828e] to-[#01b5a2] text-white flex items-center justify-center shadow-xs shrink-0 cursor-pointer hover:opacity-95"
-              onClick={() => onSelectView('home')}
-              title="Dashboard Utama Proyek SAPA"
-            >
-              <Flower2 className="w-5 h-5 stroke-[2.2]" />
-            </div>
-
-            {!isCollapsed && (
+            {!isCollapsed ? (
               <div
-                className="flex flex-col min-w-0 cursor-pointer"
+                className="flex items-center gap-2.5 cursor-pointer overflow-hidden"
                 onClick={() => onSelectView('home')}
+                title="Yayasan Pelestarian dan Pengembangan Lamrim Nusantara"
               >
-                <span className="font-bold text-slate-800 text-[15px] tracking-tight leading-none">
-                  Proyek SAPA
-                </span>
-                <span className="text-[10.5px] font-medium text-slate-400 mt-1">
-                  YPPLN Portal
-                </span>
+                <img
+                  src="/assets/aistudio/image_e94e2d75.png"
+                  alt="Lamrimnesia Logo"
+                  className="h-8 max-w-[120px] object-contain rounded-md shrink-0 shadow-2xs"
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-slate-800 text-[13.5px] tracking-tight leading-none truncate">
+                    Proyek SAPA
+                  </span>
+                  <span className="text-[9.5px] font-medium text-slate-400 mt-0.5 truncate">
+                    Lamrim Nusantara
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div
+                id="sidebar-lotus-logo"
+                className="w-9 h-9 rounded-xl bg-[#05828e] p-1 flex items-center justify-center shadow-xs shrink-0 cursor-pointer hover:opacity-95 overflow-hidden"
+                onClick={() => onSelectView('home')}
+                title="Yayasan Pelestarian dan Pengembangan Lamrim Nusantara"
+              >
+                <img
+                  src="/assets/aistudio/image_e94e2d75.png"
+                  alt="Lamrimnesia"
+                  className="w-full h-full object-contain"
+                />
               </div>
             )}
           </div>

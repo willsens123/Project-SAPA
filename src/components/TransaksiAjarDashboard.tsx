@@ -17,11 +17,14 @@ import {
   CheckCircle2,
   Trash2,
   Link2,
+  Award,
+  GraduationCap,
 } from 'lucide-react';
 import { TransaksiAjarItem, TransaksiAjarSubProduct } from '../transaksiAjarData';
 import { ModalSayPaid } from './ModalSayPaid';
 import { ModalTambahkanKodeMutasi } from './ModalTambahkanKodeMutasi';
 import { ModalInvoiceAjar } from './ModalInvoiceAjar';
+import { ModalSertifikatAjar } from './ModalSertifikatAjar';
 import { SayPaidRecord, RekeningItem, MutasiItem } from '../types';
 import { calculateOrderBadges } from '../utils/orderBadgeHelper';
 import {
@@ -84,6 +87,15 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
   const handleOpenInvoiceModal = (order: TransaksiAjarItem) => {
     setSelectedOrderForInvoice(order);
     setIsInvoiceModalOpen(true);
+  };
+
+  // Modal E-Sertifikat Ajar state
+  const [isSertifikatModalOpen, setIsSertifikatModalOpen] = useState(false);
+  const [selectedOrderForSertifikat, setSelectedOrderForSertifikat] = useState<TransaksiAjarItem | null>(null);
+
+  const handleOpenSertifikatModal = (order: TransaksiAjarItem) => {
+    setSelectedOrderForSertifikat(order);
+    setIsSertifikatModalOpen(true);
   };
 
   const handleSaveSayPaid = (orderId: string, records: SayPaidRecord[]) => {
@@ -740,6 +752,16 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
                       </button>
                       <button
                         type="button"
+                        id={`btn-sertifikat-${item.id}`}
+                        onClick={() => handleOpenSertifikatModal(item)}
+                        className="hover:text-indigo-600 transition-colors cursor-pointer flex items-center gap-1 font-semibold text-indigo-600"
+                        title="Buka & Cetak E-Sertifikat Kelulusan"
+                      >
+                        <Award className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>E-Sertifikat</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleOpenInvoiceModal(item)}
                         className="hover:text-[#008d91] transition-colors cursor-pointer"
                       >
@@ -851,6 +873,19 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
                             >
                               <FileText className="w-4 h-4 text-[#008d91]" />
                               <span>Lihat Invoice</span>
+                            </button>
+                            <button
+                              type="button"
+                              id={`menu-sertifikat-${item.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuId(null);
+                                handleOpenSertifikatModal(item);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 text-left transition-colors cursor-pointer"
+                            >
+                              <Award className="w-4 h-4 text-indigo-600" />
+                              <span>E-Sertifikat Resmi</span>
                             </button>
                             <button
                               type="button"
@@ -1179,6 +1214,17 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
         onClose={() => {
           setIsInvoiceModalOpen(false);
           setSelectedOrderForInvoice(null);
+        }}
+        onShowToast={onShowToast}
+      />
+
+      {/* Modal E-Sertifikat Kelulusan A-AJAR */}
+      <ModalSertifikatAjar
+        isOpen={isSertifikatModalOpen}
+        item={selectedOrderForSertifikat}
+        onClose={() => {
+          setIsSertifikatModalOpen(false);
+          setSelectedOrderForSertifikat(null);
         }}
         onShowToast={onShowToast}
       />

@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { ModalExportPdfLaporanKeuangan } from './ModalExportPdfLaporanKeuangan';
 import { RingkasanJurnalConsolidatedView } from './RingkasanJurnalConsolidatedView';
+import { BukuBesarGeneralLedgerView } from './BukuBesarGeneralLedgerView';
+import { GrafikPemasukanPengeluaranBulanan } from './GrafikPemasukanPengeluaranBulanan';
 import { DashboardArusKas } from './DashboardArusKas';
 import { MutasiItem, PengeluaranItem, ProjectItem, JenisProyekItem } from '../types';
 import { PosKeuanganItem } from '../posKeuanganData';
@@ -72,7 +74,7 @@ interface LaporanKeuanganViewProps {
   projects?: ProjectItem[];
   jenisProyekList?: JenisProyekItem[];
   coaList?: CoaAccount[];
-  initialTab?: 'coa' | 'jurnal' | 'ringkasanJurnal' | 'arusKas' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
+  initialTab?: 'coa' | 'jurnal' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
   onUpdateCoaList?: (items: CoaAccount[]) => void;
   onNavigateToCoa?: () => void;
   onNavigateToMutasi?: (bankAccount: string) => void;
@@ -98,10 +100,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
   onNavigateToMutasi,
   onNavigateToPengeluaran,
 }) => {
-  // Navigation Tabs: COA, Jurnal, Ringkasan Jurnal, ARUS KAS, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
+  // Navigation Tabs: COA, Jurnal, Buku Besar, Ringkasan Jurnal, ARUS KAS, GRAFIK BULANAN, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
   const [activeTab, setActiveTab] = useState<
-    'coa' | 'jurnal' | 'ringkasanJurnal' | 'arusKas' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
+    'coa' | 'jurnal' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
   >(initialTab);
+
+  // Sub-view toggle when inside Jurnal tab
+  const [jurnalViewMode, setJurnalViewMode] = useState<'kronologis' | 'bukuBesar' | 'ringkasan'>('kronologis');
 
   React.useEffect(() => {
     if (initialTab) {
@@ -869,6 +874,23 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   </button>
                 )}
               </>
+            ) : activeTab === 'grafikBulanan' ? (
+              <>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Grafik Batang Recharts</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsExportPdfModalOpen(true)}
+                  title="Ekspor Laporan Keuangan ke format PDF"
+                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ekspor PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+              </>
             ) : activeTab === 'arusKas' ? (
               <>
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
@@ -936,8 +958,10 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-4 border-b border-slate-200 scrollbar-none">
         {[
           { key: 'coa', label: 'COA', desc: 'Daftar Akun', badge: coaList.length },
-          { key: 'jurnal', label: 'Jurnal Umum Otomatis', desc: 'Rekap Transaksi & COA', badge: journalEntries.length },
+          { key: 'jurnal', label: 'Jurnal Umum', desc: 'Rekap 5 Modul Otomatis', badge: journalEntries.length },
+          { key: 'bukuBesar', label: 'Buku Besar (General Ledger)', desc: 'T-Account per Akun COA', badge: 'Ledger' },
           { key: 'ringkasanJurnal', label: 'Ringkasan Jurnal', desc: 'Konsolidasi Debet-Kredit Mutasi & Transaksi', badge: journalEntries.length },
+          { key: 'grafikBulanan', label: 'Grafik Bulanan', desc: 'Pemasukan vs Pengeluaran Recharts', badge: 'Recharts' },
           { key: 'arusKas', label: 'Arus Kas (Cash Flow)', desc: 'Dashboard Visualisasi Recharts', badge: 'Grafik' },
           { key: 'manajemen', label: 'MANAJEMEN', desc: 'Kinerja Keuangan' },
           { key: 'summary', label: 'SUMMARY', desc: 'Ringkasan Laporan' },
@@ -1097,8 +1121,86 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* ============================================================== */}
       {activeTab === 'jurnal' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Rules and compliance banner: 100% auto generated & synchronized with COA */}
-          <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 border border-teal-200 rounded-xl p-4 text-xs text-slate-800 shadow-2xs">
+          {/* Quick Sub-view switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-700">Tampilan Akuntansi:</span>
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setJurnalViewMode('kronologis')}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    jurnalViewMode === 'kronologis'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Receipt className="w-3.5 h-3.5 text-[#05828e]" />
+                  <span>Jurnal Umum (Kronologis)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJurnalViewMode('bukuBesar')}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    jurnalViewMode === 'bukuBesar'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Buku Besar (General Ledger)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJurnalViewMode('ringkasan')}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    jurnalViewMode === 'ringkasan'
+                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Ringkasan Konsolidasi</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>5 Modul Terintegrasi</span>
+              </span>
+              <span>•</span>
+              <span className="font-mono font-bold text-slate-700">{journalEntries.length} Jurnal</span>
+            </div>
+          </div>
+
+          {jurnalViewMode === 'bukuBesar' ? (
+            <BukuBesarGeneralLedgerView
+              journalEntries={journalEntries}
+              coaList={computedCoaList}
+              isPrivacyMasked={isPrivacyMasked}
+              onOpenPdfModal={() => setIsExportPdfModalOpen(true)}
+              onSelectJournalDetail={(entry) => setSelectedJournalForDetail(entry)}
+              onNavigateToSource={(source) => {
+                if (source === 'mutasi' && onNavigateToMutasi) onNavigateToMutasi('BCA 888');
+              }}
+            />
+          ) : jurnalViewMode === 'ringkasan' ? (
+            <RingkasanJurnalConsolidatedView
+              journalEntries={journalEntries}
+              coaList={computedCoaList}
+              isPrivacyMasked={isPrivacyMasked}
+              onOpenPdfModal={() => setIsExportPdfModalOpen(true)}
+              onSelectJournalDetail={(entry) => setSelectedJournalForDetail(entry)}
+              onNavigateToSource={(source) => {
+                if (source === 'mutasi' && onNavigateToMutasi) onNavigateToMutasi('BCA 888');
+              }}
+            />
+          ) : (
+            <>
+              {/* Rules and compliance banner: 100% auto generated & synchronized with COA */}
+              <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 border border-teal-200 rounded-xl p-4 text-xs text-slate-800 shadow-2xs">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
@@ -1643,7 +1745,25 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </div>
             ))
           )}
+            </>
+          )}
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: BUKU BESAR (General Ledger) */}
+      {/* ============================================================== */}
+      {activeTab === 'bukuBesar' && (
+        <BukuBesarGeneralLedgerView
+          journalEntries={journalEntries}
+          coaList={computedCoaList}
+          isPrivacyMasked={isPrivacyMasked}
+          onOpenPdfModal={() => setIsExportPdfModalOpen(true)}
+          onSelectJournalDetail={(entry) => setSelectedJournalForDetail(entry)}
+          onNavigateToSource={(source) => {
+            if (source === 'mutasi' && onNavigateToMutasi) onNavigateToMutasi('BCA 888');
+          }}
+        />
       )}
 
       {/* ============================================================== */}
@@ -1722,30 +1842,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
           </div>
 
-          {/* Quick link banner to Dashboard Arus Kas Recharts */}
-          <div className="bg-linear-to-r from-teal-50 via-white to-emerald-50 border border-teal-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <TrendingUp className="w-5 h-5 stroke-[2.5]" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Dashboard Visualisasi Arus Kas (Recharts)
-                </h4>
-                <p className="text-xs text-slate-500">
-                  Pantau tren perbandingan arus kas masuk (pemasukan) dan keluar (pengeluaran) per bulan secara dinamis.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setActiveTab('arusKas')}
-              className="bg-[#05828e] hover:bg-[#046c76] text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-            >
-              <span>Buka Grafik Arus Kas</span>
-              <ArrowRightLeft className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          {/* Grafik Batang Perbandingan Pemasukan vs Pengeluaran Bulanan Recharts */}
+          <GrafikPemasukanPengeluaranBulanan
+            mutasiItems={mutasiItems}
+            pengeluaranList={pengeluaranList}
+            salurOrders={salurOrders}
+            donasiOrders={donasiOrders}
+            transaksiAjarList={transaksiAjarList}
+            journalEntries={journalEntries}
+            isPrivacyMasked={isPrivacyMasked}
+          />
 
           {/* Performance & Program Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2229,6 +2335,21 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: GRAFIK BULANAN PEMASUKAN VS PENGELUARAN (RECHARTS) */}
+      {/* ============================================================== */}
+      {activeTab === 'grafikBulanan' && (
+        <GrafikPemasukanPengeluaranBulanan
+          mutasiItems={mutasiItems}
+          pengeluaranList={pengeluaranList}
+          salurOrders={salurOrders}
+          donasiOrders={donasiOrders}
+          transaksiAjarList={transaksiAjarList}
+          journalEntries={journalEntries}
+          isPrivacyMasked={isPrivacyMasked}
+        />
       )}
 
       {/* ============================================================== */}

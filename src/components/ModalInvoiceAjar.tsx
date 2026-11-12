@@ -271,13 +271,20 @@ export const ModalInvoiceAjar: React.FC<ModalInvoiceAjarProps> = ({
             {/* Top Brand & Title */}
             <div>
               <div className="flex items-start justify-between border-b border-slate-100 pb-5">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-serif">
-                    INVOICE
-                  </h1>
-                  <span className="text-xs font-semibold text-[#008d91] uppercase tracking-wider mt-0.5 inline-block">
-                    A-AJAR • Program Pembelajaran
-                  </span>
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/assets/aistudio/image_e94e2d75.png"
+                    alt="Logo Lamrimnesia"
+                    className="h-10 w-auto object-contain rounded-md shrink-0 shadow-2xs"
+                  />
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-serif leading-none">
+                      INVOICE
+                    </h1>
+                    <span className="text-[11px] font-semibold text-[#008d91] uppercase tracking-wider mt-1 inline-block">
+                      A-AJAR • Yayasan Pelestarian dan Pengembangan Lamrim Nusantara
+                    </span>
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-slate-400 font-medium">Nomor Invoice</div>

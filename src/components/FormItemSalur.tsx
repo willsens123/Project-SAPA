@@ -405,7 +405,7 @@ export const FormItemSalur: React.FC<FormItemSalurProps> = ({
         author: firstAuthor,
         publisher:
           penerbit ||
-          'Penerbit Yayasan Pengembangan dan Pelestarian Lamrim Nusantara',
+          'Penerbit Yayasan Pelestarian dan Pengembangan Lamrim Nusantara',
         dimensions: ukuran || '21 x 14.8 x 1.2 mm',
         pages: jumlahHalaman || 'xvii+137',
         cover: jenisKover || 'Soft Cover',

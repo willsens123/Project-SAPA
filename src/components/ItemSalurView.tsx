@@ -1036,7 +1036,7 @@ export const ItemSalurView: React.FC<ItemSalurViewProps> = ({
                               </p>
                               <p>
                                 <span className="font-normal text-slate-700">Penerbit: </span>
-                                {item.detailedInfo?.publisher || item.publisher || 'Penerbit Yayasan Pengembangan dan Pelestarian Lamrim Nusantara'}
+                                {item.detailedInfo?.publisher || item.publisher || 'Penerbit Yayasan Pelestarian dan Pengembangan Lamrim Nusantara'}
                               </p>
                               <p>
                                 <span className="font-normal text-slate-700">Ukuran: </span>

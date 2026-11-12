@@ -4119,7 +4119,7 @@ export default function App() {
     if (currentView === 'mutasi') return 'Mutasi';
     if (currentView === 'rincianMutasi') return 'Rincian Mutasi';
     if (currentView === 'laporanKeuangan') return 'Laporan Keuangan';
-    if (currentView === 'jurnalUmum') return 'Jurnal Umum (Otomatis Mutasi)';
+    if (currentView === 'jurnalUmum') return 'Jurnal Umum & Buku Besar (General Ledger)';
     if (currentView === 'coa') return 'COA (Chart of Accounts)';
     if (currentView === 'posKeuangan') return 'Pos Keuangan';
     if (currentView === 'posPemasukan') return 'Pos Pemasukan';

@@ -92,7 +92,7 @@ export function generateFinancialReportPdf(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     doc.setTextColor(30, 41, 59); // Slate-800
-    doc.text('YAYASAN PELESTARI PUSAKA LITERASI NUSANTARA (YPPLN)', marginX, currentY);
+    doc.text('YAYASAN PELESTARIAN DAN PENGEMBANGAN LAMRIM NUSANTARA', marginX, currentY);
 
     currentY += 5;
     doc.setFont('helvetica', 'bold');
@@ -568,9 +568,9 @@ export function generateFinancialReportPdf(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('Divisi Keuangan YPPLN', marginX + 10, currentY + 3.5);
+  doc.text('Divisi Keuangan Yayasan', marginX + 10, currentY + 3.5);
   doc.text('Tim Audit Independen', marginX + colSignWidth + 10, currentY + 3.5);
-  doc.text('Yayasan LPPLN Nusantara', marginX + colSignWidth * 2 + 10, currentY + 3.5);
+  doc.text('Yayasan Pelestarian dan Pengembangan Lamrim Nusantara', marginX + colSignWidth * 2 + 10, currentY + 3.5);
 
   // =========================================================================
   // RUNNING FOOTERS WITH PAGE NUMBERS
@@ -585,7 +585,7 @@ export function generateFinancialReportPdf(
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184); // Slate-400
     doc.text(
-      'Sistem ERP Keuangan Yayasan Pelestari Pusaka Literasi Nusantara (YPPLN) • Dokumen Resmi',
+      'Sistem ERP Keuangan Yayasan Pelestarian dan Pengembangan Lamrim Nusantara • Dokumen Resmi',
       marginX,
       pageHeight - 7
     );

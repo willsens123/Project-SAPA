@@ -357,7 +357,12 @@ export const ModalInvoiceSalur: React.FC<ModalInvoiceSalurProps> = ({
                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#008d91]" />
 
                   {/* Left: Lamrimnesia store logo & Yayasan info */}
-                  <div className="flex items-center gap-4 z-10">
+                  <div className="flex items-center gap-3.5 z-10">
+                    <img
+                      src="/assets/aistudio/image_e94e2d75.png"
+                      alt="Logo Lamrimnesia"
+                      className="h-10 w-auto object-contain shrink-0 rounded shadow-xs"
+                    />
                     <div className="flex flex-col">
                       <div className="flex items-baseline gap-1">
                         <span className="font-serif italic font-extrabold text-xl text-[#f7c948] tracking-wide">

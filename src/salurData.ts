@@ -241,7 +241,7 @@ export const INITIAL_BOOKS: SalurProduct[] = [
     detailedInfo: {
       fullTitle: 'Jalan Menuju Kemahatahuan: Risalah Mengenai Tingkatan Jalan Menuju Pencerahan (Lamrim)',
       author: 'Panchen Losang Chokyi Gyaltshen & Panchen Losang Yeshe',
-      publisher: 'Penerbit Yayasan Pengembangan dan Pelestarian Lamrim Nusantara',
+      publisher: 'Penerbit Yayasan Pelestarian dan Pengembangan Lamrim Nusantara',
       dimensions: '21 x 14.8 x 1.5 mm',
       pages: 'xxiv+246',
       cover: 'Soft Cover',
@@ -273,7 +273,7 @@ export const INITIAL_BOOKS: SalurProduct[] = [
     detailedInfo: {
       fullTitle: 'Demi Kepentingan Semua Makhluk: Sebuah Ulasan Atas Lakon Hidup Sang Penerang',
       author: 'Y.M.S. Dalai Lama XIV',
-      publisher: 'Penerbit Yayasan Pengembangan dan Pelestarian Lamrim Nusantara',
+      publisher: 'Penerbit Yayasan Pelestarian dan Pengembangan Lamrim Nusantara',
       dimensions: '21 x 14.8 x 1.2 mm',
       pages: 'xvii+137',
       cover: 'Soft Cover',
@@ -305,7 +305,7 @@ export const INITIAL_BOOKS: SalurProduct[] = [
     detailedInfo: {
       fullTitle: 'Menjadi Buddha di Tempat Kerja: 8 Langkah Praktis Menghadapi Tekanan Hidup dan Karier',
       author: 'Franz Metcalf & BJ Gallagher',
-      publisher: 'Penerbit Yayasan Pengembangan dan Pelestarian Lamrim Nusantara',
+      publisher: 'Penerbit Yayasan Pelestarian dan Pengembangan Lamrim Nusantara',
       dimensions: '21 x 14.8 x 1.2 mm',
       pages: 'xvi+192',
       cover: 'Soft Cover',

@@ -14,10 +14,12 @@ import {
   FileText,
   CheckCircle2,
   Link2,
+  Receipt,
 } from 'lucide-react';
 import { DonasiOrder, DonasiItem } from '../donasiData';
 import { ModalSayPaid } from './ModalSayPaid';
 import { ModalTambahkanKodeMutasi } from './ModalTambahkanKodeMutasi';
+import { ModalKwitansiDonasi } from './ModalKwitansiDonasi';
 import { SayPaidRecord, RekeningItem, MutasiItem } from '../types';
 import { calculateOrderBadges } from '../utils/orderBadgeHelper';
 import {
@@ -70,6 +72,15 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
   const handleOpenConnectMutasiModal = (order: DonasiOrder) => {
     setSelectedOrderForMutasi(order);
     setIsConnectMutasiModalOpen(true);
+  };
+
+  // Modal E-Kwitansi Donasi Resmi state
+  const [isKwitansiModalOpen, setIsKwitansiModalOpen] = useState(false);
+  const [selectedOrderForKwitansi, setSelectedOrderForKwitansi] = useState<DonasiOrder | null>(null);
+
+  const handleOpenKwitansiModal = (order: DonasiOrder) => {
+    setSelectedOrderForKwitansi(order);
+    setIsKwitansiModalOpen(true);
   };
 
   const handleSaveSayPaid = (orderId: string, records: SayPaidRecord[]) => {
@@ -689,7 +700,18 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
 
                       <button
                         type="button"
-                        onClick={() => onShowToast(`Invoice donasi ${order.orderNumber} telah dikirim`)}
+                        id={`btn-kwitansi-${order.id}`}
+                        onClick={() => handleOpenKwitansiModal(order)}
+                        className="hover:text-[#008d91] font-semibold text-[#008d91] transition-colors cursor-pointer flex items-center gap-1"
+                        title="Buka & Cetak E-Kwitansi Donasi Resmi"
+                      >
+                        <Receipt className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>E-Kwitansi</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenKwitansiModal(order)}
                         className="hover:text-[#008d91] font-medium transition-colors cursor-pointer"
                       >
                         Kirim Invoice
@@ -741,6 +763,19 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
                             id={`dropdown-donasi-${order.id}`}
                             className="absolute right-0 bottom-full mb-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
                           >
+                            <button
+                              type="button"
+                              id={`menu-kwitansi-${order.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuOrderId(null);
+                                handleOpenKwitansiModal(order);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-[#008d91] hover:bg-[#008d91]/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                            >
+                              <Receipt className="w-4 h-4 text-[#008d91]" />
+                              <span>E-Kwitansi Resmi</span>
+                            </button>
                             <button
                               type="button"
                               id={`menu-say-paid-${order.id}`}
@@ -1011,6 +1046,17 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
         order={selectedOrderForMutasi}
         mutasiItems={mutasiItems}
         onUpdateMutasiItems={onUpdateMutasiItems}
+        onShowToast={onShowToast}
+      />
+
+      {/* Modal E-Kwitansi Tanda Terima Donasi Resmi */}
+      <ModalKwitansiDonasi
+        isOpen={isKwitansiModalOpen}
+        order={selectedOrderForKwitansi}
+        onClose={() => {
+          setIsKwitansiModalOpen(false);
+          setSelectedOrderForKwitansi(null);
+        }}
         onShowToast={onShowToast}
       />
     </div>

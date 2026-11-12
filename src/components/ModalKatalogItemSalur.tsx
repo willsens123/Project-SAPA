@@ -157,8 +157,8 @@ export const ModalKatalogItemSalur: React.FC<ModalKatalogItemSalurProps> = ({
   // 4. Copy WhatsApp Broadcast Text
   const handleCopyText = () => {
     const textLines: string[] = [];
-    textLines.push(`📚 *KATALOG RESMI PENERBITAN YPPLN*`);
-    textLines.push(`_Yayasan Pengembangan dan Pelestarian Lamrim Nusantara_\n`);
+    textLines.push(`📚 *KATALOG RESMI PENERBITAN LAMRIMNESIA*`);
+    textLines.push(`_Yayasan Pelestarian dan Pengembangan Lamrim Nusantara_\n`);
 
     const targetList = viewMode === 'single' ? [currentItem] : items;
 
@@ -428,7 +428,7 @@ const CatalogSingleCard: React.FC<CatalogSingleCardProps> = ({
       : [item.category || 'TJMP'];
 
   const authorName = item.author || item.detailedInfo?.author || 'Panchen Losang Chokyi Gyaltshen & Panchen Losang Yeshe';
-  const publisherName = item.publisher || item.detailedInfo?.publisher || 'Yayasan Pengembangan dan Pelestarian Lamrim Nusantara';
+  const publisherName = item.publisher || item.detailedInfo?.publisher || 'Yayasan Pelestarian dan Pengembangan Lamrim Nusantara';
   const fullTitle = item.detailedInfo?.fullTitle || item.title;
   const quoteText = item.detailedInfo?.quote;
   const descriptionText = item.detailedInfo?.description;
@@ -448,21 +448,28 @@ const CatalogSingleCard: React.FC<CatalogSingleCardProps> = ({
         <div className="absolute right-32 -bottom-10 w-32 h-32 rounded-full bg-amber-400/15 blur-lg pointer-events-none" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/25 text-amber-200 border border-amber-300/30">
-                Katalog Literasi Dharma
-              </span>
-              <span className="text-[11px] text-teal-100 font-medium">
-                Penerbitan Nusantara
-              </span>
+          <div className="flex items-center gap-3.5">
+            <img
+              src="/assets/aistudio/image_e94e2d75.png"
+              alt="Logo Lamrimnesia"
+              className="h-10 sm:h-12 w-auto object-contain rounded-md shadow-2xs shrink-0"
+            />
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-400/25 text-amber-200 border border-amber-300/30">
+                  Katalog Literasi Dharma
+                </span>
+                <span className="text-[11px] text-teal-100 font-medium">
+                  Penerbitan Nusantara
+                </span>
+              </div>
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white leading-snug">
+                YAYASAN PELESTARIAN DAN PENGEMBANGAN LAMRIM NUSANTARA
+              </h1>
+              <p className="text-[11px] text-teal-100/90 mt-0.5">
+                Divisi S-SALUR & Distribusi Buku Dharma • Program Pelestarian Ajaran
+              </p>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white leading-snug">
-              YAYASAN PENGEMBANGAN DAN PELESTARIAN LAMRIM NUSANTARA
-            </h1>
-            <p className="text-xs text-teal-100/90 mt-0.5">
-              Divisi S-SALUR & Distribusi Buku Dharma • Program Pelestarian Ajaran
-            </p>
           </div>
 
           <div className="text-left sm:text-right shrink-0">
@@ -675,7 +682,7 @@ const CatalogSingleCard: React.FC<CatalogSingleCardProps> = ({
       {/* Catalog Card Bottom Footer */}
       <div className="bg-slate-50 px-6 sm:px-8 py-3 border-t border-slate-200/90 text-slate-500 text-[10px] flex flex-wrap items-center justify-between gap-2">
         <div>
-          © {new Date().getFullYear()} Yayasan Pengembangan dan Pelestarian Lamrim Nusantara (YPPLN). Hak cipta dilindungi.
+          © {new Date().getFullYear()} Yayasan Pelestarian dan Pengembangan Lamrim Nusantara. Hak cipta dilindungi.
         </div>
         <div className="font-mono text-slate-600 font-medium">
           DOKUMEN RESMI DIVISI PENERBITAN & DISTRIBUSI SALUR
