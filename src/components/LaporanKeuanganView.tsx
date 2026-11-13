@@ -60,6 +60,12 @@ import {
   createReversalJournal,
   verifyAllJournalsBalanced,
 } from '../accountingData';
+import {
+  isDateInRange,
+  formatDateRangeLabel,
+  parseFinancialDateToIso,
+  formatIsoDateIndo,
+} from '../utils/financialDateFilter';
 
 interface LaporanKeuanganViewProps {
   mutasiItems: MutasiItem[];
@@ -74,7 +80,7 @@ interface LaporanKeuanganViewProps {
   projects?: ProjectItem[];
   jenisProyekList?: JenisProyekItem[];
   coaList?: CoaAccount[];
-  initialTab?: 'coa' | 'jurnal' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
+  initialTab?: 'coa' | 'jurnal' | 'tabelMutasi' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening';
   onUpdateCoaList?: (items: CoaAccount[]) => void;
   onNavigateToCoa?: () => void;
   onNavigateToMutasi?: (bankAccount: string) => void;
@@ -100,9 +106,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
   onNavigateToMutasi,
   onNavigateToPengeluaran,
 }) => {
-  // Navigation Tabs: COA, Jurnal, Buku Besar, Ringkasan Jurnal, ARUS KAS, GRAFIK BULANAN, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
+  // Navigation Tabs: COA, Jurnal, Tabel Mutasi, Buku Besar, Ringkasan Jurnal, ARUS KAS, GRAFIK BULANAN, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
   const [activeTab, setActiveTab] = useState<
-    'coa' | 'jurnal' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
+    'coa' | 'jurnal' | 'tabelMutasi' | 'bukuBesar' | 'ringkasanJurnal' | 'arusKas' | 'grafikBulanan' | 'manajemen' | 'summary' | 'saldoAkhir' | 'saldoPerRekening'
   >(initialTab);
 
   // Sub-view toggle when inside Jurnal tab
@@ -119,6 +125,18 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isPrivacyMasked, setIsPrivacyMasked] = useState(false);
+
+  // Custom Date Range Filter (sinkron ke Grafik Batang, Tabel Mutasi, & Jurnal Umum)
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [mutasiBankFilter, setMutasiBankFilter] = useState<string>('ALL');
+  const [mutasiTypeFilter, setMutasiTypeFilter] = useState<'ALL' | 'CR' | 'DB'>('ALL');
+
+  const hasCustomDateRange = Boolean(startDate || endDate);
+  const activeDateRangeLabel = useMemo(
+    () => formatDateRangeLabel(startDate, endDate),
+    [startDate, endDate]
+  );
 
   // Filters state
   const [selectedRekeningFilter, setSelectedRekeningFilter] = useState<string>('ALL');
@@ -143,35 +161,123 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
   const [reversals, setReversals] = useState<JournalEntry[]>(() => loadReversalJournals());
 
+  // Filter seluruh sumber transaksi berdasarkan rentang tanggal kustom [startDate, endDate]
+  const dateFilteredMutasiItems = useMemo(() => {
+    if (!hasCustomDateRange) return mutasiItems;
+    return mutasiItems.filter((item) => isDateInRange(item.date, startDate, endDate));
+  }, [mutasiItems, startDate, endDate, hasCustomDateRange]);
+
+  const dateFilteredPengeluaranList = useMemo(() => {
+    if (!hasCustomDateRange) return pengeluaranList;
+    return pengeluaranList.filter((item) => isDateInRange(item.tanggal, startDate, endDate));
+  }, [pengeluaranList, startDate, endDate, hasCustomDateRange]);
+
+  const dateFilteredSalurOrders = useMemo(() => {
+    if (!hasCustomDateRange) return salurOrders;
+    return salurOrders.filter((item) => isDateInRange(item.date, startDate, endDate));
+  }, [salurOrders, startDate, endDate, hasCustomDateRange]);
+
+  const dateFilteredDonasiOrders = useMemo(() => {
+    if (!hasCustomDateRange) return donasiOrders;
+    return donasiOrders.filter((item) => isDateInRange(item.date, startDate, endDate));
+  }, [donasiOrders, startDate, endDate, hasCustomDateRange]);
+
+  const dateFilteredTransaksiAjarList = useMemo(() => {
+    if (!hasCustomDateRange) return transaksiAjarList;
+    return transaksiAjarList.filter((item) => isDateInRange(item.date, startDate, endDate));
+  }, [transaksiAjarList, startDate, endDate, hasCustomDateRange]);
+
+  const dateFilteredReversals = useMemo(() => {
+    if (!hasCustomDateRange) return reversals;
+    return reversals.filter((r) => isDateInRange(r.tanggalJurnal, startDate, endDate));
+  }, [reversals, startDate, endDate, hasCustomDateRange]);
+
+  // Daftar mutasi untuk tab Tabel Mutasi (rentang tanggal + filter bank + tipe CR/DB + pencarian)
+  const mutasiTableItems = useMemo(() => {
+    return dateFilteredMutasiItems.filter((item) => {
+      if (mutasiBankFilter !== 'ALL' && item.bankAccount !== mutasiBankFilter) {
+        return false;
+      }
+      if (mutasiTypeFilter !== 'ALL' && item.type !== mutasiTypeFilter) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const match =
+          (item.date || '').toLowerCase().includes(q) ||
+          (item.bankAccount || '').toLowerCase().includes(q) ||
+          (item.keteranganBank || '').toLowerCase().includes(q) ||
+          (item.linkedTransactions || []).some((lt) =>
+            lt.kode.toLowerCase().includes(q) || lt.keterangan.toLowerCase().includes(q)
+          );
+        if (!match) return false;
+      }
+      return true;
+    });
+  }, [dateFilteredMutasiItems, mutasiBankFilter, mutasiTypeFilter, searchQuery]);
+
+  const mutasiSummaryStats = useMemo(() => {
+    let totalCR = 0;
+    let totalDB = 0;
+    let countCR = 0;
+    let countDB = 0;
+    mutasiTableItems.forEach((m) => {
+      const amt = m.amount || 0;
+      if (m.type === 'CR') {
+        totalCR += amt;
+        countCR++;
+      } else {
+        totalDB += amt;
+        countDB++;
+      }
+    });
+    return {
+      totalCR,
+      totalDB,
+      net: totalCR - totalDB,
+      countCR,
+      countDB,
+      totalCount: mutasiTableItems.length,
+    };
+  }, [mutasiTableItems]);
+
+  const mutasiBankOptions = useMemo(() => {
+    const set = new Set<string>();
+    mutasiItems.forEach((m) => {
+      if (m.bankAccount) set.add(m.bankAccount);
+    });
+    return Array.from(set);
+  }, [mutasiItems]);
+
   // STRICT AUDIT INTEGRATION: Jurnal muncul secara otomatis 100% dari Mutasi!
   // Jurnal TIDAK BOLEH memunculkan data yang tidak ada di mutasi.
   // Terhubung langsung dengan konfigurasi akun COA, Kebutuhan Pengeluaran, dan semua Transaksi!
   const journalEntries = useMemo(() => {
     return generateJournalsFromMutasi(
-      mutasiItems,
-      pengeluaranList,
-      reversals,
+      dateFilteredMutasiItems,
+      dateFilteredPengeluaranList,
+      dateFilteredReversals,
       coaList,
-      salurOrders,
-      donasiOrders,
+      dateFilteredSalurOrders,
+      dateFilteredDonasiOrders,
       kebutuhanPengeluaranList,
       posPengeluaranList,
       projects,
       jenisProyekList,
-      transaksiAjarList
+      dateFilteredTransaksiAjarList
     );
   }, [
-    mutasiItems,
-    pengeluaranList,
-    reversals,
+    dateFilteredMutasiItems,
+    dateFilteredPengeluaranList,
+    dateFilteredReversals,
     coaList,
-    salurOrders,
-    donasiOrders,
+    dateFilteredSalurOrders,
+    dateFilteredDonasiOrders,
     kebutuhanPengeluaranList,
     posPengeluaranList,
     projects,
     jenisProyekList,
-    transaksiAjarList,
+    dateFilteredTransaksiAjarList,
   ]);
 
   // Modal states
@@ -429,6 +535,41 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
     selectedCoaRangeFilter,
     searchQuery,
   ]);
+
+  // Export filtered mutasi table to CSV
+  const handleExportMutasiCsv = () => {
+    const headers = [
+      'Tanggal',
+      'Rekening Bank',
+      'Tipe',
+      'Nominal',
+      'Saldo Rekening',
+      'Keterangan Mutasi',
+      'Tautan Transaksi',
+    ];
+    const rows = mutasiTableItems.map((m) => [
+      `"${m.date}"`,
+      `"${m.bankAccount}"`,
+      `"${m.type}"`,
+      String(m.amount || 0),
+      String(m.balance || 0),
+      `"${(m.keteranganBank || '').replace(/"/g, '""')}"`,
+      `"${(m.linkedTransactions || []).map((lt) => `${lt.sourceType.toUpperCase()}:${lt.kode}`).join(' | ')}"`,
+    ]);
+
+    const csvContent =
+      '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `tabel_mutasi_${startDate || 'awal'}_${endDate || 'akhir'}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    showToast('File CSV Tabel Mutasi berhasil diunduh');
+  };
 
   // Export filtered journals to standard CSV format
   const handleExportJournalsCSV = () => {
@@ -891,6 +1032,27 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   <span className="sm:hidden">PDF</span>
                 </button>
               </>
+            ) : activeTab === 'tabelMutasi' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleExportMutasiCsv}
+                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Ekspor CSV Mutasi</span>
+                </button>
+                {onNavigateToMutasi && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToMutasi('BCA 888')}
+                    className="bg-[#05828e] hover:bg-[#046e78] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Kelola Mutasi Bank</span>
+                  </button>
+                )}
+              </>
             ) : activeTab === 'arusKas' ? (
               <>
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
@@ -954,10 +1116,115 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
         </div>
       </div>
 
+      {/* Filter Rentang Tanggal Kustom (Periode Start Date & End Date) */}
+      <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 shadow-2xs">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mr-1">
+              <Calendar className="w-4 h-4 text-[#05828e] shrink-0" />
+              <span>Rentang Tanggal:</span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="laporan-start-date"
+                className="text-[11px] font-semibold text-slate-500"
+              >
+                Dari
+              </label>
+              <input
+                id="laporan-start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                aria-label="Tanggal Mulai"
+                className="text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#05828e] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
+              />
+            </div>
+
+            <span className="text-xs text-slate-400">–</span>
+
+            <div className="flex items-center gap-1.5">
+              <label
+                htmlFor="laporan-end-date"
+                className="text-[11px] font-semibold text-slate-500"
+              >
+                Sampai
+              </label>
+              <input
+                id="laporan-end-date"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                aria-label="Tanggal Akhir"
+                className="text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#05828e] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
+              />
+            </div>
+
+            {/* Preset Periode Cepat */}
+            <div className="flex flex-wrap items-center gap-1.5 xl:ml-2 xl:pl-2.5 xl:border-l xl:border-slate-200">
+              {[
+                { label: 'Semua', start: '', end: '' },
+                { label: 'Nov 2021', start: '2021-11-01', end: '2021-11-30' },
+                { label: 'Okt–Nov 2021', start: '2021-10-01', end: '2021-11-30' },
+                { label: 'Tahun 2021', start: '2021-01-01', end: '2021-12-31' },
+                { label: 'Bulan Ini', start: '2026-11-01', end: '2026-11-30' },
+              ].map((preset) => {
+                const isSelected = startDate === preset.start && endDate === preset.end;
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setStartDate(preset.start);
+                      setEndDate(preset.end);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+                      isSelected
+                        ? 'bg-[#05828e] border-[#05828e] text-white'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+
+              {hasCustomDateRange && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1"
+                  title="Hapus filter rentang tanggal"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Info periode aktif & jumlah data sinkron */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 tabular-nums shrink-0">
+            <span className={hasCustomDateRange ? 'font-bold text-[#05828e]' : 'font-semibold text-slate-700'}>
+              {activeDateRangeLabel}
+            </span>
+            <span className="text-slate-300">·</span>
+            <span>{dateFilteredMutasiItems.length} mutasi</span>
+            <span className="text-slate-300">·</span>
+            <span>{journalEntries.length} jurnal</span>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs Navigation matching Identitas UI */}
       <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-4 border-b border-slate-200 scrollbar-none">
         {[
           { key: 'coa', label: 'COA', desc: 'Daftar Akun', badge: coaList.length },
+          { key: 'tabelMutasi', label: 'Tabel Mutasi', desc: 'Mutasi Bank Terfilter', badge: mutasiTableItems.length },
           { key: 'jurnal', label: 'Jurnal Umum', desc: 'Rekap 5 Modul Otomatis', badge: journalEntries.length },
           { key: 'bukuBesar', label: 'Buku Besar (General Ledger)', desc: 'T-Account per Akun COA', badge: 'Ledger' },
           { key: 'ringkasanJurnal', label: 'Ringkasan Jurnal', desc: 'Konsolidasi Debet-Kredit Mutasi & Transaksi', badge: journalEntries.length },
@@ -1783,6 +2050,253 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       )}
 
       {/* ============================================================== */}
+      {/* TAB: TABEL MUTASI BANK (TERFILTER RENTANG TANGGAL) */}
+      {/* ============================================================== */}
+      {activeTab === 'tabelMutasi' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Summary Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                Total Mutasi Masuk (CR)
+              </span>
+              <div className="text-lg font-bold text-emerald-600 font-mono tabular-nums mt-1">
+                {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.totalCR)}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+                {mutasiSummaryStats.countCR} transaksi kredit
+              </span>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                Total Mutasi Keluar (DB)
+              </span>
+              <div className="text-lg font-bold text-rose-600 font-mono tabular-nums mt-1">
+                {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.totalDB)}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+                {mutasiSummaryStats.countDB} transaksi debet
+              </span>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                Arus Kas Mutasi Bersih
+              </span>
+              <div
+                className={`text-lg font-bold font-mono tabular-nums mt-1 ${
+                  mutasiSummaryStats.net >= 0 ? 'text-[#05828e]' : 'text-rose-600'
+                }`}
+              >
+                {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.net)}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-0.5 block">
+                Selisih CR dikurangi DB
+              </span>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+                Periode & Jumlah Data
+              </span>
+              <div className="text-base font-bold text-slate-800 tabular-nums mt-1 truncate">
+                {activeDateRangeLabel}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+                {mutasiSummaryStats.totalCount} baris mutasi tampil
+              </span>
+            </div>
+          </div>
+
+          {/* Sub-filter Toolbar inside Tabel Mutasi */}
+          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-600">Rekening Bank:</span>
+                <select
+                  value={mutasiBankFilter}
+                  onChange={(e) => setMutasiBankFilter(e.target.value)}
+                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                >
+                  <option value="ALL">Semua Rekening ({dateFilteredMutasiItems.length})</option>
+                  {mutasiBankOptions.map((bank) => (
+                    <option key={bank} value={bank}>
+                      {bank}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                {[
+                  { key: 'ALL', label: 'Semua Tipe' },
+                  { key: 'CR', label: 'Pemasukan (CR)' },
+                  { key: 'DB', label: 'Pengeluaran (DB)' },
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setMutasiTypeFilter(opt.key as 'ALL' | 'CR' | 'DB')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                      mutasiTypeFilter === opt.key
+                        ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {(mutasiBankFilter !== 'ALL' || mutasiTypeFilter !== 'ALL' || hasCustomDateRange) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMutasiBankFilter('ALL');
+                    setMutasiTypeFilter('ALL');
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Tampilkan Semua Mutasi
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleExportMutasiCsv}
+                className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Ekspor CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tabel Mutasi */}
+          <div className="bg-white border border-slate-300 rounded-lg shadow-xs overflow-hidden">
+            <div className="py-2.5 px-4 bg-slate-100/90 border-b border-slate-300 flex items-center justify-between">
+              <span className="font-bold text-xs sm:text-sm tracking-wide text-slate-900 uppercase">
+                TABEL MUTASI BANK · {activeDateRangeLabel}
+              </span>
+              <span className="text-xs font-semibold text-slate-600 tabular-nums">
+                {mutasiTableItems.length} Transaksi
+              </span>
+            </div>
+
+            {mutasiTableItems.length === 0 ? (
+              <div className="p-10 text-center text-slate-500 text-xs space-y-2">
+                <Landmark className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="font-semibold text-slate-700 text-sm">
+                  Tidak ada data mutasi yang sesuai dengan rentang tanggal atau filter
+                </p>
+                <p>Periode aktif: {activeDateRangeLabel}</p>
+                {hasCustomDateRange && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDate('');
+                      setEndDate('');
+                      setMutasiBankFilter('ALL');
+                      setMutasiTypeFilter('ALL');
+                    }}
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#05828e] hover:bg-[#046e78] text-white text-xs font-semibold cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset Rentang Tanggal</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
+                      <th className="py-2.5 px-3 border-r border-slate-200 w-28">Tanggal</th>
+                      <th className="py-2.5 px-3 border-r border-slate-200 w-28">Rekening</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 min-w-[260px]">Keterangan Mutasi Bank</th>
+                      <th className="py-2.5 px-3 border-r border-slate-200 text-center w-16">Tipe</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 text-right min-w-[135px]">Nominal</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 text-right min-w-[135px]">Saldo Rekening</th>
+                      <th className="py-2.5 px-3 min-w-[170px]">Tautan Modul</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {mutasiTableItems.map((item) => {
+                      const isoDate = parseFinancialDateToIso(item.date);
+                      const isCredit = item.type === 'CR';
+                      return (
+                        <tr key={item.id} className="hover:bg-teal-50/30 transition-colors">
+                          <td className="py-2 px-3 border-r border-slate-200 whitespace-nowrap">
+                            <div className="font-semibold text-slate-800 tabular-nums">
+                              {isoDate ? formatIsoDateIndo(isoDate) : item.date}
+                            </div>
+                            {isoDate && item.date !== formatIsoDateIndo(isoDate) && (
+                              <div className="text-[10px] text-slate-400">{item.date}</div>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 border-r border-slate-200 font-semibold text-slate-700 whitespace-nowrap">
+                            {item.bankAccount}
+                          </td>
+                          <td className="py-2 px-4 border-r border-slate-200 text-slate-700 leading-snug">
+                            {item.keteranganBank}
+                          </td>
+                          <td className="py-2 px-3 border-r border-slate-200 text-center">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                isCredit
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}
+                            >
+                              {item.type}
+                            </span>
+                          </td>
+                          <td
+                            className={`py-2 px-4 border-r border-slate-200 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
+                              isCredit ? 'text-emerald-700' : 'text-rose-600'
+                            }`}
+                          >
+                            {isPrivacyMasked
+                              ? '••••'
+                              : `${isCredit ? '+' : '-'} ${formatRupiah(item.amount)}`}
+                          </td>
+                          <td className="py-2 px-4 border-r border-slate-200 text-right font-mono text-slate-600 tabular-nums whitespace-nowrap">
+                            {isPrivacyMasked ? '••••' : formatRupiah(item.balance)}
+                          </td>
+                          <td className="py-2 px-3 text-[11px] text-slate-600">
+                            {item.linkedTransactions && item.linkedTransactions.length > 0 ? (
+                              <div className="space-y-0.5">
+                                {item.linkedTransactions.slice(0, 2).map((lt) => (
+                                  <div key={lt.id} className="truncate font-medium text-slate-700">
+                                    {lt.sourceType.toUpperCase()} · {lt.kode}
+                                  </div>
+                                ))}
+                                {item.linkedTransactions.length > 2 && (
+                                  <div className="text-[10px] text-slate-400">
+                                    +{item.linkedTransactions.length - 2} tautan lainnya
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">Mutasi Langsung</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
       {/* TAB 3: MANAJEMEN (Laporan Keuangan Manajemen) */}
       {/* ============================================================== */}
       {activeTab === 'manajemen' && (
@@ -1844,13 +2358,19 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
           {/* Grafik Batang Perbandingan Pemasukan vs Pengeluaran Bulanan Recharts */}
           <GrafikPemasukanPengeluaranBulanan
-            mutasiItems={mutasiItems}
-            pengeluaranList={pengeluaranList}
-            salurOrders={salurOrders}
-            donasiOrders={donasiOrders}
-            transaksiAjarList={transaksiAjarList}
+            mutasiItems={dateFilteredMutasiItems}
+            pengeluaranList={dateFilteredPengeluaranList}
+            salurOrders={dateFilteredSalurOrders}
+            donasiOrders={dateFilteredDonasiOrders}
+            transaksiAjarList={dateFilteredTransaksiAjarList}
             journalEntries={journalEntries}
             isPrivacyMasked={isPrivacyMasked}
+            startDate={startDate}
+            endDate={endDate}
+            onClearDateRange={() => {
+              setStartDate('');
+              setEndDate('');
+            }}
           />
 
           {/* Performance & Program Breakdown */}
@@ -2342,13 +2862,19 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* ============================================================== */}
       {activeTab === 'grafikBulanan' && (
         <GrafikPemasukanPengeluaranBulanan
-          mutasiItems={mutasiItems}
-          pengeluaranList={pengeluaranList}
-          salurOrders={salurOrders}
-          donasiOrders={donasiOrders}
-          transaksiAjarList={transaksiAjarList}
+          mutasiItems={dateFilteredMutasiItems}
+          pengeluaranList={dateFilteredPengeluaranList}
+          salurOrders={dateFilteredSalurOrders}
+          donasiOrders={dateFilteredDonasiOrders}
+          transaksiAjarList={dateFilteredTransaksiAjarList}
           journalEntries={journalEntries}
           isPrivacyMasked={isPrivacyMasked}
+          startDate={startDate}
+          endDate={endDate}
+          onClearDateRange={() => {
+            setStartDate('');
+            setEndDate('');
+          }}
         />
       )}
 
@@ -2357,14 +2883,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* ============================================================== */}
       {activeTab === 'arusKas' && (
         <DashboardArusKas
-          mutasiItems={mutasiItems}
-          pengeluaranList={pengeluaranList}
-          salurOrders={salurOrders}
-          donasiOrders={donasiOrders}
-          transaksiAjarList={transaksiAjarList}
+          mutasiItems={dateFilteredMutasiItems}
+          pengeluaranList={dateFilteredPengeluaranList}
+          salurOrders={dateFilteredSalurOrders}
+          donasiOrders={dateFilteredDonasiOrders}
+          transaksiAjarList={dateFilteredTransaksiAjarList}
           journalEntries={journalEntries}
           coaList={computedCoaList}
           isPrivacyMasked={isPrivacyMasked}
+          startDate={startDate}
+          endDate={endDate}
         />
       )}
 

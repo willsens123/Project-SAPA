@@ -32,6 +32,7 @@ import {
   Search,
   EyeOff,
   SlidersHorizontal,
+  LogOut,
 } from 'lucide-react';
 import {
   ProjectItem,
@@ -60,6 +61,21 @@ import { ReportDivisiPnb } from './ReportDivisiPnb';
 import { ReportDivisiFun } from './ReportDivisiFun';
 import { ReportDivisiMad } from './ReportDivisiMad';
 import { SalurProduct } from '../salurData';
+import { HomeFinancialSummaryCards } from './HomeFinancialSummaryCards';
+import {
+  HomeProjectDeadlineNotifications,
+  NotificationScopeMode,
+  NotificationReferenceMode,
+} from './HomeProjectDeadlineNotifications';
+import {
+  getOngoingProjectsWithinDays,
+  toLocalIsoDate,
+  SEED_REFERENCE_DATE_ISO,
+} from '../utils/projectDeadlineUtils';
+import { CoaAccount } from '../accountingData';
+import { KebutuhanPengeluaranItem } from '../kebutuhanPengeluaranData';
+import { PosPengeluaranGroup } from '../posPengeluaranData';
+import { JenisProyekItem } from '../types';
 
 interface PersonalNote {
   id: string;
@@ -73,7 +89,9 @@ interface PersonalNote {
 interface HomeViewProps {
   currentUser: KaryawanItem;
   currentDivisi: string;
+  karyawanList?: KaryawanItem[];
   onUpdateCurrentUser: (user: KaryawanItem, divisi: string) => void;
+  onLogout?: () => void;
   projects: ProjectItem[];
   identitasList: IdentitasItem[];
   organisasiList: OrganisasiItem[];
@@ -88,6 +106,10 @@ interface HomeViewProps {
   transaksiAjarList?: TransaksiAjarItem[];
   donasiOrders?: DonasiOrder[];
   pengeluaranList?: PengeluaranItem[];
+  coaList?: CoaAccount[];
+  kebutuhanPengeluaranList?: KebutuhanPengeluaranItem[];
+  posPengeluaranList?: PosPengeluaranGroup[];
+  jenisProyekList?: JenisProyekItem[];
   volunteerSSebarList?: VolunteerSSebarItem[];
   onNavigateView: (view: AppView) => void;
   onOpenProjectReport?: (project: ProjectItem) => void;
@@ -150,7 +172,9 @@ function parseFlexibleDate(str: string): { day: number; month: number; year?: nu
 export const HomeView: React.FC<HomeViewProps> = ({
   currentUser,
   currentDivisi,
+  karyawanList,
   onUpdateCurrentUser,
+  onLogout,
   projects,
   identitasList,
   organisasiList,
@@ -165,6 +189,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   transaksiAjarList = [],
   donasiOrders = [],
   pengeluaranList = [],
+  coaList,
+  kebutuhanPengeluaranList = [],
+  posPengeluaranList = [],
+  jenisProyekList = [],
   volunteerSSebarList,
   onNavigateView,
   onOpenProjectReport,
@@ -575,6 +603,75 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return projects.filter((p) => p.divisi === activeDivisi || activeDivisi === 'ALL').slice(0, 2);
   }, [ongoingProjects, projects, activeDivisi]);
 
+  // 6. Notifikasi Deadline Proyek Ongoing dalam 7 hari ke depan
+  const realTodayIso = useMemo(() => toLocalIsoDate(new Date()), []);
+  const allRealTimeDeadlineNotifs = useMemo(
+    () => getOngoingProjectsWithinDays(projects, todoTasks, realTodayIso, 7),
+    [projects, todoTasks, realTodayIso]
+  );
+  const allSeedDeadlineNotifs = useMemo(
+    () => getOngoingProjectsWithinDays(projects, todoTasks, SEED_REFERENCE_DATE_ISO, 7),
+    [projects, todoTasks]
+  );
+
+  const [notifScopeMode, setNotifScopeMode] = useState<NotificationScopeMode>('all');
+  const [notifReferenceMode, setNotifReferenceMode] = useState<NotificationReferenceMode>(() =>
+    allRealTimeDeadlineNotifs.length > 0 ? 'real' : 'seed'
+  );
+  const [hasManualRefChoice, setHasManualRefChoice] = useState(false);
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([]);
+  const [isNotifCollapsed, setIsNotifCollapsed] = useState(false);
+
+  // Jika ada proyek real-time baru yang masuk deadline 7 hari dan user belum memilih manual, arahkan ke 'real'
+  useEffect(() => {
+    if (!hasManualRefChoice && allRealTimeDeadlineNotifs.length > 0 && notifReferenceMode !== 'real') {
+      setNotifReferenceMode('real');
+    }
+  }, [allRealTimeDeadlineNotifs.length, hasManualRefChoice, notifReferenceMode]);
+
+  const activeReferenceIso =
+    notifReferenceMode === 'real' ? realTodayIso : SEED_REFERENCE_DATE_ISO;
+
+  const activeWindowEndIso = useMemo(() => {
+    const [y, m, d] = activeReferenceIso.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + 7);
+    return toLocalIsoDate(dt);
+  }, [activeReferenceIso]);
+
+  const scopedDeadlineNotifications = useMemo(() => {
+    const baseList =
+      notifReferenceMode === 'real' ? allRealTimeDeadlineNotifs : allSeedDeadlineNotifs;
+    if (notifScopeMode === 'division' && activeDivisi !== 'ALL') {
+      return baseList.filter((item) => item.project.divisi === activeDivisi);
+    }
+    return baseList;
+  }, [
+    notifReferenceMode,
+    allRealTimeDeadlineNotifs,
+    allSeedDeadlineNotifs,
+    notifScopeMode,
+    activeDivisi,
+  ]);
+
+  const visibleDeadlineNotifications = useMemo(
+    () =>
+      scopedDeadlineNotifications.filter(
+        (item) => !dismissedNotifIds.includes(item.project.id)
+      ),
+    [scopedDeadlineNotifications, dismissedNotifIds]
+  );
+
+  const dismissedInScopeCount =
+    scopedDeadlineNotifications.length - visibleDeadlineNotifications.length;
+
+  const handleFocusDeadlineNotifications = () => {
+    setIsNotifCollapsed(false);
+    const el = document.getElementById('home-deadline-notifications');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-5 text-slate-800 animate-in fade-in duration-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* ============================================================== */}
@@ -611,6 +708,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
         {/* Right Toolbar Icons & + Add Button matching Transaksi S-SALUR & Identitas */}
         <div className="flex items-center gap-3 self-end sm:self-auto">
+          {/* Deadline Notification Bell */}
+          <button
+            type="button"
+            id="btn-home-deadline-bell"
+            title={`Notifikasi Deadline Proyek Ongoing (≤ 7 Hari): ${visibleDeadlineNotifications.length}`}
+            onClick={handleFocusDeadlineNotifications}
+            className="relative p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-[#008d91] hover:border-teal-300 hover:bg-teal-50/60 transition-colors cursor-pointer"
+          >
+            <Bell className="w-5 h-5 stroke-[1.8]" />
+            {visibleDeadlineNotifications.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center tabular-nums shadow-xs">
+                {visibleDeadlineNotifications.length}
+              </span>
+            )}
+          </button>
+
           {/* Eye Off Icon */}
           <button
             type="button"
@@ -696,12 +809,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   {currentUser.kodeKaryawan || '00031'}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-teal-100 font-normal mt-1 flex items-center gap-2">
+              <p className="text-xs sm:text-sm text-teal-100 font-normal mt-1 flex flex-wrap items-center gap-2">
                 <span>Login ID Aktif: {currentUser.namaLengkap}</span>
                 <span>•</span>
                 <span className="font-bold underline cursor-pointer hover:text-white" onClick={() => setIsChangeUserOpen(true)}>
                   Ubah ID Login
                 </span>
+                {onLogout && (
+                  <>
+                    <span>•</span>
+                    <button
+                      type="button"
+                      id="btn-home-logout"
+                      onClick={onLogout}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/20 hover:bg-rose-500/35 text-rose-100 hover:text-white font-semibold text-xs border border-rose-300/30 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      <span>Logout</span>
+                    </button>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -730,6 +857,69 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ============================================================== */}
+      {/* RINGKASAN KEUANGAN: TOTAL ASET, PENDAPATAN & PENGELUARAN       */}
+      {/* ============================================================== */}
+      <HomeFinancialSummaryCards
+        posKeuanganList={posKeuanganList}
+        mutasiItems={mutasiItems}
+        salurOrders={salurOrders}
+        donasiOrders={donasiOrders}
+        transaksiAjarList={transaksiAjarList}
+        pengeluaranList={pengeluaranList}
+        coaList={coaList}
+        kebutuhanPengeluaranList={kebutuhanPengeluaranList}
+        posPengeluaranList={posPengeluaranList}
+        projects={projects}
+        jenisProyekList={jenisProyekList}
+        onNavigateView={onNavigateView}
+      />
+
+      {/* ============================================================== */}
+      {/* NOTIFIKASI DEADLINE PROYEK ONGOING (7 HARI KE DEPAN)           */}
+      {/* ============================================================== */}
+      <HomeProjectDeadlineNotifications
+        notifications={visibleDeadlineNotifications}
+        totalAvailableCount={scopedDeadlineNotifications.length}
+        activeDivisi={activeDivisi}
+        scopeMode={notifScopeMode}
+        onChangeScopeMode={(mode) => setNotifScopeMode(mode)}
+        referenceMode={notifReferenceMode}
+        onChangeReferenceMode={(mode) => {
+          setHasManualRefChoice(true);
+          setNotifReferenceMode(mode);
+        }}
+        activeReferenceIso={activeReferenceIso}
+        windowEndIso={activeWindowEndIso}
+        realTimeCount={allRealTimeDeadlineNotifs.length}
+        seedCount={allSeedDeadlineNotifs.length}
+        dismissedCount={dismissedInScopeCount}
+        isCollapsed={isNotifCollapsed}
+        onToggleCollapse={() => setIsNotifCollapsed((prev) => !prev)}
+        onDismissNotification={(projectId) => {
+          setDismissedNotifIds((prev) =>
+            prev.includes(projectId) ? prev : [...prev, projectId]
+          );
+          onShowToast('Notifikasi proyek ditandai sudah dibaca');
+        }}
+        onDismissAll={() => {
+          const ids = scopedDeadlineNotifications.map((n) => n.project.id);
+          setDismissedNotifIds((prev) => Array.from(new Set([...prev, ...ids])));
+          onShowToast('Semua notifikasi deadline pada daftar ditandai dibaca');
+        }}
+        onRestoreDismissed={() => {
+          const scopeIds = new Set(
+            scopedDeadlineNotifications.map((n) => n.project.id)
+          );
+          setDismissedNotifIds((prev) => prev.filter((id) => !scopeIds.has(id)));
+          onShowToast('Notifikasi deadline dipulihkan');
+        }}
+        onOpenProjectDetail={onOpenProjectDetail}
+        onOpenProjectReport={onOpenProjectReport}
+        onOpenProjectTodos={onOpenProjectTodos}
+        onNavigateView={onNavigateView}
+      />
 
       {/* ============================================================== */}
       {/* BAGIAN ATAS: 4 CARDS                                           */}
@@ -1831,6 +2021,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         onClose={() => setIsChangeUserOpen(false)}
         currentUser={currentUser}
         currentDivisi={activeDivisi}
+        karyawanList={karyawanList}
         onSelectUser={(u, d) => {
           onUpdateCurrentUser(u, d);
           setActiveDivisi(d);

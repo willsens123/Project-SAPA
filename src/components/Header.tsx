@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History, LogOut } from 'lucide-react';
 import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
-import { AppView } from '../types';
+import { AppView, KaryawanItem } from '../types';
 import { CloudSyncIndicator } from './CloudSyncIndicator';
 import { SyncStatus } from '../firebase/syncService';
 
@@ -18,6 +18,8 @@ interface HeaderProps {
   onToggleMobileSidebar?: () => void;
   syncStatus?: SyncStatus;
   onManualSync?: () => void;
+  currentUser?: KaryawanItem | null;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -31,6 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileSidebar,
   syncStatus = 'synced',
   onManualSync,
+  currentUser,
+  onLogout,
 }) => {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
@@ -181,6 +185,21 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Download className="w-3.5 h-3.5 text-[#008993]" />
             <span>Unduh Semua Data</span>
+          </button>
+        )}
+
+        {onLogout && (
+          <button
+            id="btn-header-logout"
+            type="button"
+            onClick={onLogout}
+            title={`Logout dari akun ${currentUser?.namaLengkap || ''}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 shadow-2xs transition-all cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              Logout{currentUser?.namaPanggilan ? ` (${currentUser.namaPanggilan})` : ''}
+            </span>
           </button>
         )}
 
@@ -377,10 +396,24 @@ export const Header: React.FC<HeaderProps> = ({
                     onResetData();
                     setShowOptions(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100 mt-1"
+                  className="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100 mt-1 cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Reset ke Data Awal
+                </button>
+              )}
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowOptions(false);
+                    onLogout();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100 mt-1 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout ({currentUser?.namaPanggilan || currentUser?.namaLengkap || 'Akun'})
                 </button>
               )}
             </div>

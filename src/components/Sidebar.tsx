@@ -64,8 +64,9 @@ import {
   Folder,
   CircleDot,
   CheckCircle2,
+  LogOut,
 } from 'lucide-react';
-import { ProjectItem, AppView } from '../types';
+import { ProjectItem, AppView, KaryawanItem } from '../types';
 import { SSalurIcon } from './SSalurIcon';
 import { ItemSSalurIcon } from './ItemSSalurIcon';
 import { DDonasiIcon } from './DDonasiIcon';
@@ -90,6 +91,9 @@ interface SidebarProps {
   organisasiCount?: number;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
+  currentUser?: KaryawanItem | null;
+  onLogout?: () => void;
+  animateEntrance?: boolean;
 }
 
 export interface NavItemDef {
@@ -123,6 +127,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   organisasiCount,
   isMobileOpen = false,
   onMobileClose,
+  currentUser,
+  onLogout,
+  animateEntrance = false,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1577,28 +1584,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {/* Profile Bar */}
-            <div className="flex items-center justify-between p-1.5 px-2 rounded-xl bg-slate-50">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-teal-100 text-[#05828e] flex items-center justify-center font-bold text-xs">
-                  S
+            {/* Profile Bar & Logout */}
+            <div className="flex items-center justify-between gap-1.5 p-1.5 px-2 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className={`w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 ${
+                    currentUser?.avatarBg || 'bg-[#05828e]'
+                  }`}
+                >
+                  {currentUser?.avatarInitial ||
+                    currentUser?.namaLengkap?.charAt(0).toUpperCase() ||
+                    'S'}
                 </div>
                 <div className="truncate">
-                  <div className="text-xs font-semibold text-slate-800 leading-tight">
-                    SAPA Admin
+                  <div className="text-xs font-semibold text-slate-800 leading-tight truncate">
+                    {currentUser?.namaPanggilan || currentUser?.namaLengkap || 'Anggota SAPA'}
                   </div>
-                  <div className="text-[10px] text-slate-400">YPPLN Online</div>
+                  <div className="text-[10px] text-slate-400 truncate">
+                    {currentUser?.kodeKaryawan ? `${currentUser.kodeKaryawan} • ` : ''}
+                    {currentUser?.divisi || 'Online'}
+                  </div>
                 </div>
               </div>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100" />
+              {onLogout ? (
+                <button
+                  id="btn-sidebar-logout"
+                  type="button"
+                  onClick={onLogout}
+                  title="Logout / Keluar Akun"
+                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10.5px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>Logout</span>
+                </button>
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shrink-0" />
+              )}
             </div>
           </>
         ) : (
-          <div className="flex justify-center py-1">
+          <div className="flex flex-col items-center gap-2 py-1">
             <span
               className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"
               title="Online"
             />
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                title="Logout / Keluar Akun"
+                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1612,7 +1651,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         id="desktop-left-sidebar"
         className={`hidden md:block shrink-0 bg-white border-r border-slate-200/80 h-screen sticky top-0 transition-all duration-300 z-30 shadow-xs ${
           isCollapsed ? 'w-16' : 'w-64'
-        }`}
+        } ${animateEntrance ? 'animate-sapa-sidebar-enter' : ''}`}
       >
         {sidebarContent}
       </aside>

@@ -5,3 +5,124 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
 }
+
+@keyframes sapa-ambient-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: translate3d(28px, -18px, 0) scale(1.06);
+    opacity: 0.92;
+  }
+}
+
+@keyframes sapa-ambient-drift-reverse {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate3d(-24px, 20px, 0) scale(1.08);
+    opacity: 0.88;
+  }
+}
+
+@keyframes sapa-orbit-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sapa-panel-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sapa-portal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sapa-dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes sapa-sidebar-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-16px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-sapa-drift {
+  animation: sapa-ambient-drift 16s ease-in-out infinite;
+}
+
+.animate-sapa-drift-reverse {
+  animation: sapa-ambient-drift-reverse 20s ease-in-out infinite;
+}
+
+.animate-sapa-orbit {
+  animation: sapa-orbit-slow 70s linear infinite;
+}
+
+.animate-sapa-orbit-reverse {
+  animation: sapa-orbit-slow 95s linear infinite reverse;
+}
+
+.animate-sapa-panel-enter {
+  animation: sapa-panel-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-sapa-portal-enter {
+  animation: sapa-portal-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-sapa-dashboard-enter {
+  animation: sapa-dashboard-enter 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-sapa-sidebar-enter {
+  animation: sapa-sidebar-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sapa-drift,
+  .animate-sapa-drift-reverse,
+  .animate-sapa-orbit,
+  .animate-sapa-orbit-reverse,
+  .animate-sapa-panel-enter,
+  .animate-sapa-portal-enter,
+  .animate-sapa-dashboard-enter,
+  .animate-sapa-sidebar-enter {
+    animation: none !important;
+  }
+}
+

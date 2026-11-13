@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Check, Search, User, Plus, Building2, Sparkles } from 'lucide-react';
 import { KaryawanItem } from '../types';
-import { loadKaryawan } from '../karyawanData';
+import { INITIAL_KARYAWAN } from '../karyawanData';
 import { getDivisiFromStorage } from '../divisiData';
 
 interface ChangeLoginUserModalProps {
@@ -9,6 +9,7 @@ interface ChangeLoginUserModalProps {
   onClose: () => void;
   currentUser: KaryawanItem;
   currentDivisi: string;
+  karyawanList?: KaryawanItem[];
   onSelectUser: (user: KaryawanItem, divisi: string) => void;
 }
 
@@ -17,9 +18,10 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
   onClose,
   currentUser,
   currentDivisi,
+  karyawanList: propKaryawanList,
   onSelectUser,
 }) => {
-  const [karyawanList] = useState<KaryawanItem[]>(() => loadKaryawan());
+  const karyawanList = propKaryawanList && propKaryawanList.length > 0 ? propKaryawanList : INITIAL_KARYAWAN;
   const [divisiList] = useState(() => getDivisiFromStorage());
   const [search, setSearch] = useState('');
   const [selectedKaryawanId, setSelectedKaryawanId] = useState(currentUser.id);

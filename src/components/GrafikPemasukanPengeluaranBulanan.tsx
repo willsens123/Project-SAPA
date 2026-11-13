@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,12 +26,17 @@ import {
   Filter,
   DollarSign,
   Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import { MutasiItem, PengeluaranItem } from '../types';
 import { SalurOrder } from '../salurData';
 import { DonasiOrder } from '../donasiData';
 import { TransaksiAjarItem } from '../transaksiAjarData';
 import { JournalEntry } from '../accountingData';
+import {
+  parseFinancialDateToIso,
+  formatDateRangeLabel,
+} from '../utils/financialDateFilter';
 
 interface GrafikPemasukanPengeluaranBulananProps {
   mutasiItems: MutasiItem[];
@@ -41,6 +46,9 @@ interface GrafikPemasukanPengeluaranBulananProps {
   transaksiAjarList?: TransaksiAjarItem[];
   journalEntries?: JournalEntry[];
   isPrivacyMasked?: boolean;
+  startDate?: string;
+  endDate?: string;
+  onClearDateRange?: () => void;
 }
 
 export interface MonthlyBarChartPoint {
@@ -88,8 +96,18 @@ const MONTH_MAP: Record<string, number> = {
 };
 
 function parseMonthYear(dateStr?: string): { year: number; month: number } | null {
+  const iso = parseFinancialDateToIso(dateStr);
+  if (iso) {
+    const [yrStr, moStr] = iso.split('-');
+    const year = parseInt(yrStr, 10);
+    const month = parseInt(moStr, 10) - 1;
+    if (!isNaN(year) && !isNaN(month) && month >= 0 && month <= 11) {
+      return { year, month };
+    }
+  }
+
   if (!dateStr) return null;
-  const s = dateStr.trim().toLowerCase();
+  const s = dateStr.trim().toLowerCase().replace(/([a-z])(\d)/g, '$1 $2');
 
   // Pattern: "1/Nov" or "15/Jan/21" or "15/Jan/2021"
   if (s.includes('/')) {
@@ -115,7 +133,7 @@ function parseMonthYear(dateStr?: string): { year: number; month: number } | nul
     if (cleanWord.length >= 3 && MONTH_MAP[cleanWord.slice(0, 3)] !== undefined) {
       const m = MONTH_MAP[cleanWord.slice(0, 3)];
       let yr = 2021;
-      const yrMatch = s.match(/\b(20\d\d)\b/);
+      const yrMatch = s.match(/(?:^|\D)(20\d\d)(?:\D|$)/);
       if (yrMatch) {
         yr = parseInt(yrMatch[1], 10);
       }
@@ -143,11 +161,17 @@ export const GrafikPemasukanPengeluaranBulanan: React.FC<GrafikPemasukanPengelua
   transaksiAjarList = [],
   journalEntries = [],
   isPrivacyMasked = false,
+  startDate = '',
+  endDate = '',
+  onClearDateRange,
 }) => {
   // Filters & display modes
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [barMode, setBarMode] = useState<'grouped' | 'stacked' | 'net'>('grouped');
   const [showAverageLine, setShowAverageLine] = useState(true);
+
+  const hasCustomDateRange = Boolean(startDate || endDate);
+  const customRangeLabel = formatDateRangeLabel(startDate, endDate);
 
   // Format currency helpers
   const formatRupiah = (val: number): string => {
@@ -365,6 +389,12 @@ export const GrafikPemasukanPengeluaranBulanan: React.FC<GrafikPemasukanPengelua
     };
   }, [mutasiItems, pengeluaranList, salurOrders, donasiOrders, transaksiAjarList]);
 
+  useEffect(() => {
+    if (selectedYear !== 'ALL' && !availableYears.includes(Number(selectedYear))) {
+      setSelectedYear('ALL');
+    }
+  }, [availableYears, selectedYear]);
+
   // Filter by selected year
   const filteredData = useMemo(() => {
     if (selectedYear === 'ALL') return monthlyData;
@@ -475,7 +505,11 @@ export const GrafikPemasukanPengeluaranBulanan: React.FC<GrafikPemasukanPengelua
     csvRows.push('YAYASAN PELESTARIAN DAN PENGEMBANGAN LAMRIM NUSANTARA');
     csvRows.push(
       `Laporan Perbandingan Pemasukan vs Pengeluaran Bulanan (Periode: ${
-        selectedYear === 'ALL' ? 'Semua Periode' : selectedYear
+        hasCustomDateRange
+          ? customRangeLabel
+          : selectedYear === 'ALL'
+          ? 'Semua Periode'
+          : selectedYear
       })`
     );
     csvRows.push(`Tanggal Ekspor: ${new Date().toLocaleDateString('id-ID')}`);
@@ -526,11 +560,8 @@ export const GrafikPemasukanPengeluaranBulanan: React.FC<GrafikPemasukanPengelua
                 <h3 className="font-bold text-slate-900 text-sm sm:text-base">
                   Grafik Batang Perbandingan Pemasukan & Pengeluaran Bulanan
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">
-                  Visualisasi Recharts
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Dinamis & Terintegrasi
+                <span className="text-[11.5px] font-semibold text-[#05828e]">
+                  Visualisasi Recharts · {hasCustomDateRange ? `Periode ${customRangeLabel}` : 'Semua Periode'}
                 </span>
               </div>
               <p className="text-[11.5px] text-slate-600 mt-1 leading-relaxed">
@@ -739,9 +770,24 @@ export const GrafikPemasukanPengeluaranBulanan: React.FC<GrafikPemasukanPengelua
         {/* Recharts Canvas */}
         <div className="w-full h-80 sm:h-96">
           {filteredData.length === 0 ? (
-            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-              <BarChart3 className="w-10 h-10 mb-2 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-600">Tidak ada data untuk periode ini</p>
+            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2">
+              <BarChart3 className="w-10 h-10 text-slate-300" />
+              <p className="text-sm font-semibold text-slate-600">
+                Tidak ada transaksi pada rentang tanggal yang dipilih
+              </p>
+              {hasCustomDateRange && (
+                <p className="text-xs text-slate-500">Periode aktif: {customRangeLabel}</p>
+              )}
+              {hasCustomDateRange && onClearDateRange && (
+                <button
+                  type="button"
+                  onClick={onClearDateRange}
+                  className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#05828e] hover:bg-[#046e78] text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Rentang Tanggal</span>
+                </button>
+              )}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">

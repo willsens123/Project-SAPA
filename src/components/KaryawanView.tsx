@@ -60,9 +60,6 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedDivisi, setSelectedDivisi] = useState<string>('ALL');
 
-  // Password individual visibility toggle
-  const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(new Set());
-
   // Row context menu popover
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -358,19 +355,6 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
     setFormModalOpen(false);
   };
 
-  // Toggle single password visibility
-  const toggleRevealPassword = (id: string) => {
-    setRevealedPasswords((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
   // Copy helper
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -594,13 +578,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                 </tr>
               ) : (
                 filteredItems.map((item) => {
-                  const isPasswordRevealed = revealedPasswords.has(item.id);
-
-                  // Password representation: 10 asterisks matching image, or actual password when revealed
-                  const maskedPassword = '**********';
-                  const displayedPassword = isPasswordRevealed
-                    ? item.password
-                    : maskedPassword;
+                  const displayedPassword = '••••••••••';
 
                   // Masked email when privacy mode is on
                   const displayedEmail = hideSensitive
@@ -686,29 +664,11 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                         </span>
                       </td>
 
-                      {/* Col 5: Password (Email Login header in screenshot) */}
+                      {/* Col 5: Status Keamanan Password (selalu disamarkan) */}
                       <td className="py-4 px-4 sm:px-6">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`font-mono text-slate-700 tracking-wider text-sm sm:text-base ${
-                              isPasswordRevealed ? 'font-medium' : 'text-slate-600'
-                            }`}
-                          >
-                            {displayedPassword}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => toggleRevealPassword(item.id)}
-                            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                            title={isPasswordRevealed ? 'Sembunyikan Password' : 'Lihat Password'}
-                          >
-                            {isPasswordRevealed ? (
-                              <EyeOff className="w-3.5 h-3.5" />
-                            ) : (
-                              <Eye className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
+                        <span className="font-mono text-slate-500 tracking-wider text-sm sm:text-base">
+                          {displayedPassword}
+                        </span>
                       </td>
 
                       {/* Col 6: Actions (3 dots) */}
@@ -768,33 +728,6 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                             >
                               <Copy className="w-3.5 h-3.5 text-slate-400" />
                               <span>Salin Email</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(item.password, 'Password')}
-                              className="w-full px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
-                            >
-                              <KeyRound className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Salin Password</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toggleRevealPassword(item.id);
-                                setActiveMenuId(null);
-                              }}
-                              className="w-full px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
-                            >
-                              {isPasswordRevealed ? (
-                                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-                              ) : (
-                                <Eye className="w-3.5 h-3.5 text-slate-400" />
-                              )}
-                              <span>
-                                {isPasswordRevealed ? 'Sembunyikan Password' : 'Lihat Password'}
-                              </span>
                             </button>
 
                             <div className="my-1 border-t border-slate-100" />

@@ -1,7 +1,5 @@
 import { KaryawanItem } from './types';
 
-const STORAGE_KEY = 'sapa_karyawan_data_v1';
-
 export const INITIAL_KARYAWAN: KaryawanItem[] = [
   {
     id: 'karyawan-1',
@@ -124,46 +122,28 @@ export const INITIAL_KARYAWAN: KaryawanItem[] = [
   },
 ];
 
-export function loadKaryawan(): KaryawanItem[] {
+/**
+ * Clears any legacy localStorage keys for member accounts or login sessions.
+ * Accounts & sessions must NEVER be stored in localStorage.
+ */
+export function clearLegacyAuthLocalStorage(): void {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      saveKaryawan(INITIAL_KARYAWAN);
-      return INITIAL_KARYAWAN;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      // Migrate existing items if tanggalBergabung is missing
-      const migrated = parsed.map((item: KaryawanItem, idx: number) => {
-        const fallback = INITIAL_KARYAWAN.find((init) => init.id === item.id);
-        return {
-          ...item,
-          tanggalBergabung:
-            item.tanggalBergabung ||
-            fallback?.tanggalBergabung ||
-            `01/01/202${(idx % 3) + 1}`,
-          tanggalBerhenti: item.tanggalBerhenti || fallback?.tanggalBerhenti || undefined,
-          aktif:
-            item.aktif !== undefined
-              ? item.aktif
-              : item.tanggalBerhenti
-              ? false
-              : true,
-        };
-      });
-      return migrated;
-    }
-    return INITIAL_KARYAWAN;
-  } catch (err) {
-    console.warn('Error loading Karyawan from localStorage:', err);
-    return INITIAL_KARYAWAN;
+    localStorage.removeItem('sapa_karyawan_data_v1');
+    localStorage.removeItem('sapa_current_login_user');
+    localStorage.removeItem('sapa_current_login_divisi');
+    localStorage.removeItem('erp_cloud_cache_karyawan');
+    localStorage.removeItem('erp_cloud_cache_member_accounts');
+  } catch {
+    // Ignore storage access restrictions
   }
 }
 
-export function saveKaryawan(items: KaryawanItem[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch (err) {
-    console.warn('Error saving Karyawan to localStorage:', err);
-  }
+export function loadKaryawan(): KaryawanItem[] {
+  clearLegacyAuthLocalStorage();
+  return INITIAL_KARYAWAN;
+}
+
+export function saveKaryawan(_items: KaryawanItem[]): void {
+  // No-op: Member accounts are stored strictly in Cloud Firestore (never in localStorage).
+  clearLegacyAuthLocalStorage();
 }

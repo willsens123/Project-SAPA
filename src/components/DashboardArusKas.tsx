@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -41,6 +41,10 @@ import { SalurOrder } from '../salurData';
 import { DonasiOrder } from '../donasiData';
 import { TransaksiAjarItem } from '../transaksiAjarData';
 import { JournalEntry, CoaAccount } from '../accountingData';
+import {
+  parseFinancialDateToIso,
+  formatDateRangeLabel,
+} from '../utils/financialDateFilter';
 
 interface DashboardArusKasProps {
   mutasiItems: MutasiItem[];
@@ -51,6 +55,8 @@ interface DashboardArusKasProps {
   journalEntries?: JournalEntry[];
   coaList?: CoaAccount[];
   isPrivacyMasked?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface MonthlyCashflowPoint {
@@ -99,8 +105,18 @@ const MONTH_MAP: Record<string, number> = {
 };
 
 function parseMonthYear(dateStr?: string): { year: number; month: number } | null {
+  const iso = parseFinancialDateToIso(dateStr);
+  if (iso) {
+    const [yrStr, moStr] = iso.split('-');
+    const year = parseInt(yrStr, 10);
+    const month = parseInt(moStr, 10) - 1;
+    if (!isNaN(year) && !isNaN(month) && month >= 0 && month <= 11) {
+      return { year, month };
+    }
+  }
+
   if (!dateStr) return null;
-  const s = dateStr.trim().toLowerCase();
+  const s = dateStr.trim().toLowerCase().replace(/([a-z])(\d)/g, '$1 $2');
 
   // Pattern: "1/Nov" or "15/Jan/21" or "15/Jan/2021"
   if (s.includes('/')) {
@@ -127,7 +143,7 @@ function parseMonthYear(dateStr?: string): { year: number; month: number } | nul
       const m = MONTH_MAP[cleanWord.slice(0, 3)];
       // Look for 4-digit or 2-digit year
       let yr = 2021;
-      const yrMatch = s.match(/\b(20\d\d)\b/);
+      const yrMatch = s.match(/(?:^|\D)(20\d\d)(?:\D|$)/);
       if (yrMatch) {
         yr = parseInt(yrMatch[1], 10);
       }
@@ -156,12 +172,23 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
   journalEntries = [],
   coaList = [],
   isPrivacyMasked = false,
+  startDate = '',
+  endDate = '',
 }) => {
   // Chart visual type: 'area' (gradient curve) | 'bar' (side-by-side) | 'composed' (bars + net line)
   const [chartType, setChartType] = useState<'area' | 'bar' | 'composed'>('composed');
 
+  const hasCustomDateRange = Boolean(startDate || endDate);
+  const customRangeLabel = formatDateRangeLabel(startDate, endDate);
+
   // Filter Tahun
-  const [selectedYear, setSelectedYear] = useState<string>('2021');
+  const [selectedYear, setSelectedYear] = useState<string>('ALL');
+
+  useEffect(() => {
+    if (hasCustomDateRange) {
+      setSelectedYear('ALL');
+    }
+  }, [hasCustomDateRange, startDate, endDate]);
 
   // Format currency
   const formatRupiah = (val: number): string => {
@@ -193,7 +220,9 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
     useMemo(() => {
       // Collect all distinct years
       const yearsSet = new Set<number>();
-      yearsSet.add(2021); // Default fiscal year
+      if (!hasCustomDateRange) {
+        yearsSet.add(2021); // Default fiscal year
+      }
 
       // Map to hold aggregated data by "YYYY-MM"
       const map: Record<
@@ -341,13 +370,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         }
       });
 
-      // Fill in all 12 months for selected fiscal year if sparse
+      // Fill in all 12 months for selected fiscal year only when viewing full year without custom date range
       const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
-      const activeYearNum = selectedYear === 'ALL' ? 2021 : parseInt(selectedYear, 10);
-
-      // Ensure full 12 months exist for standard viewing
-      for (let m = 0; m < 12; m++) {
-        getOrCreateBucket(activeYearNum, m);
+      if (!hasCustomDateRange) {
+        const activeYearNum = selectedYear === 'ALL' ? 2021 : parseInt(selectedYear, 10);
+        for (let m = 0; m < 12; m++) {
+          getOrCreateBucket(activeYearNum, m);
+        }
       }
 
       // Convert map to sorted array
@@ -450,7 +479,7 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         categoryPemasukan,
         categoryPengeluaran,
       };
-    }, [mutasiItems, pengeluaranList, salurOrders, donasiOrders, selectedYear]);
+    }, [mutasiItems, pengeluaranList, salurOrders, donasiOrders, selectedYear, hasCustomDateRange]);
 
   // Export CSV
   const handleExportCsv = () => {
@@ -558,12 +587,12 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
             <TrendingUp className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold text-slate-800">
                 Dashboard Visualisasi Arus Kas (Cash Flow)
               </h2>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#05828e] border border-teal-200">
-                Real-Time Recharts
+              <span className="text-xs font-semibold text-[#05828e]">
+                Real-Time Recharts · {hasCustomDateRange ? `Periode ${customRangeLabel}` : 'Semua Periode'}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">

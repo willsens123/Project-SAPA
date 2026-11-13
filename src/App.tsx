@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
 import { useCloudSyncManager } from './firebase/useCloudSyncManager';
+import { testFirestoreConnection } from './firebase/config';
+import {
+  subscribeToMemberAccounts,
+  saveMemberAccountsToFirestore,
+} from './firebase/authAccountService';
+import { AuthPortalView } from './components/AuthPortalView';
 import { TableToolbar } from './components/TableToolbar';
 import { ProjectTable } from './components/ProjectTable';
 import { FormProyekSapa } from './components/FormProyekSapa';
@@ -196,8 +202,7 @@ import {
 } from './templatePMData';
 import { KaryawanView } from './components/KaryawanView';
 import {
-  loadKaryawan,
-  saveKaryawan,
+  clearLegacyAuthLocalStorage,
   INITIAL_KARYAWAN,
 } from './karyawanData';
 import { FormCutiKaryawanView } from './components/FormCutiKaryawanView';
@@ -2175,10 +2180,9 @@ export default function App() {
     showToast(`Template "${target?.namaTemplate}" status: ${target?.aktif ? 'Aktif (Yes)' : 'Tidak Aktif (No)'}`);
   };
 
-  // Karyawan State & Handlers
-  const [karyawanList, setKaryawanList] = useState<KaryawanItem[]>(() => {
-    return loadKaryawan();
-  });
+  // Karyawan State & Handlers (disinkronkan real-time ke Firestore, tanpa localStorage)
+  const [karyawanList, setKaryawanList] = useState<KaryawanItem[]>(INITIAL_KARYAWAN);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState<boolean>(true);
 
   // Agen Resi State & Handlers
   const [agenResiList, setAgenResiList] = useState<AgenResiItem[]>(() => {
@@ -2194,14 +2198,35 @@ export default function App() {
       updated = [savedItem, ...karyawanList];
     }
     setKaryawanList(updated);
-    saveKaryawan(updated);
+    saveMemberAccountsToFirestore(updated).catch((err) => {
+      console.error('Gagal menyimpan akun anggota ke Firestore:', err);
+    });
+    setAuthenticatedUser((prev) => {
+      if (!prev || prev.id !== savedItem.id) return prev;
+      if (savedItem.aktif === false) {
+        setAuthInitialMode('login');
+        setLogoutNotice('Akun Anda dinonaktifkan. Silakan login menggunakan akun aktif lain.');
+        return null;
+      }
+      return savedItem;
+    });
   };
 
   const handleDeleteKaryawanItem = (id: string) => {
     const target = karyawanList.find((it) => it.id === id);
     const updated = karyawanList.filter((it) => it.id !== id);
     setKaryawanList(updated);
-    saveKaryawan(updated);
+    saveMemberAccountsToFirestore(updated).catch((err) => {
+      console.error('Gagal menghapus akun anggota di Firestore:', err);
+    });
+    setAuthenticatedUser((prev) => {
+      if (prev && prev.id === id) {
+        setAuthInitialMode('login');
+        setLogoutNotice('Akun yang sedang digunakan telah dihapus. Silakan login kembali.');
+        return null;
+      }
+      return prev;
+    });
     showToast(`Karyawan "${target?.namaLengkap || ''}" berhasil dihapus`);
   };
 
@@ -2422,34 +2447,69 @@ export default function App() {
   // View state: 'table' | 'form' | 'jenisProyek' | 'report' | 'transaksiSalur' | 'formTransaksiSalur'
   const [currentView, setCurrentView] = useState<AppView>('home');
 
-  // Current logged in user & division for Home customization (default: Agustino Ong, 00031, MAD)
-  const [currentUser, setCurrentUser] = useState<KaryawanItem>(() => {
-    try {
-      const saved = localStorage.getItem('sapa_current_login_user');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    const list = loadKaryawan();
-    return (
-      list.find((k) => k.kodeKaryawan === '00031' || k.namaLengkap.toLowerCase().includes('agustino')) ||
-      list[0] ||
-      INITIAL_KARYAWAN[0]
+  // Sesi Login Anggota (HANYA di memori React — tidak pernah disimpan di localStorage)
+  // Setiap refresh / logout mewajibkan pengguna login kembali terlebih dahulu.
+  const [authenticatedUser, setAuthenticatedUser] = useState<KaryawanItem | null>(null);
+  const [authInitialMode, setAuthInitialMode] = useState<'register' | 'login'>('register');
+  const [logoutNotice, setLogoutNotice] = useState<string | null>(null);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [currentDivisi, setCurrentDivisi] = useState<string>('MAD');
+
+  const currentUser: KaryawanItem =
+    authenticatedUser || karyawanList[0] || INITIAL_KARYAWAN[0];
+
+  useEffect(() => {
+    clearLegacyAuthLocalStorage();
+    testFirestoreConnection();
+
+    const unsubscribe = subscribeToMemberAccounts(
+      (accounts) => {
+        setKaryawanList(accounts);
+        setIsLoadingAccounts(false);
+        setAuthenticatedUser((prev) => {
+          if (!prev) return null;
+          const fresh = accounts.find((a) => a.id === prev.id);
+          if (!fresh || fresh.aktif === false) {
+            setAuthInitialMode('login');
+            setLogoutNotice('Akun Anda telah diperbarui atau dinonaktifkan. Silakan login kembali.');
+            return null;
+          }
+          return fresh;
+        });
+      },
+      () => {
+        setIsLoadingAccounts(false);
+      },
+      (errMessage) => {
+        console.error('Gagal memuat daftar akun anggota dari Firestore:', errMessage);
+        setIsLoadingAccounts(false);
+      }
     );
-  });
-  const [currentDivisi, setCurrentDivisi] = useState<string>(() => {
-    try {
-      const saved = localStorage.getItem('sapa_current_login_divisi');
-      if (saved) return saved;
-    } catch {}
-    return 'MAD';
-  });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleUpdateCurrentUser = (user: KaryawanItem, divisi: string) => {
-    setCurrentUser(user);
+    clearLegacyAuthLocalStorage();
+    setAuthenticatedUser(user);
     setCurrentDivisi(divisi);
-    try {
-      localStorage.setItem('sapa_current_login_user', JSON.stringify(user));
-      localStorage.setItem('sapa_current_login_divisi', divisi);
-    } catch {}
+  };
+
+  useEffect(() => {
+    if (!justLoggedIn) return;
+    const timer = window.setTimeout(() => {
+      setJustLoggedIn(false);
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [justLoggedIn]);
+
+  const handleLogout = () => {
+    clearLegacyAuthLocalStorage();
+    setAuthenticatedUser(null);
+    setJustLoggedIn(false);
+    setAuthInitialMode('login');
+    setLogoutNotice('Anda berhasil logout. Silakan login terlebih dahulu sebelum mengakses sistem.');
+    setCurrentView('home');
   };
   const [returnViewAfterAdd, setReturnViewAfterAdd] = useState<AppView | null>(null);
 
@@ -3583,7 +3643,9 @@ export default function App() {
         );
         setKaryawanList((prev) => {
           const updated = prev.map((k) => (k.divisi === oldNama ? { ...k, divisi: trimmedNama } : k));
-          saveKaryawan(updated);
+          saveMemberAccountsToFirestore(updated).catch((err) => {
+            console.error('Gagal menyinkronkan perubahan divisi anggota ke Firestore:', err);
+          });
           return updated;
         });
         setPengeluaranList((prev) =>
@@ -4172,6 +4234,31 @@ export default function App() {
     return 'Proyek SAPA';
   };
 
+  if (!authenticatedUser) {
+    return (
+      <AuthPortalView
+        accounts={karyawanList}
+        isLoadingAccounts={isLoadingAccounts}
+        initialMode={authInitialMode}
+        logoutNotice={logoutNotice}
+        onRegisterSuccess={(createdAccount, updatedList) => {
+          setKaryawanList(updatedList);
+          setLogoutNotice(null);
+          showToast(`Akun "${createdAccount.emailLogin}" berhasil didaftarkan ke Firestore. Silakan login.`);
+        }}
+        onLoginSuccess={(user) => {
+          clearLegacyAuthLocalStorage();
+          setJustLoggedIn(true);
+          setAuthenticatedUser(user);
+          setCurrentDivisi(user.divisi || 'MAD');
+          setLogoutNotice(null);
+          setCurrentView('home');
+          showToast(`Selamat datang, ${user.namaLengkap}!`);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-row font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Notification */}
@@ -4202,10 +4289,17 @@ export default function App() {
         organisasiCount={organisasiList.length}
         isMobileOpen={isMobileSidebarOpen}
         onMobileClose={() => setIsMobileSidebarOpen(false)}
+        currentUser={authenticatedUser}
+        onLogout={handleLogout}
+        animateEntrance={justLoggedIn}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc]">
+      <div
+        className={`flex-1 flex flex-col min-w-0 bg-[#f8fafc] ${
+          justLoggedIn ? 'animate-sapa-dashboard-enter' : ''
+        }`}
+      >
         {/* Main Content Container */}
         <main className="w-full max-w-[1550px] mx-auto px-3 sm:px-6 md:px-8 py-5 sm:py-7 flex flex-col flex-1">
           {/* Header matching exact layout */}
@@ -4215,6 +4309,8 @@ export default function App() {
             onSelectView={(view) => setCurrentView(view)}
             syncStatus={syncStatus}
             onManualSync={forceManualSync}
+            currentUser={authenticatedUser}
+            onLogout={handleLogout}
             onBackToTable={
               currentView === 'formTransaksiAjar'
                 ? () => {
@@ -4391,9 +4487,11 @@ export default function App() {
           {/* View: Home Dashboard */}
           {currentView === 'home' && (
             <HomeView
-              currentUser={currentUser}
+              currentUser={authenticatedUser}
               currentDivisi={currentDivisi}
+              karyawanList={karyawanList}
               onUpdateCurrentUser={handleUpdateCurrentUser}
+              onLogout={handleLogout}
               projects={projects}
               identitasList={identitasList}
               organisasiList={organisasiList}
@@ -4408,6 +4506,10 @@ export default function App() {
               transaksiAjarList={transaksiAjarList}
               donasiOrders={donasiOrders}
               pengeluaranList={pengeluaranList}
+              coaList={coaList}
+              kebutuhanPengeluaranList={kebutuhanPengeluaranList}
+              posPengeluaranList={posPengeluaranList}
+              jenisProyekList={jenisProyekList}
               volunteerSSebarList={volunteerSSebarList}
               onNavigateView={(view) => setCurrentView(view)}
               onOpenProjectReport={(proj) => {
