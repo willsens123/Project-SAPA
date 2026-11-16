@@ -1153,7 +1153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`group relative w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer text-left ${
           isActive
             ? 'bg-[#05828e] text-white shadow-xs font-semibold'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium'
+            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white font-medium'
         } ${isCollapsed ? 'justify-center px-1 py-2' : ''}`}
       >
         {/* Active left indicator bar */}
@@ -1167,10 +1167,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             item.isLotus || item.isSSalur
               ? isActive
                 ? 'text-white'
-                : 'text-[#05828e]'
+                : 'text-[#05828e] dark:text-teal-400'
               : isActive
               ? 'text-white'
-              : 'text-slate-500'
+              : 'text-slate-500 dark:text-slate-400'
           }`}
         >
           <Icon
@@ -1192,7 +1192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ml-1.5 shrink-0 ${
                   isActive
                     ? 'bg-white/20 text-white'
-                    : 'bg-slate-200/70 text-slate-700'
+                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}
               >
                 {item.badge}
@@ -1203,7 +1203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Tooltip when collapsed */}
         {isCollapsed && (
-          <div className="hidden group-hover:flex absolute left-full ml-2 z-50 bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-xl items-center gap-1.5 pointer-events-none">
+          <div className="hidden group-hover:flex absolute left-full ml-2 z-50 bg-slate-900 dark:bg-slate-800 dark:border dark:border-slate-700 text-white text-xs px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-xl items-center gap-1.5 pointer-events-none">
             <span>{item.title}</span>
             {item.badge !== undefined && (
               <span className="bg-white/20 px-1 rounded text-[10px] font-bold">
@@ -1217,11 +1217,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarContent = (
-    <div className="h-full flex flex-col justify-between bg-white select-none">
+    <div className="h-full flex flex-col justify-between bg-white dark:bg-slate-900 select-none">
       {/* Top Header & Brand */}
       <div className="flex flex-col">
         {/* Brand Section */}
-        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-100">
+        <div className="p-3.5 sm:p-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 overflow-hidden">
             {!isCollapsed ? (
               <div
@@ -1235,10 +1235,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="h-8 max-w-[120px] object-contain rounded-md shrink-0 shadow-2xs"
                 />
                 <div className="flex flex-col min-w-0">
-                  <span className="font-bold text-slate-800 text-[13.5px] tracking-tight leading-none truncate">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-[13.5px] tracking-tight leading-none truncate">
                     Proyek SAPA
                   </span>
-                  <span className="text-[9.5px] font-medium text-slate-400 mt-0.5 truncate">
+                  <span className="text-[9.5px] font-medium text-slate-400 dark:text-slate-400 mt-0.5 truncate">
                     Lamrim Nusantara
                   </span>
                 </div>
@@ -1266,7 +1266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setIsCollapsed(!isCollapsed)}
             title={isCollapsed ? 'Perluas Menu' : 'Perkecil Menu'}
             aria-label={isCollapsed ? 'Perluas Menu' : 'Perkecil Menu'}
-            className="hidden md:flex w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 items-center justify-center transition-colors cursor-pointer"
+            className="hidden md:flex w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 items-center justify-center transition-colors cursor-pointer"
           >
             {isCollapsed ? (
               <ChevronRight className="w-4 h-4" />
@@ -1283,7 +1283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={onMobileClose}
               title="Tutup Menu"
               aria-label="Tutup Menu"
-              className="md:hidden w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+              className="md:hidden w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1300,13 +1300,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari menu..."
-                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#05828e] focus:border-[#05828e] transition-all"
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#05828e] focus:border-[#05828e] transition-all"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                   title="Hapus pencarian"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -1318,31 +1318,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Controls: Category Accordion Header */}
         {!isCollapsed && !isSearching && (
-          <div className="px-3 py-1 flex items-center justify-between text-[10.5px] font-semibold text-slate-400 border-b border-slate-100/60 pb-1.5">
+          <div className="px-3 py-1 flex items-center justify-between text-[10.5px] font-semibold text-slate-400 dark:text-slate-500 border-b border-slate-100/60 dark:border-slate-800 pb-1.5">
             <span>Kategori Menu</span>
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleCollapseAll}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 title="Ringkas semua kategori"
               >
                 Ringkas
               </button>
-              <span className="text-slate-200">|</span>
+              <span className="text-slate-200 dark:text-slate-700">|</span>
               <button
                 type="button"
                 onClick={handleExpandAll}
-                className="text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 title="Buka semua kategori"
               >
                 Buka
               </button>
-              <span className="text-slate-200">|</span>
+              <span className="text-slate-200 dark:text-slate-700">|</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-[#05828e] hover:underline flex items-center gap-0.5"
+                className="text-[#05828e] dark:text-teal-400 hover:underline flex items-center gap-0.5 cursor-pointer"
                 title="Atur Susunan Menu"
               >
                 <SlidersHorizontal className="w-2.5 h-2.5" />
@@ -1354,15 +1354,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Scrollable Body (Max Height with Smooth Thin Scrollbar) */}
-      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 hover:scrollbar-thumb-slate-300">
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 hover:scrollbar-thumb-slate-300">
         {/* Case 1: Search Results */}
         {isSearching ? (
           <div className="flex flex-col gap-1">
-            <div className="px-2 py-1 text-[11px] font-semibold text-slate-500">
+            <div className="px-2 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
               Hasil Pencarian ({filteredNavItems.length}):
             </div>
             {filteredNavItems.length === 0 ? (
-              <div className="p-4 text-center text-xs text-slate-400">
+              <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500">
                 Menu "{searchQuery}" tidak ditemukan
               </div>
             ) : (
@@ -1386,19 +1386,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className={`w-full h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                       isCategoryActive
                         ? 'bg-[#05828e] text-white shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                     }`}
                     title={cat.title}
                   >
                     <CatIcon className="w-4 h-4" />
                     {isCategoryActive && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-white" />
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-300 ring-2 ring-white dark:ring-slate-900" />
                     )}
                   </button>
 
                   {/* Flyout on hover for collapsed mode */}
-                  <div className="hidden group-hover:flex flex-col absolute left-full top-0 ml-2 z-50 w-56 bg-white rounded-xl shadow-xl border border-slate-200 p-2 pointer-events-auto">
-                    <div className="px-2 py-1 text-xs font-bold text-slate-700 border-b border-slate-100 mb-1 flex items-center justify-between">
+                  <div className="hidden group-hover:flex flex-col absolute left-full top-0 ml-2 z-50 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-2 pointer-events-auto">
+                    <div className="px-2 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
                       <span>{cat.title}</span>
                       <span className="text-[10px] text-slate-400">
                         {cat.itemIds.length} menu
@@ -1420,7 +1420,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             className={`flex items-center gap-2 px-2 py-1 rounded text-xs text-left cursor-pointer ${
                               isActive
                                 ? 'bg-[#05828e] text-white font-semibold'
-                                : 'text-slate-700 hover:bg-slate-100'
+                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                           >
                             <span className="truncate">{item.title}</span>
@@ -1449,8 +1449,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={cat.id}
                 className={`rounded-xl transition-all border ${
                   activeInside
-                    ? 'border-teal-200/80 bg-teal-50/20 shadow-2xs'
-                    : 'border-transparent hover:border-slate-100'
+                    ? 'border-teal-200/80 dark:border-teal-800/80 bg-teal-50/20 dark:bg-teal-950/30 shadow-2xs'
+                    : 'border-transparent hover:border-slate-100 dark:hover:border-slate-800'
                 }`}
               >
                 {/* Accordion Category Header */}
@@ -1459,8 +1459,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => toggleCategory(cat.id)}
                   className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer text-left select-none ${
                     activeInside
-                      ? 'bg-teal-50/90 text-[#046c76] font-semibold'
-                      : 'text-slate-700 hover:bg-slate-100/80 font-medium'
+                      ? 'bg-teal-50/90 dark:bg-teal-950/60 text-[#046c76] dark:text-teal-300 font-semibold'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 font-medium'
                   }`}
                   title={`Klik untuk buka/tutup kategori ${cat.title}`}
                 >
@@ -1469,7 +1469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
                         activeInside
                           ? 'bg-[#05828e] text-white shadow-2xs'
-                          : 'bg-slate-100 text-slate-500'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       <CatIcon className="w-3.5 h-3.5" />
@@ -1481,7 +1481,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </span>
                       {activeInside && (
                         <span
-                          className="w-1.5 h-1.5 rounded-full bg-[#05828e] shrink-0"
+                          className="w-1.5 h-1.5 rounded-full bg-[#05828e] dark:bg-teal-400 shrink-0"
                           title="Menu aktif ada di kategori ini"
                         />
                       )}
@@ -1492,8 +1492,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
                         activeInside
-                          ? 'bg-teal-100 text-[#05828e]'
-                          : 'bg-slate-100 text-slate-400'
+                          ? 'bg-teal-100 dark:bg-teal-900/80 text-[#05828e] dark:text-teal-300'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400'
                       }`}
                     >
                       {cat.itemIds.length}
@@ -1523,22 +1523,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Compact Footer: Status Indicator & User Profile */}
-      <div className="p-2.5 border-t border-slate-100 flex flex-col gap-2 shrink-0">
+      <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 shrink-0">
         {!isCollapsed ? (
           <>
             {/* Collapsible Status Legend to keep sidebar height small */}
-            <div className="bg-slate-50/90 rounded-xl border border-slate-100 overflow-hidden">
+            <div className="bg-slate-50/90 dark:bg-slate-800/70 rounded-xl border border-slate-100 dark:border-slate-700/80 overflow-hidden">
               <button
                 type="button"
                 onClick={() => setShowStatusLegend(!showStatusLegend)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#05828e]" />
                   <span>Ringkasan Proyek</span>
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                  <span className="font-bold text-slate-700">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">
                     {waitingCount + ongoingCount + doneCount}
                   </span>
                   {showStatusLegend ? (
@@ -1550,33 +1550,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
 
               {showStatusLegend && (
-                <div className="px-2.5 pb-2 pt-1 border-t border-slate-100/80 flex flex-col gap-1 text-[11px] animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between text-slate-600">
+                <div className="px-2.5 pb-2 pt-1 border-t border-slate-100/80 dark:border-slate-700/70 flex flex-col gap-1 text-[11px] animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#05828e]" />
                       <span>Waiting Acc</span>
                     </div>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#05828e]/10 text-[#05828e]">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#05828e]/10 dark:bg-teal-900/50 text-[#05828e] dark:text-teal-300">
                       {waitingCount}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-slate-600">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#fbc02d]" />
                       <span>Ongoing</span>
                     </div>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
                       {ongoingCount}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-slate-600">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-300" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-white dark:bg-slate-600 border border-slate-300 dark:border-slate-500" />
                       <span>Done</span>
                     </div>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200/80 text-slate-700">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
                       {doneCount}
                     </span>
                   </div>
@@ -1585,7 +1585,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Profile Bar & Logout */}
-            <div className="flex items-center justify-between gap-1.5 p-1.5 px-2 rounded-xl bg-slate-50 border border-slate-100">
+            <div className="flex items-center justify-between gap-1.5 p-1.5 px-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80">
               <div className="flex items-center gap-2 min-w-0">
                 <div
                   className={`w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 ${
@@ -1597,10 +1597,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     'S'}
                 </div>
                 <div className="truncate">
-                  <div className="text-xs font-semibold text-slate-800 leading-tight truncate">
+                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight truncate">
                     {currentUser?.namaPanggilan || currentUser?.namaLengkap || 'Anggota SAPA'}
                   </div>
-                  <div className="text-[10px] text-slate-400 truncate">
+                  <div className="text-[10px] text-slate-400 dark:text-slate-400 truncate">
                     {currentUser?.kodeKaryawan ? `${currentUser.kodeKaryawan} • ` : ''}
                     {currentUser?.divisi || 'Online'}
                   </div>
@@ -1612,20 +1612,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   type="button"
                   onClick={onLogout}
                   title="Logout / Keluar Akun"
-                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10.5px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 text-rose-600 dark:text-rose-400 text-[10.5px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3 h-3" />
                   <span>Logout</span>
                 </button>
               ) : (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-900 shrink-0" />
               )}
             </div>
           </>
         ) : (
           <div className="flex flex-col items-center gap-2 py-1">
             <span
-              className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"
+              className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900"
               title="Online"
             />
             {onLogout && (
@@ -1633,7 +1633,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={onLogout}
                 title="Logout / Keluar Akun"
-                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
               </button>
@@ -1649,7 +1649,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop Sidebar */}
       <aside
         id="desktop-left-sidebar"
-        className={`hidden md:block shrink-0 bg-white border-r border-slate-200/80 h-screen sticky top-0 transition-all duration-300 z-30 shadow-xs ${
+        className={`hidden md:block shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 h-screen sticky top-0 transition-all duration-300 z-30 shadow-xs ${
           isCollapsed ? 'w-16' : 'w-64'
         } ${animateEntrance ? 'animate-sapa-sidebar-enter' : ''}`}
       >
@@ -1660,13 +1660,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isMobileOpen && (
         <div
           id="mobile-sidebar-backdrop"
-          className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 animate-in fade-in duration-200"
+          className="md:hidden fixed inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-xs z-50 animate-in fade-in duration-200"
           onClick={onMobileClose}
         >
           {/* Mobile Drawer */}
           <div
             id="mobile-left-sidebar"
-            className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-2xl z-50 animate-in slide-in-from-left duration-200"
+            className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white dark:bg-slate-900 shadow-2xl z-50 animate-in slide-in-from-left duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {sidebarContent}

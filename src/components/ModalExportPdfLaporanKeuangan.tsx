@@ -85,10 +85,10 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-teal-900 via-slate-900 to-slate-900 text-white flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-teal-900 via-slate-900 to-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300">
               <FileText className="w-5 h-5" />
@@ -112,34 +112,34 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-5 text-xs text-slate-700">
+        <div className="p-5 overflow-y-auto space-y-5 text-xs text-slate-700 dark:text-slate-300">
           {/* Executive Preview Banner */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+          <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5">
             <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block mb-2">
               Ringkasan Data yang Akan Dicetak
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-              <div className="p-2 bg-white rounded-lg border border-slate-200">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] text-slate-400 block">Total Aktiva</span>
-                <span className="font-bold text-slate-800 text-xs">
+                <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
                   {formatRp(reportData.coaTotals.totalAktiva)}
                 </span>
               </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] text-slate-400 block">Surplus Bersih</span>
-                <span className="font-bold text-emerald-600 text-xs">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
                   {formatRp(reportData.coaTotals.surplusDefisit)}
                 </span>
               </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] text-slate-400 block">Total Rekening</span>
-                <span className="font-bold text-teal-700 text-xs">
+                <span className="font-bold text-teal-700 dark:text-teal-400 text-xs">
                   {reportData.bankBalances.length} Akun Kas
                 </span>
               </div>
-              <div className="p-2 bg-white rounded-lg border border-slate-200">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <span className="text-[10px] text-slate-400 block">Jurnal Umum</span>
-                <span className="font-bold text-indigo-700 text-xs">
+                <span className="font-bold text-indigo-700 dark:text-indigo-400 text-xs">
                   {reportData.journalEntries.length} Entri
                 </span>
               </div>
@@ -148,7 +148,7 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
 
           {/* Section Selection Checkboxes */}
           <div>
-            <label className="text-xs font-bold text-slate-800 block mb-2">
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-100 block mb-2">
               Pilih Komponen Laporan yang Disertakan:
             </label>
             <div className="space-y-2.5">
@@ -157,8 +157,8 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 onClick={() => setIncludeArusKas(!includeArusKas)}
                 className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
                   includeArusKas
-                    ? 'bg-teal-50/60 border-teal-300 text-teal-900'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-teal-50/60 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700/60 text-teal-900 dark:text-teal-200'
+                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -166,21 +166,21 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
                       includeArusKas
                         ? 'bg-[#05828e] border-[#05828e] text-white'
-                        : 'border-slate-300 bg-white'
+                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
                     }`}
                   >
                     {includeArusKas && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                   </div>
                   <div>
-                    <span className="font-bold text-xs block text-slate-800">
+                    <span className="font-bold text-xs block text-slate-800 dark:text-slate-100">
                       1. Ringkasan Arus Kas & Persamaan Akuntansi
                     </span>
-                    <span className="text-[11px] text-slate-500 block">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                       Penerimaan donasi, salur, ajar, beban program & operasional, kas bersih
                     </span>
                   </div>
                 </div>
-                <TrendingUp className="w-4 h-4 text-teal-600 shrink-0 ml-2" />
+                <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 ml-2" />
               </label>
 
               {/* Option 2: Pos Keuangan & Saldo Rekening */}
@@ -188,8 +188,8 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 onClick={() => setIncludePosKeuangan(!includePosKeuangan)}
                 className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
                   includePosKeuangan
-                    ? 'bg-teal-50/60 border-teal-300 text-teal-900'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-teal-50/60 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700/60 text-teal-900 dark:text-teal-200'
+                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -197,21 +197,21 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
                       includePosKeuangan
                         ? 'bg-[#05828e] border-[#05828e] text-white'
-                        : 'border-slate-300 bg-white'
+                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
                     }`}
                   >
                     {includePosKeuangan && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                   </div>
                   <div>
-                    <span className="font-bold text-xs block text-slate-800">
+                    <span className="font-bold text-xs block text-slate-800 dark:text-slate-100">
                       2. Posisi Pos Keuangan & Saldo Rekening Bank Saat Ini
                     </span>
-                    <span className="text-[11px] text-slate-500 block">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                       Saldo kas BCA, Mandiri, kas tunai, deposito berjangka & kategori dana
                     </span>
                   </div>
                 </div>
-                <Landmark className="w-4 h-4 text-teal-600 shrink-0 ml-2" />
+                <Landmark className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 ml-2" />
               </label>
 
               {/* Option 3: Jurnal Umum */}
@@ -219,8 +219,8 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 onClick={() => setIncludeJurnalUmum(!includeJurnalUmum)}
                 className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
                   includeJurnalUmum
-                    ? 'bg-teal-50/60 border-teal-300 text-teal-900'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    ? 'bg-teal-50/60 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700/60 text-teal-900 dark:text-teal-200'
+                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -228,41 +228,41 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
                       includeJurnalUmum
                         ? 'bg-[#05828e] border-[#05828e] text-white'
-                        : 'border-slate-300 bg-white'
+                        : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'
                     }`}
                   >
                     {includeJurnalUmum && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                   </div>
                   <div>
-                    <span className="font-bold text-xs block text-slate-800">
+                    <span className="font-bold text-xs block text-slate-800 dark:text-slate-100">
                       3. Jurnal Umum Otomatis & Rekonsiliasi Audit
                     </span>
-                    <span className="text-[11px] text-slate-500 block">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                       Daftar entri jurnal berpasangan dari Mutasi, S-SALUR, D-DONASI, A-AJAR
                     </span>
                   </div>
                 </div>
-                <Receipt className="w-4 h-4 text-teal-600 shrink-0 ml-2" />
+                <Receipt className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0 ml-2" />
               </label>
             </div>
           </div>
 
           {/* Jurnal Filtering & Pagination Settings */}
           {includeJurnalUmum && (
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
-              <span className="text-xs font-bold text-slate-800 block">
+            <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-3">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block">
                 Pengaturan Jurnal Umum pada PDF:
               </span>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Filter Sumber Transaksi:
                   </label>
                   <select
                     value={filterSource}
                     onChange={(e) => setFilterSource(e.target.value)}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white outline-none focus:border-[#05828e]"
+                    className="w-full text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-[#05828e]"
                   >
                     <option value="ALL">Semua Sumber ({reportData.journalEntries.length})</option>
                     <option value="mutasiBank">Mutasi Bank ({reportData.journalSourceStats.mutasiBank.count})</option>
@@ -274,13 +274,13 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Batas Entri Jurnal Dicetak:
                   </label>
                   <select
                     value={journalLimit}
                     onChange={(e) => setJournalLimit(Number(e.target.value))}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white outline-none focus:border-[#05828e]"
+                    className="w-full text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-[#05828e]"
                   >
                     <option value={30}>30 Entri Terkini (~2-3 Halaman)</option>
                     <option value={60}>60 Entri Terkini (~4-5 Halaman) - Rekomendasi</option>
@@ -295,7 +295,7 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
           {/* Additional Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                 Dicetak Oleh / Penanggung Jawab:
               </label>
               <input
@@ -303,12 +303,12 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 value={printedBy}
                 onChange={(e) => setPrintedBy(e.target.value)}
                 placeholder="Nama bagian atau staf..."
-                className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white outline-none focus:border-[#05828e]"
+                className="w-full text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 outline-none focus:border-[#05828e]"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                 Mode Privasi / Masking Nominal:
               </label>
               <button
@@ -316,8 +316,8 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
                 onClick={() => setIsPrivacyMasked(!isPrivacyMasked)}
                 className={`w-full text-xs border rounded-lg px-3 py-1.5 font-medium flex items-center justify-between cursor-pointer transition-colors ${
                   isPrivacyMasked
-                    ? 'bg-amber-50 border-amber-300 text-amber-800'
-                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 <span>{isPrivacyMasked ? 'Nominal Disamarkan (••••)' : 'Tampilkan Nominal Asli'}</span>
@@ -328,11 +328,11 @@ export const ModalExportPdfLaporanKeuangan: React.FC<ModalExportPdfLaporanKeuang
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/70 flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
           >
             Batal
           </button>

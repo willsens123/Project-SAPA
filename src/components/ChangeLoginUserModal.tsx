@@ -69,23 +69,23 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-transparent">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#008d91] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Ubah ID Login</h2>
-              <p className="text-xs text-slate-500">Pilih ID Login & Divisi yang aktif untuk halaman Home</p>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Ubah ID Login</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Pilih ID Login & Divisi yang aktif untuk halaman Home</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -94,12 +94,14 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Mode Switcher */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               type="button"
               onClick={() => setIsCustomMode(false)}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                !isCustomMode ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                !isCustomMode
+                  ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Pilih dari Karyawan SAPA
@@ -108,7 +110,9 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
               type="button"
               onClick={() => setIsCustomMode(true)}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                isCustomMode ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                isCustomMode
+                  ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               + Input ID Custom
@@ -119,13 +123,13 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
             <>
               {/* Search Box */}
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Cari nama, kode ID, atau divisi..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-[#008d91] transition-all"
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#008d91] transition-all"
                 />
               </div>
 
@@ -142,8 +146,8 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
                       }}
                       className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-[#008d91] bg-teal-50/60 shadow-xs'
-                          : 'border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200'
+                          ? 'border-[#008d91] bg-teal-50/60 dark:bg-teal-950/40 shadow-xs'
+                          : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -156,15 +160,15 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-slate-800">{item.namaLengkap}</span>
-                            <span className="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-full">
+                            <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{item.namaLengkap}</span>
+                            <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full">
                               ID: {item.kodeKaryawan}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
                             <span>Panggilan: {item.namaPanggilan}</span>
                             <span>•</span>
-                            <span className="font-semibold text-[#008d91]">Divisi: {item.divisi}</span>
+                            <span className="font-semibold text-[#008d91] dark:text-teal-400">Divisi: {item.divisi}</span>
                           </div>
                         </div>
                       </div>
@@ -180,35 +184,35 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
               </div>
             </>
           ) : (
-            <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+            <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Kode / ID Login</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Kode / ID Login</label>
                 <input
                   type="text"
                   placeholder="Contoh: 00031"
                   value={customKode}
                   onChange={(e) => setCustomKode(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#008d91]"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-[#008d91]"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Nama Lengkap</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nama Lengkap</label>
                 <input
                   type="text"
                   placeholder="Contoh: Agustino Ong"
                   value={customNama}
                   onChange={(e) => setCustomNama(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#008d91]"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-[#008d91]"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Nama Panggilan</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nama Panggilan</label>
                 <input
                   type="text"
                   placeholder="Contoh: Ko Agus"
                   value={customPanggilan}
                   onChange={(e) => setCustomPanggilan(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#008d91]"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-[#008d91]"
                 />
               </div>
             </div>
@@ -216,8 +220,8 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
 
           {/* Divisi Selector */}
           <div>
-            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-2">
-              <Building2 className="w-3.5 h-3.5 text-[#008d91]" />
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-2">
+              <Building2 className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
               Pilih Divisi yang Aktif untuk Home
             </label>
             <div className="grid grid-cols-4 gap-1.5">
@@ -229,7 +233,7 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
                   className={`py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                     selectedDivisi === d
                       ? 'bg-[#008d91] text-white border-[#008d91] shadow-xs'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   {d}
@@ -240,11 +244,11 @@ export const ChangeLoginUserModal: React.FC<ChangeLoginUserModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2 bg-slate-50">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2 bg-slate-50 dark:bg-slate-950/60">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
           >
             Batal
           </button>

@@ -598,11 +598,11 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
       {/* Section Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+          <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
             Ringkasan Keuangan Yayasan
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Periode aktif: <span className="font-semibold text-slate-700">{activeBucket.label}</span>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Periode aktif: <span className="font-semibold text-slate-700 dark:text-slate-200">{activeBucket.label}</span>
             {!isShowingExactCurrentMonth && activeBucket.key === defaultSelectedKey && (
               <>
                 {' '}
@@ -618,7 +618,7 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
             aria-label="Pilih periode bulan ringkasan keuangan"
             value={activeBucket.key}
             onChange={(e) => setSelectedMonthKey(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-xl text-slate-700 hover:border-slate-300 focus:outline-none focus:border-[#008d91] cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:border-[#008d91] cursor-pointer shadow-2xs"
           >
             {monthlyBuckets.map((b) => (
               <option key={b.key} value={b.key}>
@@ -630,7 +630,7 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
           <button
             type="button"
             onClick={() => setIsPrivacyMasked((prev) => !prev)}
-            className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+            className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
             title={isPrivacyMasked ? 'Tampilkan nominal' : 'Sembunyikan nominal'}
           >
             {isPrivacyMasked ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -661,27 +661,27 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
               onNavigateView('laporanKeuangan');
             }
           }}
-          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs hover:border-[#008d91]/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-[#008d91]/40 dark:hover:border-teal-500/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="text-xs font-semibold text-slate-500 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Total Aset Yayasan
               </span>
-              <div className="text-2xl sm:text-[26px] font-extrabold text-slate-900 tracking-tight mt-1 tabular-nums">
+              <div className="text-2xl sm:text-[26px] font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-1 tabular-nums">
                 {formatRupiahFull(assetSummary.totalAset, isPrivacyMasked)}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#008d91] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center shrink-0">
               <Landmark className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums">
-              Kas &amp; Deposito: <strong className="text-slate-700">{formatCompactRupiah(assetSummary.totalKasBank, isPrivacyMasked)}</strong>
+              Kas &amp; Deposito: <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(assetSummary.totalKasBank, isPrivacyMasked)}</strong>
             </span>
-            <span className="text-slate-400">
+            <span className="text-slate-400 dark:text-slate-500">
               {assetSummary.aktivaAccountCount} akun aktiva · {assetSummary.posCount} pos
             </span>
           </div>
@@ -698,31 +698,31 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
               onNavigateView('mutasi');
             }
           }}
-          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="text-xs font-semibold text-slate-500 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Total Pendapatan ({activeBucket.label})
               </span>
-              <div className="text-2xl sm:text-[26px] font-extrabold text-emerald-700 tracking-tight mt-1 tabular-nums">
+              <div className="text-2xl sm:text-[26px] font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight mt-1 tabular-nums">
                 {formatRupiahFull(activeBucket.pendapatan, isPrivacyMasked)}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums truncate">
-              Salur <strong className="text-slate-700">{formatCompactRupiah(activeBucket.salurPendapatan, isPrivacyMasked)}</strong>
+              Salur <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(activeBucket.salurPendapatan, isPrivacyMasked)}</strong>
               {' · '}
-              Donasi <strong className="text-slate-700">{formatCompactRupiah(activeBucket.donasiPendapatan, isPrivacyMasked)}</strong>
+              Donasi <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(activeBucket.donasiPendapatan, isPrivacyMasked)}</strong>
               {' · '}
-              Ajar <strong className="text-slate-700">{formatCompactRupiah(activeBucket.ajarPendapatan, isPrivacyMasked)}</strong>
+              Ajar <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(activeBucket.ajarPendapatan, isPrivacyMasked)}</strong>
             </span>
-            <span className="text-emerald-700 font-semibold shrink-0 tabular-nums">
+            <span className="text-emerald-700 dark:text-emerald-400 font-semibold shrink-0 tabular-nums">
               {activeBucket.countMasuk} masuk
             </span>
           </div>
@@ -739,31 +739,31 @@ export const HomeFinancialSummaryCards: React.FC<HomeFinancialSummaryCardsProps>
               onNavigateView('pengeluaran');
             }
           }}
-          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs hover:border-rose-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
+          className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs hover:border-rose-300 dark:hover:border-rose-500/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="text-xs font-semibold text-slate-500 block">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block">
                 Total Pengeluaran ({activeBucket.label})
               </span>
-              <div className="text-2xl sm:text-[26px] font-extrabold text-rose-700 tracking-tight mt-1 tabular-nums">
+              <div className="text-2xl sm:text-[26px] font-extrabold text-rose-700 dark:text-rose-400 tracking-tight mt-1 tabular-nums">
                 {formatRupiahFull(activeBucket.pengeluaran, isPrivacyMasked)}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <TrendingDown className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-slate-500 dark:text-slate-400">
             <span className="tabular-nums truncate">
-              Program <strong className="text-slate-700">{formatCompactRupiah(activeBucket.programPengeluaran, isPrivacyMasked)}</strong>
+              Program <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(activeBucket.programPengeluaran, isPrivacyMasked)}</strong>
               {' · '}
-              Ops <strong className="text-slate-700">{formatCompactRupiah(activeBucket.operasionalPengeluaran, isPrivacyMasked)}</strong>
+              Ops <strong className="text-slate-700 dark:text-slate-200">{formatCompactRupiah(activeBucket.operasionalPengeluaran, isPrivacyMasked)}</strong>
             </span>
             <span
               className={`font-semibold shrink-0 tabular-nums flex items-center gap-1 ${
-                netCashflow >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                netCashflow >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
               }`}
             >
               <Wallet className="w-3 h-3" />

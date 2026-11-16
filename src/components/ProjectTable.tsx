@@ -98,7 +98,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         return (
           <span
             id="badge-status-ongoing"
-            className="text-slate-600 text-sm font-normal pl-2"
+            className="text-slate-600 dark:text-slate-300 text-sm font-normal pl-2"
           >
             {status}
           </span>
@@ -122,20 +122,20 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
     <div className="w-full flex flex-col gap-4 pb-8">
       {/* SECTION: Ringkasan Proyeksi Pendapatan Berdasarkan Riwayat S-SALUR & D-DONASI */}
       {columnVisibility.projectedRevenue !== false && (
-        <div className="w-full bg-linear-to-br from-teal-50/50 via-white to-slate-50 border border-teal-100/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-teal-100/60">
+        <div className="w-full bg-linear-to-br from-teal-50/50 via-white to-slate-50 dark:from-teal-950/30 dark:via-slate-900 dark:to-slate-900 border border-teal-100/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-teal-100/60 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-[#05828e] text-white flex items-center justify-center shadow-xs">
                 <TrendingUp className="w-4 h-4 stroke-[2.5]" />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   <span>Ringkasan Proyeksi Pendapatan</span>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#05828e] bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#05828e] dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 px-2 py-0.5 rounded-full">
                     S-SALUR + D-DONASI
                   </span>
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Dihitung otomatis dari riwayat volume penjualan produk S-SALUR dan mutasi donasi D-DONASI yang tertaut.
                 </p>
               </div>
@@ -144,7 +144,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
             <button
               type="button"
               onClick={() => setShowSummaryCards(!showSummaryCards)}
-              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#05828e] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-teal-300 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-300 hover:text-[#05828e] dark:hover:text-teal-400 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer"
             >
               <span>{showSummaryCards ? 'Sembunyikan Kartu' : 'Tampilkan Kartu'}</span>
               {showSummaryCards ? (
@@ -158,75 +158,75 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
           {showSummaryCards && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
               {/* Card 1: Total Proyeksi */}
-              <div className="bg-white border border-teal-200/90 rounded-xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-[#05828e] transition-colors">
+              <div className="bg-white dark:bg-slate-900/90 border border-teal-200/90 dark:border-teal-800/70 rounded-xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-[#05828e] transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Total Proyeksi
                   </span>
-                  <span className="p-1.5 rounded-lg bg-teal-50 text-[#05828e]">
+                  <span className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-[#05828e] dark:text-teal-400">
                     <TrendingUp className="w-4 h-4" />
                   </span>
                 </div>
-                <div className="mt-2 font-bold text-lg sm:text-xl text-[#05828e] tracking-tight">
+                <div className="mt-2 font-bold text-lg sm:text-xl text-[#05828e] dark:text-teal-400 tracking-tight">
                   Rp {summary.totalProjectedRevenue.toLocaleString('id-ID')}
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <span>Dari {summary.totalProjects} proyek kegiatan</span>
                 </div>
               </div>
 
               {/* Card 2: S-SALUR */}
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 transition-colors">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     S-SALUR (Penjualan)
                   </span>
-                  <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                  <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
                     <ShoppingBag className="w-4 h-4" />
                   </span>
                 </div>
-                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 tracking-tight">
+                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 dark:text-slate-100 tracking-tight">
                   Rp {summary.totalSalurRevenue.toLocaleString('id-ID')}
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span className="font-semibold text-emerald-600">{summary.salurItemCount} item</span>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">{summary.salurItemCount} item</span>
                   <span>buku/produk tersalurkan</span>
                 </div>
               </div>
 
               {/* Card 3: D-DONASI */}
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 transition-colors">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     D-DONASI (Pemasukan)
                   </span>
-                  <span className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                  <span className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
                     <HeartHandshake className="w-4 h-4" />
                   </span>
                 </div>
-                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 tracking-tight">
+                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 dark:text-slate-100 tracking-tight">
                   Rp {summary.totalDonasiRevenue.toLocaleString('id-ID')}
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span className="font-semibold text-amber-600">{summary.donasiOrderCount} transaksi</span>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">{summary.donasiOrderCount} transaksi</span>
                   <span>donasi donatur & patron</span>
                 </div>
               </div>
 
               {/* Card 4: Rata-rata per Proyek */}
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 transition-colors">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs group hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Rata-Rata / Proyek
                   </span>
-                  <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+                  <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
                     <Sparkles className="w-4 h-4" />
                   </span>
                 </div>
-                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 tracking-tight">
+                <div className="mt-2 font-bold text-lg sm:text-xl text-slate-800 dark:text-slate-100 tracking-tight">
                   Rp {summary.averageProjectedRevenue.toLocaleString('id-ID')}
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500">
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <span>Estimasi benchmark run-rate divisi</span>
                 </div>
               </div>
@@ -236,53 +236,53 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       )}
 
       {/* Main Table */}
-      <div className="w-full overflow-x-auto">
+      <div className="w-full overflow-x-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <table className="w-full text-left border-collapse min-w-[950px]">
           {/* Table Header */}
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-slate-200 dark:border-slate-800">
               {columnVisibility.tanggal && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Tanggal
                 </th>
               )}
               {columnVisibility.dateRangePersiapan && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Date Range Persiapan
                 </th>
               )}
               {columnVisibility.namaKegiatan && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Nama Kegiatan
                 </th>
               )}
               {columnVisibility.jenisProyek && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Jenis Proyek
                 </th>
               )}
               {columnVisibility.divisi && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Divisi
                 </th>
               )}
               {columnVisibility.lokasi && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Lokasi
                 </th>
               )}
               {columnVisibility.status && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap">
                   Status
                 </th>
               )}
               {columnVisibility.projectedRevenue !== false && (
-                <th className="py-4 px-4 font-semibold text-slate-700 text-sm sm:text-base whitespace-nowrap text-right">
+                <th className="py-4 px-4 font-semibold text-slate-700 dark:text-slate-200 text-sm sm:text-base whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-1.5">
                     <span>Proyeksi Pendapatan</span>
                     <span
                       title="Proyeksi gabungan riwayat transaksi S-SALUR dan D-DONASI"
-                      className="text-[10px] font-semibold text-[#05828e] bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded cursor-help"
+                      className="text-[10px] font-semibold text-[#05828e] dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 px-1.5 py-0.5 rounded cursor-help"
                     >
                       S & D
                     </span>
@@ -294,12 +294,12 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
             {projects.length === 0 ? (
               <tr>
                 <td
                   colSpan={visibleColumnCount}
-                  className="py-12 text-center text-slate-400 text-sm"
+                  className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm"
                 >
                   Tidak ada data proyek yang sesuai.
                 </td>
@@ -315,34 +315,34 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                   <tr
                     key={project.id}
                     id={`row-project-${project.id}`}
-                    className="hover:bg-slate-50/60 transition-colors group"
+                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors group"
                   >
                     {/* Tanggal */}
                     {columnVisibility.tanggal && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] whitespace-nowrap">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] whitespace-nowrap">
                         {project.tanggal}
                       </td>
                     )}
 
                     {/* Date Range Persiapan */}
                     {columnVisibility.dateRangePersiapan && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] whitespace-nowrap">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] whitespace-nowrap">
                         {project.dateRangePersiapan}
                       </td>
                     )}
 
                     {/* Nama Kegiatan */}
                     {columnVisibility.namaKegiatan && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] whitespace-nowrap">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-200 text-sm sm:text-[15px] whitespace-nowrap">
                         {(() => {
                           const s = (project.status || '').toLowerCase().trim();
-                          let badgeStyle = 'bg-white text-slate-800 border border-slate-200 shadow-2xs';
+                          let badgeStyle = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-2xs';
                           if (s.includes('waiting') || s === 'waiting acc') {
                             badgeStyle = 'bg-[#05828e] text-white shadow-xs';
                           } else if (s.includes('ongoing')) {
                             badgeStyle = 'bg-[#fbc02d] text-slate-800 shadow-xs';
                           } else if (s.includes('done')) {
-                            badgeStyle = 'bg-white text-slate-800 border border-slate-200 shadow-2xs';
+                            badgeStyle = 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 shadow-2xs';
                           }
 
                           return (
@@ -361,21 +361,21 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
                     {/* Jenis Proyek */}
                     {columnVisibility.jenisProyek && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] whitespace-nowrap">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] whitespace-nowrap">
                         {project.jenisProyek}
                       </td>
                     )}
 
                     {/* Divisi */}
                     {columnVisibility.divisi && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] whitespace-nowrap font-normal">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] whitespace-nowrap font-normal">
                         {project.divisi}
                       </td>
                     )}
 
                     {/* Lokasi */}
                     {columnVisibility.lokasi && (
-                      <td className="py-4 px-4 text-slate-700 text-sm sm:text-[15px] max-w-xs truncate">
+                      <td className="py-4 px-4 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] max-w-xs truncate">
                         {project.lokasi}
                       </td>
                     )}
@@ -396,15 +396,15 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                           title="Klik untuk rincian sumber S-SALUR & D-DONASI"
                           className="text-right group/rev cursor-pointer hover:opacity-90 inline-block focus:outline-hidden"
                         >
-                          <div className="font-bold text-slate-800 text-sm sm:text-[15px] group-hover/rev:text-[#05828e] transition-colors">
+                          <div className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-[15px] group-hover/rev:text-[#05828e] dark:group-hover/rev:text-teal-400 transition-colors">
                             Rp {projectedAmount.toLocaleString('id-ID')}
                           </div>
-                          <div className="flex items-center justify-end gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                            <span className="text-[#05828e] font-medium" title="S-SALUR">
+                          <div className="flex items-center justify-end gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                            <span className="text-[#05828e] dark:text-teal-400 font-medium" title="S-SALUR">
                               S: Rp {salurPart.toLocaleString('id-ID')}
                             </span>
                             <span>•</span>
-                            <span className="text-amber-700 font-medium" title="D-DONASI">
+                            <span className="text-amber-700 dark:text-amber-400 font-medium" title="D-DONASI">
                               D: Rp {donasiPart.toLocaleString('id-ID')}
                             </span>
                           </div>
@@ -423,7 +423,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                         }}
                         title="Menu Baris"
                         aria-label="Menu Baris"
-                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
@@ -433,7 +433,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                         <div
                           id={`menu-actions-${project.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="absolute right-2 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
+                          className="absolute right-2 mt-1 w-48 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1.5 z-50 text-xs text-left animate-in fade-in zoom-in-95 duration-100"
                         >
                           <button
                             type="button"
@@ -441,7 +441,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                               onViewDetail(project);
                               setActiveMenuId(null);
                             }}
-                            className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                            className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5 text-slate-400" />
                             Lihat Detail
@@ -454,9 +454,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 setSelectedProjection(projData);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <TrendingUp className="w-3.5 h-3.5 text-[#05828e]" />
+                              <TrendingUp className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
                               Rincian Proyeksi
                             </button>
                           )}
@@ -469,9 +469,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onViewReport(project);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <BarChart3 className="w-3.5 h-3.5 text-[#05828e]" />
+                              <BarChart3 className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
                               Lihat Report
                             </button>
                           )}
@@ -484,9 +484,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onOpenTodoList(project);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <ListTodo className="w-3.5 h-3.5 text-[#008d91]" />
+                              <ListTodo className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
                               To-Do List
                             </button>
                           )}
@@ -499,9 +499,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onKirimHadiah(project);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer font-medium"
+                              className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer font-medium"
                             >
-                              <Gift className="w-3.5 h-3.5 text-[#008d91]" />
+                              <Gift className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
                               Kirim Hadiah
                             </button>
                           )}
@@ -512,13 +512,13 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                               onEditProject(project);
                               setActiveMenuId(null);
                             }}
-                            className="w-full px-3 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                            className="w-full px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
                           >
                             <Edit2 className="w-3.5 h-3.5 text-slate-400" />
                             Edit Proyek
                           </button>
 
-                          <div className="border-t border-slate-100 my-1 pt-1">
+                          <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
                             <div className="px-3 py-1 font-semibold text-[10px] text-slate-400 uppercase">
                               Ubah Status
                             </div>
@@ -528,9 +528,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onUpdateStatus(project.id, 'Done');
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#05828e]" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
                               Done
                             </button>
                             <button
@@ -539,7 +539,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onUpdateStatus(project.id, 'Waiting Acc');
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                             >
                               <AlertCircle className="w-3.5 h-3.5 text-[#f04e4e]" />
                               Waiting Acc
@@ -550,21 +550,21 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                                 onUpdateStatus(project.id, 'Ongoing');
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                             >
-                              <Clock className="w-3.5 h-3.5 text-slate-500" />
+                              <Clock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                               Ongoing
                             </button>
                           </div>
 
-                          <div className="border-t border-slate-100 mt-1 pt-1">
+                          <div className="border-t border-slate-100 dark:border-slate-800 mt-1 pt-1">
                             <button
                               type="button"
                               onClick={() => {
                                 onDeleteProject(project.id);
                                 setActiveMenuId(null);
                               }}
-                              className="w-full px-3 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                              className="w-full px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 flex items-center gap-2"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Hapus
@@ -582,18 +582,18 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
           {/* Table Footer: Totals */}
           {projects.length > 0 && columnVisibility.projectedRevenue !== false && (
             <tfoot>
-              <tr className="border-t-2 border-slate-200 bg-slate-50/80 font-semibold text-slate-700">
+              <tr className="border-t-2 border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-200">
                 <td
                   colSpan={visibleColumnCount - 2}
-                  className="py-3 px-4 text-xs sm:text-sm uppercase tracking-wider text-slate-500 font-bold"
+                  className="py-3 px-4 text-xs sm:text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold"
                 >
                   Total Proyeksi ({projects.length} Proyek Tampil)
                 </td>
                 <td className="py-3 px-4 text-right whitespace-nowrap">
-                  <div className="font-bold text-[#05828e] text-sm sm:text-base">
+                  <div className="font-bold text-[#05828e] dark:text-teal-400 text-sm sm:text-base">
                     Rp {summary.totalProjectedRevenue.toLocaleString('id-ID')}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-normal mt-0.5">
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mt-0.5">
                     S-SALUR: Rp {summary.totalSalurRevenue.toLocaleString('id-ID')} • D-DONASI: Rp {summary.totalDonasiRevenue.toLocaleString('id-ID')}
                   </div>
                 </td>
@@ -606,19 +606,19 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
       {/* MODAL: Detail Rincian Sumber Proyeksi Pendapatan */}
       {selectedProjection && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 dark:bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-slate-800/50">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#05828e] text-white flex items-center justify-center">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-800 text-sm">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     Rincian Proyeksi Pendapatan
                   </h4>
-                  <p className="text-xs text-slate-500 truncate max-w-xs">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs">
                     {selectedProjection.projectName}
                   </p>
                 </div>
@@ -626,7 +626,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedProjection(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -635,41 +635,41 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
             {/* Content */}
             <div className="p-5 space-y-4 text-xs sm:text-sm">
               {/* Highlight Card */}
-              <div className="bg-linear-to-r from-teal-50 to-emerald-50/40 border border-teal-100 rounded-xl p-4">
-                <div className="text-xs text-slate-500 font-medium">
+              <div className="bg-linear-to-r from-teal-50 to-emerald-50/40 dark:from-teal-950/50 dark:to-emerald-950/30 border border-teal-100 dark:border-teal-800/70 rounded-xl p-4">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Total Estimasi Proyeksi Pendapatan
                 </div>
-                <div className="text-2xl font-bold text-[#05828e] mt-1">
+                <div className="text-2xl font-bold text-[#05828e] dark:text-teal-400 mt-1">
                   Rp {selectedProjection.projectedRevenue.toLocaleString('id-ID')}
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-white text-slate-700 border border-teal-200">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-teal-200 dark:border-teal-800">
                     Tingkat Keyakinan: {selectedProjection.confidenceScore}
                   </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-white text-slate-700 border border-slate-200">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                     Status: {selectedProjection.status}
                   </span>
                 </div>
               </div>
 
               {/* Breakdown Rows */}
-              <div className="space-y-2 border border-slate-100 rounded-xl p-3 bg-slate-50/40">
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <ShoppingBag className="w-4 h-4 text-emerald-600" />
+              <div className="space-y-2 border border-slate-100 dark:border-slate-800 rounded-xl p-3 bg-slate-50/40 dark:bg-slate-800/40">
+                <div className="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <ShoppingBag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Riwayat S-SALUR (Penjualan Buku/Item)</span>
                   </div>
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">
                     Rp {selectedProjection.historicalSalurRevenue.toLocaleString('id-ID')}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between py-1.5">
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <HeartHandshake className="w-4 h-4 text-amber-600" />
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <HeartHandshake className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     <span>Riwayat D-DONASI (Donasi & Dana Terikat)</span>
                   </div>
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">
                     Rp {selectedProjection.historicalDonasiRevenue.toLocaleString('id-ID')}
                   </span>
                 </div>
@@ -677,19 +677,19 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
               {/* Linked Items List */}
               <div>
-                <div className="font-semibold text-xs text-slate-600 uppercase tracking-wider mb-1.5">
+                <div className="font-semibold text-xs text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                   Item & Transaksi Tertaut ({selectedProjection.linkedItemsSummary.length})
                 </div>
                 {selectedProjection.linkedItemsSummary.length === 0 ? (
-                  <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div className="text-xs text-slate-400 dark:text-slate-500 italic bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                     Tidak ada transaksi riwayat dengan tautan kata kunci langsung. Nilai dihitung menggunakan benchmark historis divisi {selectedProjection.divisi}.
                   </div>
                 ) : (
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
                     {selectedProjection.linkedItemsSummary.map((itemStr, idx) => (
                       <div
                         key={idx}
-                        className="text-xs text-slate-700 flex items-center gap-2 bg-white px-2.5 py-1.5 rounded border border-slate-200/70"
+                        className="text-xs text-slate-700 dark:text-slate-200 flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded border border-slate-200/70 dark:border-slate-700"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-[#05828e]" />
                         <span className="truncate">{itemStr}</span>
@@ -699,14 +699,14 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                 )}
               </div>
 
-              <div className="text-[11px] text-slate-400 leading-relaxed bg-amber-50/60 border border-amber-100 rounded-lg p-2.5">
-                <span className="font-semibold text-amber-800">Metodologi: </span>
+              <div className="text-[11px] text-slate-400 dark:text-slate-400 leading-relaxed bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/60 rounded-lg p-2.5">
+                <span className="font-semibold text-amber-800 dark:text-amber-300">Metodologi: </span>
                 Untuk proyek berstatus Done, proyeksi mencerminkan realisasi aktual. Untuk proyek Ongoing atau Waiting Acc, proyeksi menerapkan run-rate faktor (1.25x - 1.5x) dari riwayat penjualan dan donasi terhubung.
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedProjection(null)}

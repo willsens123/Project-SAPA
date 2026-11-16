@@ -108,7 +108,7 @@ const SearchSelectInput: React.FC<SearchSelectProps> = ({
       <div
         id={id}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl cursor-pointer hover:border-[#94a3b8] transition-colors shadow-2xs"
+        className="flex items-center justify-between h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl cursor-pointer hover:border-[#94a3b8] dark:hover:border-slate-600 transition-colors shadow-2xs"
       >
         <input
           type="text"
@@ -132,7 +132,7 @@ const SearchSelectInput: React.FC<SearchSelectProps> = ({
             }
           }}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm text-slate-800 placeholder-[#94a3b8] focus:outline-none cursor-pointer"
+          className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none cursor-pointer"
         />
         {/* Teal circular chevron button matching image */}
         <div className="w-5 h-5 rounded-full bg-[#05828e] flex items-center justify-center text-white shrink-0 ml-2 pointer-events-none">
@@ -141,7 +141,7 @@ const SearchSelectInput: React.FC<SearchSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-30 top-[46px] left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto py-1 text-sm animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute z-30 top-[46px] left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto py-1 text-sm animate-in fade-in zoom-in-95 duration-150">
           {filtered.length > 0 ? (
             filtered.map((item) => (
               <button
@@ -152,10 +152,10 @@ const SearchSelectInput: React.FC<SearchSelectProps> = ({
                   setFilterText(item);
                   setIsOpen(false);
                 }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 text-slate-700 flex items-center justify-between cursor-pointer"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-between cursor-pointer"
               >
                 <span>{item}</span>
-                {value === item && <Check className="w-4 h-4 text-[#05828e]" />}
+                {value === item && <Check className="w-4 h-4 text-[#05828e] dark:text-teal-400" />}
               </button>
             ))
           ) : (
@@ -167,7 +167,7 @@ const SearchSelectInput: React.FC<SearchSelectProps> = ({
                   setIsOpen(false);
                 }
               }}
-              className="w-full text-left px-3.5 py-2 text-xs text-[#05828e] hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer font-medium"
+              className="w-full text-left px-3.5 py-2 text-xs text-[#05828e] dark:text-teal-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 cursor-pointer font-medium"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Gunakan & Tambah "{filterText}"</span>
@@ -374,11 +374,11 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
   return (
     <div className="w-full flex flex-col py-2 sm:py-4 animate-in fade-in duration-150">
-      <form onSubmit={handleSubmit} className="w-full max-w-4xl space-y-4 sm:space-y-5 text-sm text-slate-700">
+      <form onSubmit={handleSubmit} className="w-full max-w-4xl space-y-4 sm:space-y-5 text-sm text-slate-700 dark:text-slate-300">
         
         {/* Row 1: Tanggal */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Tanggal
           </label>
           <div className="flex items-center gap-2 relative">
@@ -389,7 +389,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               onChange={(e) => setTanggalStart(e.target.value)}
               onClick={() => setIsTanggalRangeOpen(true)}
               placeholder="Input Date..."
-              className="w-[155px] sm:w-[165px] h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors cursor-pointer"
+              className="w-[155px] sm:w-[165px] h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors cursor-pointer"
             />
             <span className="text-slate-400 font-medium">-</span>
             <div className="relative flex items-center">
@@ -400,12 +400,12 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                 onChange={(e) => setTanggalEnd(e.target.value)}
                 onClick={() => setIsTanggalRangeOpen(true)}
                 placeholder="Input Date..."
-                className="w-[155px] sm:w-[165px] h-[42px] pl-3.5 pr-9 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors cursor-pointer"
+                className="w-[155px] sm:w-[165px] h-[42px] pl-3.5 pr-9 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors cursor-pointer"
               />
               <button
                 type="button"
                 onClick={() => setIsTanggalRangeOpen(!isTanggalRangeOpen)}
-                className="absolute right-3 text-[#05828e] hover:text-[#046c76] cursor-pointer"
+                className="absolute right-3 text-[#05828e] dark:text-teal-400 hover:text-[#046c76] cursor-pointer"
                 title="Pilih Rentang Tanggal"
               >
                 <Calendar className="w-4 h-4" />
@@ -428,7 +428,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Row 2: Date Range Persiapan */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Date Range Persiapan
           </label>
           <div className="flex items-center gap-2 relative">
@@ -439,7 +439,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               onChange={(e) => setPersiapanStart(e.target.value)}
               onClick={() => setIsPersiapanRangeOpen(true)}
               placeholder="Input Date..."
-              className="w-[155px] sm:w-[165px] h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors cursor-pointer"
+              className="w-[155px] sm:w-[165px] h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors cursor-pointer"
             />
             <span className="text-slate-400 font-medium">-</span>
             <div className="relative flex items-center">
@@ -450,12 +450,12 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                 onChange={(e) => setPersiapanEnd(e.target.value)}
                 onClick={() => setIsPersiapanRangeOpen(true)}
                 placeholder="Input Date..."
-                className="w-[155px] sm:w-[165px] h-[42px] pl-3.5 pr-9 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors cursor-pointer"
+                className="w-[155px] sm:w-[165px] h-[42px] pl-3.5 pr-9 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors cursor-pointer"
               />
               <button
                 type="button"
                 onClick={() => setIsPersiapanRangeOpen(!isPersiapanRangeOpen)}
-                className="absolute right-3 text-[#05828e] hover:text-[#046c76] cursor-pointer"
+                className="absolute right-3 text-[#05828e] dark:text-teal-400 hover:text-[#046c76] cursor-pointer"
                 title="Pilih Rentang Tanggal Persiapan"
               >
                 <Calendar className="w-4 h-4" />
@@ -478,7 +478,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Row 3: Nama Proyek SAPA */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Nama Proyek SAPA
           </label>
           <div className="w-[320px] sm:w-[350px]">
@@ -489,14 +489,14 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               onChange={(e) => setNamaProyek(e.target.value)}
               placeholder="Input Text..."
               required
-              className="w-full h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors"
+              className="w-full h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
             />
           </div>
         </div>
 
         {/* Row 4: Jenis Proyek */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Jenis Proyek
           </label>
           <SearchSelectInput
@@ -515,7 +515,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Row 5: Divisi */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:pt-1 gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0 pt-2">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0 pt-2">
             Divisi
           </label>
           <div className="space-y-2">
@@ -536,7 +536,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                   type="button"
                   id={`btn-remove-divisi-${idx}`}
                   onClick={() => handleRemoveDivisi(idx)}
-                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer transition-colors"
                   title="Hapus"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -559,7 +559,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Row 6: Online? Checkbox */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Online?
           </label>
           <div className="flex items-center">
@@ -569,11 +569,11 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               role="checkbox"
               aria-checked={isOnline}
               onClick={() => setIsOnline(!isOnline)}
-              className="w-6 h-6 rounded-md border-2 border-[#05828e] flex items-center justify-center cursor-pointer bg-white transition-all shadow-2xs hover:bg-teal-50/30"
+              className="w-6 h-6 rounded-md border-2 border-[#05828e] dark:border-teal-500 flex items-center justify-center cursor-pointer bg-white dark:bg-slate-900 transition-all shadow-2xs hover:bg-teal-50/30 dark:hover:bg-teal-950/30"
             >
               {isOnline && (
                 <svg
-                  className="w-4 h-4 text-[#05828e]"
+                  className="w-4 h-4 text-[#05828e] dark:text-teal-400"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -593,7 +593,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
           <>
             {/* Platform */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-              <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
                 Platform
               </label>
               <SearchSelectInput
@@ -610,7 +610,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
           <>
             {/* Lokasi Kegiatan */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-              <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
                 Lokasi Kegiatan
               </label>
               <div className="w-[320px] sm:w-[350px]">
@@ -620,14 +620,14 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                   value={lokasiKegiatan}
                   onChange={(e) => setLokasiKegiatan(e.target.value)}
                   placeholder="Input Text..."
-                  className="w-full h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors"
+                  className="w-full h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
                 />
               </div>
             </div>
 
             {/* Kota/Kabupaten */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-              <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
                 Kota/Kabupaten
               </label>
               <SearchSelectInput
@@ -641,7 +641,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
             {/* Provinsi */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-              <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
                 Provinsi
               </label>
               <SearchSelectInput
@@ -657,7 +657,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Common Field: Keterangan */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Keterangan
           </label>
           <div className="w-[320px] sm:w-[350px]">
@@ -667,14 +667,14 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               value={keterangan}
               onChange={(e) => setKeterangan(e.target.value)}
               placeholder="Input Text..."
-              className="w-full h-[42px] px-3.5 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors"
+              className="w-full h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
             />
           </div>
         </div>
 
         {/* Common Field: Link Foto */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:pt-1 gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0 pt-2">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0 pt-2">
             Link Foto
           </label>
           <div className="space-y-2">
@@ -691,9 +691,9 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                       setLinkFotoList(next);
                     }}
                     placeholder="Input Link..."
-                    className="w-full h-[42px] pl-3.5 pr-10 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors"
+                    className="w-full h-[42px] pl-3.5 pr-10 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#05828e] pointer-events-none">
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#05828e] dark:text-teal-400 pointer-events-none">
                     <Link2 className="w-4 h-4" />
                   </div>
                 </div>
@@ -701,7 +701,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                   type="button"
                   id={`btn-remove-link-foto-${idx}`}
                   onClick={() => handleRemoveLinkFoto(idx)}
-                  className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer transition-colors"
                   title="Hapus"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" />
@@ -724,7 +724,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
 
         {/* Common Field: Link Laporan */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-          <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+          <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
             Link Laporan
           </label>
           <div className="relative w-[320px] sm:w-[350px]">
@@ -734,9 +734,9 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
               value={linkLaporan}
               onChange={(e) => setLinkLaporan(e.target.value)}
               placeholder="Input Link..."
-              className="w-full h-[42px] pl-3.5 pr-10 bg-white border border-[#cbd5e1] rounded-xl text-slate-800 placeholder-[#94a3b8] focus:outline-none focus:border-[#05828e] shadow-2xs transition-colors"
+              className="w-full h-[42px] pl-3.5 pr-10 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#05828e] pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#05828e] dark:text-teal-400 pointer-events-none">
               <Link2 className="w-4 h-4" />
             </div>
           </div>
@@ -745,7 +745,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
         {/* Offline-Only Field: Target (Shown when Online is NOT checked, as per Image 1) */}
         {!isOnline && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-            <label className="w-48 text-[15px] text-[#555e69] shrink-0">
+            <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
               Target
             </label>
             <div className="flex items-center gap-2">
@@ -769,7 +769,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
                 type="button"
                 id="btn-remove-target"
                 onClick={handleResetTarget}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer transition-colors"
                 title="Hapus Target"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />
@@ -797,7 +797,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
             id="btn-form-cancel"
             type="button"
             onClick={onCancel}
-            className="px-7 sm:px-8 py-2 border border-slate-300 rounded-xl text-slate-500 font-medium text-sm hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            className="px-7 sm:px-8 py-2 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-300 font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
           >
             Cancel
           </button>

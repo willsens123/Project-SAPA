@@ -11,17 +11,23 @@ import {
   CheckCircle2,
   ArrowRight,
   AtSign,
+  Check,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { KaryawanItem } from '../types';
 import { registerMemberAccountInFirestore } from '../firebase/authAccountService';
+import { AppTheme } from '../utils/themeManager';
 
 interface AuthPortalViewProps {
   accounts: KaryawanItem[];
   isLoadingAccounts: boolean;
   initialMode?: 'register' | 'login';
   logoutNotice?: string | null;
+  theme?: AppTheme;
+  onToggleTheme?: () => void;
   onRegisterSuccess: (createdAccount: KaryawanItem, updatedList: KaryawanItem[]) => void;
-  onLoginSuccess: (user: KaryawanItem) => void;
+  onLoginSuccess: (user: KaryawanItem, rememberMe?: boolean) => void;
 }
 
 const DIVISI_OPTIONS = [
@@ -45,6 +51,8 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
   isLoadingAccounts,
   initialMode = 'register',
   logoutNotice = null,
+  theme = 'light',
+  onToggleTheme,
   onRegisterSuccess,
   onLoginSuccess,
 }) => {
@@ -81,6 +89,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
   const [loginAccount, setLoginAccount] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSuccessBanner, setLoginSuccessBanner] = useState<string | null>(null);
 
@@ -199,13 +208,13 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
-      onLoginSuccess(matched);
+      onLoginSuccess(matched, rememberMe);
       return;
     }
 
     setIsEnteringWorkspace(true);
     exitTimerRef.current = window.setTimeout(() => {
-      onLoginSuccess(matched);
+      onLoginSuccess(matched, rememberMe);
     }, 230);
   };
 
@@ -216,7 +225,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
 
   return (
     <div
-      className={`min-h-screen bg-[#f8fafc] text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] lg:grid lg:grid-cols-12 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+      className={`min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] lg:grid lg:grid-cols-12 transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
         isEnteringWorkspace
           ? 'opacity-0 scale-[0.985] pointer-events-none'
           : 'animate-sapa-portal-enter'
@@ -323,36 +332,73 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
       </aside>
 
       {/* Right Column: Clean Auth Workspace */}
-      <div className="lg:col-span-6 xl:col-span-5 bg-white flex flex-col justify-between min-h-screen p-5 sm:p-8 lg:p-12 xl:p-14 border-l border-slate-200/80">
-        {/* Top Bar (Mobile Brand Lockup + Desktop Quiet Context) */}
+      <div className="lg:col-span-6 xl:col-span-5 bg-white dark:bg-slate-950 flex flex-col justify-between min-h-screen p-5 sm:p-8 lg:p-12 xl:p-14 border-l border-slate-200/80 dark:border-slate-800">
+        {/* Top Bar (Mobile Brand Lockup + Desktop Quiet Context & Theme Toggle) */}
         <header className="w-full max-w-md mx-auto">
-          <div className="flex lg:hidden items-center gap-3 pb-5 border-b border-slate-100">
-            {!logoImgFailed ? (
-              <img
-                src="/assets/aistudio/image_e94e2d75.png"
-                alt="Logo Lamrimnesia"
-                referrerPolicy="no-referrer"
-                onError={() => setLogoImgFailed(true)}
-                className="h-11 w-11 object-contain rounded-xl border border-slate-200 bg-white p-1 shrink-0"
-              />
-            ) : (
-              <div className="h-11 w-11 rounded-xl bg-[#05828e] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
-                YPPLN
+          <div className="flex lg:hidden items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 min-w-0">
+              {!logoImgFailed ? (
+                <img
+                  src="/assets/aistudio/image_e94e2d75.png"
+                  alt="Logo Lamrimnesia"
+                  referrerPolicy="no-referrer"
+                  onError={() => setLogoImgFailed(true)}
+                  className="h-11 w-11 object-contain rounded-xl border border-slate-200 dark:border-slate-700 bg-white p-1 shrink-0"
+                />
+              ) : (
+                <div className="h-11 w-11 rounded-xl bg-[#05828e] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                  YPPLN
+                </div>
+              )}
+              <div className="min-w-0">
+                <h1 className="text-base font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">
+                  Portal Anggota Proyek SAPA
+                </h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+                  Yayasan Pelestarian dan Pengembangan Lamrim Nusantara
+                </p>
               </div>
-            )}
-            <div className="min-w-0">
-              <h1 className="text-base font-extrabold text-slate-900 tracking-tight truncate">
-                Portal Anggota Proyek SAPA
-              </h1>
-              <p className="text-xs text-slate-500 font-medium truncate">
-                Yayasan Pelestarian dan Pengembangan Lamrim Nusantara
-              </p>
             </div>
+            {onToggleTheme && (
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                aria-label={theme === 'dark' ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap'}
+                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+                className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] dark:hover:text-teal-400 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
           </div>
 
-          <div className="hidden lg:flex items-center justify-between text-xs text-slate-500 font-medium">
+          <div className="hidden lg:flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span>Portal Anggota Proyek SAPA</span>
-            <span className="text-slate-400">Akses Internal Divisi</span>
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400 dark:text-slate-500">Akses Internal Divisi</span>
+              {onToggleTheme && (
+                <button
+                  id="btn-auth-toggle-theme"
+                  type="button"
+                  onClick={onToggleTheme}
+                  aria-label={theme === 'dark' ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap'}
+                  title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] dark:hover:text-teal-400 hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer"
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Terang</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-3.5 h-3.5" />
+                      <span>Gelap</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -362,12 +408,12 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           <div
             role="tablist"
             aria-label="Mode Portal Akun"
-            className="relative p-1 bg-slate-100 rounded-xl grid grid-cols-2 gap-1 mb-7"
+            className="relative p-1 bg-slate-100 dark:bg-slate-900 rounded-xl grid grid-cols-2 gap-1 mb-7 border border-transparent dark:border-slate-800"
           >
             {/* Sliding Active Pill Background */}
             <div
               aria-hidden="true"
-              className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white shadow-xs transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+              className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white dark:bg-slate-800 shadow-xs transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                 mode === 'login' ? 'translate-x-full' : 'translate-x-0'
               }`}
             />
@@ -382,11 +428,11 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               }}
               className={`relative z-10 min-h-[42px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05828e] ${
                 mode === 'register'
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-600 font-semibold hover:text-slate-900'
+                  ? 'text-slate-900 dark:text-white font-bold'
+                  : 'text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <UserPlus className="w-4 h-4 shrink-0 text-[#05828e]" />
+              <UserPlus className="w-4 h-4 shrink-0 text-[#05828e] dark:text-teal-400" />
               <span>1. Register Anggota</span>
             </button>
             <button
@@ -400,19 +446,19 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               }}
               className={`relative z-10 min-h-[42px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05828e] ${
                 mode === 'login'
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-600 font-semibold hover:text-slate-900'
+                  ? 'text-slate-900 dark:text-white font-bold'
+                  : 'text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <LogIn className="w-4 h-4 shrink-0 text-[#05828e]" />
+              <LogIn className="w-4 h-4 shrink-0 text-[#05828e] dark:text-teal-400" />
               <span>2. Login Anggota</span>
             </button>
           </div>
 
           {/* Logout Notice Banner */}
           {logoutNotice && mode === 'login' && !loginSuccessBanner && (
-            <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-900 text-xs flex items-start gap-2.5 animate-sapa-panel-enter">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 animate-sapa-panel-enter">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
                 <span className="font-bold block">Sesi Berakhir</span>
                 <span>{logoutNotice}</span>
@@ -423,7 +469,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           {mode === 'register' ? (
             <form key="register-form" onSubmit={handleRegisterSubmit} className="space-y-4 animate-sapa-panel-enter">
               <div className="mb-5">
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight [text-wrap:balance]">
+                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight [text-wrap:balance]">
                   Registrasi Akun Anggota
                 </h2>
               </div>
@@ -431,9 +477,9 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               {registerError && (
                 <div
                   role="alert"
-                  className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5"
+                  className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5"
                 >
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{registerError}</span>
                 </div>
               )}
@@ -442,19 +488,19 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <div>
                   <label
                     htmlFor="reg-nama-lengkap"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                   >
-                    Nama Lengkap <span className="text-rose-600">*</span>
+                    Nama Lengkap <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="reg-nama-lengkap"
                       type="text"
                       value={regNamaLengkap}
                       onChange={(e) => setRegNamaLengkap(e.target.value)}
                       placeholder="Budi Santoso"
-                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                     />
                   </div>
                 </div>
@@ -462,7 +508,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <div>
                   <label
                     htmlFor="reg-nama-panggilan"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                   >
                     Nama Panggilan
                   </label>
@@ -472,7 +518,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     value={regNamaPanggilan}
                     onChange={(e) => setRegNamaPanggilan(e.target.value)}
                     placeholder="Budi (opsional)"
-                    className="w-full h-11 px-3.5 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 px-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                   />
                 </div>
               </div>
@@ -481,19 +527,19 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="reg-nama-akun"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                   >
-                    Nama Akun / Email Login <span className="text-rose-600">*</span>
+                    Nama Akun / Email Login <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="relative">
-                    <AtSign className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <AtSign className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="reg-nama-akun"
                       type="text"
                       value={regNamaAkun}
                       onChange={(e) => setRegNamaAkun(e.target.value)}
                       placeholder="budi@lamrimnesia.org"
-                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                     />
                   </div>
                 </div>
@@ -501,17 +547,17 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <div>
                   <label
                     htmlFor="reg-divisi"
-                    className="block text-xs font-semibold text-slate-700 mb-1.5"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                   >
-                    Divisi <span className="text-rose-600">*</span>
+                    Divisi <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="relative">
-                    <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <select
                       id="reg-divisi"
                       value={regDivisi}
                       onChange={(e) => setRegDivisi(e.target.value)}
-                      className="w-full h-11 pl-9 pr-3 text-sm font-semibold bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 cursor-pointer transition-all duration-150"
+                      className="w-full h-11 pl-9 pr-3 text-sm font-semibold bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 cursor-pointer transition-all duration-150"
                     >
                       {DIVISI_OPTIONS.map((div) => (
                         <option key={div} value={div}>
@@ -526,24 +572,24 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               <div>
                 <label
                   htmlFor="reg-password"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                 >
-                  Password <span className="text-rose-600">*</span>
+                  Password <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <KeyRound className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="reg-password"
                     type={showRegPassword ? 'text' : 'password'}
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Minimal 4 karakter"
-                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     aria-label={showRegPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                   >
                     {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -555,41 +601,41 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <div className="flex items-center justify-between mb-1.5">
                   <label
                     htmlFor="reg-confirm-password"
-                    className="block text-xs font-semibold text-slate-700"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
                   >
-                    Konfirmasi Password <span className="text-rose-600">*</span>
+                    Konfirmasi Password <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   {passwordsMatch && (
-                    <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Cocok</span>
                     </span>
                   )}
                   {passwordsMismatch && (
-                    <span className="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
+                    <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
                       <AlertCircle className="w-3.5 h-3.5" />
                       <span>Belum cocok</span>
                     </span>
                   )}
                 </div>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <KeyRound className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="reg-confirm-password"
                     type={showRegConfirmPassword ? 'text' : 'password'}
                     value={regConfirmPassword}
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     placeholder="Ulangi password Anda"
-                    className={`w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 border rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-3 transition-all duration-150 ${
+                    className={`w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-3 transition-all duration-150 ${
                       passwordsMismatch
-                        ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/12'
-                        : 'border-slate-200 hover:border-slate-300 focus:border-[#05828e] focus:ring-[#05828e]/12'
+                        ? 'border-rose-300 dark:border-rose-700 focus:border-rose-500 focus:ring-rose-500/12'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-[#05828e] focus:ring-[#05828e]/12'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegConfirmPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     aria-label={
                       showRegConfirmPassword
                         ? 'Sembunyikan konfirmasi password'
@@ -620,17 +666,17 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 </button>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 text-center">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
                 <button
                   type="button"
                   onClick={() => {
                     setMode('login');
                     setRegisterError(null);
                   }}
-                  className="text-xs font-semibold text-slate-600 hover:text-[#05828e] transition-colors cursor-pointer"
+                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer"
                 >
                   Sudah memiliki akun anggota?{' '}
-                  <span className="text-[#05828e] underline underline-offset-4">
+                  <span className="text-[#05828e] dark:text-teal-400 underline underline-offset-4">
                     Masuk ke halaman Login
                   </span>
                 </button>
@@ -639,7 +685,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           ) : (
             <form key="login-form" onSubmit={handleLoginSubmit} className="space-y-4 animate-sapa-panel-enter">
               <div className="mb-5">
-                <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight [text-wrap:balance]">
+                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight [text-wrap:balance]">
                   Masuk ke Workspace
                 </h2>
               </div>
@@ -647,9 +693,9 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               {loginSuccessBanner && (
                 <div
                   role="status"
-                  className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2.5"
+                  className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/80 text-emerald-900 dark:text-emerald-200 text-xs flex items-start gap-2.5"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{loginSuccessBanner}</span>
                 </div>
               )}
@@ -657,9 +703,9 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               {loginError && (
                 <div
                   role="alert"
-                  className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5"
+                  className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5"
                 >
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{loginError}</span>
                 </div>
               )}
@@ -667,19 +713,19 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               <div>
                 <label
                   htmlFor="login-nama-akun"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                 >
-                  Nama Akun / Email / Kode Anggota <span className="text-rose-600">*</span>
+                  Nama Akun / Email / Kode Anggota <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="login-nama-akun"
                     type="text"
                     value={loginAccount}
                     onChange={(e) => setLoginAccount(e.target.value)}
                     placeholder="Masukkan nama akun atau email"
-                    className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                   />
                 </div>
               </div>
@@ -687,24 +733,24 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
               <div>
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-semibold text-slate-700 mb-1.5"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                 >
-                  Password <span className="text-rose-600">*</span>
+                  Password <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <KeyRound className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="login-password"
                     type={showLoginPassword ? 'text' : 'password'}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Masukkan password akun"
-                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 hover:border-slate-300 focus:bg-white focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                     aria-label={showLoginPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -712,7 +758,39 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2">
+              {/* Remember Me Checkbox Control */}
+              <div className="flex items-center justify-between pt-0.5">
+                <label
+                  htmlFor="login-remember-me"
+                  className="inline-flex items-center gap-2.5 min-h-[36px] cursor-pointer select-none group"
+                >
+                  <input
+                    id="login-remember-me"
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center transition-all duration-150 shrink-0 peer-focus-visible:ring-2 peer-focus-visible:ring-[#05828e] ${
+                      rememberMe
+                        ? 'bg-[#05828e] border-[#05828e] text-white shadow-2xs'
+                        : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-slate-400 dark:group-hover:border-slate-600'
+                    }`}
+                  >
+                    {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">
+                    Remember Me
+                  </span>
+                </label>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Tetap masuk di perangkat ini
+                </span>
+              </div>
+
+              <div className="pt-1">
                 <button
                   id="btn-submit-login"
                   type="submit"
@@ -726,7 +804,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 </button>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 text-center">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -734,10 +812,10 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     setLoginError(null);
                     setLoginSuccessBanner(null);
                   }}
-                  className="text-xs font-semibold text-slate-600 hover:text-[#05828e] transition-colors cursor-pointer"
+                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer"
                 >
                   Belum memiliki akun anggota?{' '}
-                  <span className="text-[#05828e] underline underline-offset-4">
+                  <span className="text-[#05828e] dark:text-teal-400 underline underline-offset-4">
                     Register Anggota Baru
                   </span>
                 </button>
@@ -747,7 +825,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
         </main>
 
         {/* Quiet Footer */}
-        <footer className="w-full max-w-md mx-auto pt-6 border-t border-slate-100 text-center lg:text-left text-xs text-slate-400">
+        <footer className="w-full max-w-md mx-auto pt-6 border-t border-slate-100 dark:border-slate-800 text-center lg:text-left text-xs text-slate-400 dark:text-slate-500">
           &copy; {new Date().getFullYear()} Yayasan Pelestarian dan Pengembangan Lamrim Nusantara · Sistem Proyek SAPA
         </footer>
       </div>

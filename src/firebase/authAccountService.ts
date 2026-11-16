@@ -5,6 +5,56 @@ import { INITIAL_KARYAWAN, clearLegacyAuthLocalStorage } from '../karyawanData';
 
 const MEMBER_ACCOUNTS_COLLECTION = 'erp_state';
 const MEMBER_ACCOUNTS_DOC_ID = 'member_accounts';
+const REMEMBERED_SESSION_KEY = 'proyek_sapa_remembered_user_v1';
+
+export interface RememberedMemberRef {
+  userId: string;
+  emailLogin: string;
+  rememberedAt: string;
+}
+
+export function saveRememberedMemberRef(user: KaryawanItem): void {
+  try {
+    const payload: RememberedMemberRef = {
+      userId: user.id,
+      emailLogin: user.emailLogin,
+      rememberedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(REMEMBERED_SESSION_KEY, JSON.stringify(payload));
+  } catch {
+    // Ignore storage access restrictions
+  }
+}
+
+export function loadRememberedMemberRef(): RememberedMemberRef | null {
+  try {
+    const raw = localStorage.getItem(REMEMBERED_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<RememberedMemberRef>;
+    if (
+      typeof parsed?.userId === 'string' &&
+      parsed.userId.trim() &&
+      typeof parsed?.emailLogin === 'string'
+    ) {
+      return {
+        userId: parsed.userId,
+        emailLogin: parsed.emailLogin,
+        rememberedAt: typeof parsed.rememberedAt === 'string' ? parsed.rememberedAt : '',
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearRememberedMemberRef(): void {
+  try {
+    localStorage.removeItem(REMEMBERED_SESSION_KEY);
+  } catch {
+    // Ignore storage access restrictions
+  }
+}
 
 export enum OperationType {
   CREATE = 'create',

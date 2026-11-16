@@ -107,17 +107,17 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
   const getSourceBadge = (source: string) => {
     switch (source) {
       case 'Mutasi Bank':
-        return { bg: 'bg-teal-50 text-teal-800 border-teal-200', icon: Landmark, label: 'Mutasi' };
+        return { bg: 'bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800', icon: Landmark, label: 'Mutasi' };
       case 'Transaksi Salur':
-        return { bg: 'bg-emerald-50 text-emerald-800 border-emerald-200', icon: BookOpen, label: 'S-SALUR' };
+        return { bg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800', icon: BookOpen, label: 'S-SALUR' };
       case 'Transaksi Donasi':
-        return { bg: 'bg-amber-50 text-amber-800 border-amber-200', icon: Receipt, label: 'D-DONASI' };
+        return { bg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800', icon: Receipt, label: 'D-DONASI' };
       case 'Pengeluaran':
-        return { bg: 'bg-rose-50 text-rose-800 border-rose-200', icon: TrendingDown, label: 'Pengeluaran' };
+        return { bg: 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800', icon: TrendingDown, label: 'Pengeluaran' };
       case 'Transaksi Ajar':
-        return { bg: 'bg-purple-50 text-purple-800 border-purple-200', icon: Sparkles, label: 'A-AJAR' };
+        return { bg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800', icon: Sparkles, label: 'A-AJAR' };
       default:
-        return { bg: 'bg-slate-50 text-slate-700 border-slate-200', icon: FileText, label: source };
+        return { bg: 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700', icon: FileText, label: source };
     }
   };
 
@@ -444,7 +444,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {/* ============================================================== */}
       {/* 1. TOP HEADER & COMPLIANCE BANNER */}
       {/* ============================================================== */}
-      <div className="bg-gradient-to-r from-teal-50 via-white to-teal-50/60 border border-teal-200 rounded-xl p-4 shadow-2xs">
+      <div className="bg-gradient-to-r from-teal-50 via-white to-teal-50/60 dark:from-teal-950/40 dark:via-slate-900 dark:to-teal-950/20 border border-teal-200 dark:border-teal-800/60 rounded-xl p-4 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
@@ -452,18 +452,18 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-bold text-slate-900 text-sm sm:text-base">
+                <h2 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                   Buku Besar Terintegrasi (General Ledger)
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-300">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 dark:bg-teal-950/70 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800">
                   Double-Entry PSAK 45 / ISAK 35
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   Rekap 5 Modul Otomatis
                 </span>
               </div>
-              <p className="text-[11.5px] text-slate-600 mt-1 leading-relaxed">
+              <p className="text-[11.5px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                 Merekap mutasi akun secara kronologis dari <strong>Mutasi Bank</strong>,{' '}
                 <strong>Transaksi S-SALUR</strong>, <strong>Transaksi D-DONASI</strong>,{' '}
                 <strong>Pengeluaran</strong>, dan <strong>Transaksi A-AJAR</strong>. Menghitung saldo
@@ -478,10 +478,10 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
             <button
               type="button"
               onClick={handleExportLedgerCSV}
-              className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
+              className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
               title="Unduh data Buku Besar dalam format CSV"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Unduh CSV</span>
             </button>
 
@@ -489,7 +489,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
               <button
                 type="button"
                 onClick={onOpenPdfModal}
-                className="bg-teal-50 border border-teal-200 hover:bg-teal-100 text-[#05828e] px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
+                className="bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-[#05828e] dark:text-teal-300 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
                 title="Ekspor Laporan Keuangan & Jurnal ke PDF"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -505,52 +505,52 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {/* ============================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Total Debet */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="font-semibold uppercase tracking-wider text-[10.5px]">
               Total Mutasi Debet
             </span>
-            <span className="p-1.5 rounded-lg bg-teal-50 text-teal-600">
+            <span className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400">
               <TrendingUp className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono mt-1">
+          <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 font-mono mt-1">
             {formatRupiah(aggregateStats.grandDebet)}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Dari {aggregateStats.totalTxCount} baris mutasi terposting
           </div>
         </div>
 
         {/* Card 2: Total Kredit */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="font-semibold uppercase tracking-wider text-[10.5px]">
               Total Mutasi Kredit
             </span>
-            <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+            <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
               <TrendingDown className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono mt-1">
+          <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 font-mono mt-1">
             {formatRupiah(aggregateStats.grandKredit)}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Dari {aggregateStats.totalTxCount} baris mutasi terposting
           </div>
         </div>
 
         {/* Card 3: Keseimbangan Double-Entry */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="font-semibold uppercase tracking-wider text-[10.5px]">
               Status Keseimbangan
             </span>
             <span
               className={`p-1.5 rounded-lg ${
                 aggregateStats.isBalanced
-                  ? 'bg-emerald-50 text-emerald-600'
-                  : 'bg-rose-50 text-rose-600'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400'
               }`}
             >
               <Scale className="w-4 h-4" />
@@ -558,31 +558,31 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
           </div>
           <div
             className={`text-base sm:text-lg font-bold font-mono mt-1 ${
-              aggregateStats.isBalanced ? 'text-emerald-700' : 'text-rose-600'
+              aggregateStats.isBalanced ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             }`}
           >
             {aggregateStats.isBalanced ? '100% SEIMBANG' : `Selisih: ${formatRupiah(aggregateStats.difference)}`}
           </div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Debet = Kredit (Rp 0 Selisih)</span>
           </div>
         </div>
 
         {/* Card 4: Akun Aktif */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span className="font-semibold uppercase tracking-wider text-[10.5px]">
               Akun COA Aktif
             </span>
-            <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+            <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
               <Layers className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-base sm:text-lg font-bold text-slate-900 font-mono mt-1">
+          <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 font-mono mt-1">
             {aggregateStats.activeAccCount} Akun
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Dari total {coaList.length} akun dalam bagan akun
           </div>
         </div>
@@ -591,21 +591,21 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {/* ============================================================== */}
       {/* 3. TOOLBAR: VIEW MODE, SOURCE FILTERS & SEARCH */}
       {/* ============================================================== */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs space-y-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-3">
         {/* Row 1: Mode Switcher & Source Chips */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Mode Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold self-start sm:self-auto">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setViewMode('single')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'single'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5 text-[#05828e]" />
+              <BookOpen className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
               <span>Buku Besar per Akun</span>
             </button>
             <button
@@ -613,11 +613,11 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
               onClick={() => setViewMode('all')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'all'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-purple-600" />
+              <Layers className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               <span>Semua Buku Besar</span>
             </button>
             <button
@@ -625,11 +625,11 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
               onClick={() => setViewMode('trialBalance')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'trialBalance'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Scale className="w-3.5 h-3.5 text-emerald-600" />
+              <Scale className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Neraca Saldo (Trial Balance)</span>
             </button>
           </div>
@@ -651,7 +651,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedSourceFilter === chip.id
                     ? 'bg-[#05828e] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {chip.label}
@@ -661,16 +661,16 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
         </div>
 
         {/* Row 2: Account Selector (Single mode) + Kelompok Filter + Search */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Account Selector (only in single mode) */}
             {viewMode === 'single' && (
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-slate-600">Pilih Akun:</span>
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Pilih Akun:</span>
                 <select
                   value={selectedAccountNo}
                   onChange={(e) => setSelectedAccountNo(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-teal-50 border border-teal-300 text-teal-900 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer max-w-[280px] sm:max-w-[360px]"
+                  className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer max-w-[280px] sm:max-w-[360px] dark:[&>option]:bg-slate-900 dark:[&>optgroup]:bg-slate-900"
                 >
                   {/* Group accounts by Kelompok */}
                   {['AKTIVA', 'KEWAJIBAN', 'EKUITAS', 'PENDAPATAN', 'BIAYA PROGRAM', 'BIAYA OPERASIONAL', 'LAINNYA'].map(
@@ -696,11 +696,11 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
 
             {/* Kelompok Filter */}
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 hidden sm:inline">Kelompok:</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">Kelompok:</span>
               <select
                 value={selectedKelompokFilter}
                 onChange={(e) => setSelectedKelompokFilter(e.target.value)}
-                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer"
+                className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer dark:[&>option]:bg-slate-900"
               >
                 <option value="ALL">Semua Kelompok</option>
                 <option value="AKTIVA">AKTIVA (10000 - 19999)</option>
@@ -713,12 +713,12 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
             </div>
 
             {/* Checkbox: Hanya akun aktif */}
-            <label className="flex items-center gap-1.5 text-xs text-slate-600 font-medium cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={onlyActiveAccounts}
                 onChange={(e) => setOnlyActiveAccounts(e.target.checked)}
-                className="w-3.5 h-3.5 text-[#05828e] rounded border-slate-300 focus:ring-[#05828e] cursor-pointer"
+                className="w-3.5 h-3.5 text-[#05828e] rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800 focus:ring-[#05828e] cursor-pointer"
               />
               <span>Hanya yang ada mutasi</span>
             </label>
@@ -731,14 +731,14 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                 <button
                   type="button"
                   onClick={() => handleToggleAllExpansion(true)}
-                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded cursor-pointer"
+                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded cursor-pointer"
                 >
                   Buka Semua
                 </button>
                 <button
                   type="button"
                   onClick={() => handleToggleAllExpansion(false)}
-                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded cursor-pointer"
+                  className="px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded cursor-pointer"
                 >
                   Tutup Semua
                 </button>
@@ -746,13 +746,13 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
             )}
 
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari akun, no jurnal, ref..."
-                className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#05828e] w-48 sm:w-60"
+                className="pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#05828e] w-48 sm:w-60"
               />
             </div>
           </div>
@@ -769,31 +769,31 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {viewMode === 'single' && currentSelectedAccount && (
         <div className="space-y-4">
           {/* Account Detail Card Header */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200 text-[#05828e] flex items-center justify-center font-bold text-base font-mono">
+                <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-[#05828e] dark:text-teal-400 flex items-center justify-center font-bold text-base font-mono">
                   {currentSelectedAccount.noAkun}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
                       {currentSelectedAccount.namaAkun}
                     </h3>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                       {currentSelectedAccount.kelompok}
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                         currentSelectedAccount.pos === 'D'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                          : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                       }`}
                     >
                       Pos Normal: {currentSelectedAccount.pos === 'D' ? 'Debet' : 'Kredit'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Tercatat <strong>{currentSelectedAccount.transactions.length}</strong> entri mutasi
                     jurnal pada akun ini.
                   </p>
@@ -802,19 +802,19 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
 
               {/* Account mini quick cards */}
               <div className="flex items-center gap-3 font-mono text-right">
-                <div className="p-2 rounded-lg bg-slate-50 border border-slate-100 text-left">
-                  <span className="text-[10px] text-slate-400 block font-sans font-semibold uppercase">
+                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-left">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-sans font-semibold uppercase">
                     Saldo Awal
                   </span>
-                  <span className="text-xs font-bold text-slate-700 font-mono">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">
                     {formatRupiah(currentSelectedAccount.saldoAwal)}
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-teal-50/70 border border-teal-200 text-left">
-                  <span className="text-[10px] text-teal-700 block font-sans font-semibold uppercase">
+                <div className="p-2 rounded-lg bg-teal-50/70 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800 text-left">
+                  <span className="text-[10px] text-teal-700 dark:text-teal-300 block font-sans font-semibold uppercase">
                     Saldo Akhir
                   </span>
-                  <span className="text-sm font-bold text-[#05828e] font-mono">
+                  <span className="text-sm font-bold text-[#05828e] dark:text-teal-400 font-mono">
                     {formatRupiah(currentSelectedAccount.saldoAkhir)}
                   </span>
                 </div>
@@ -825,7 +825,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
             <div className="overflow-x-auto mt-3">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-700 font-bold border-y border-slate-200 text-[11px] uppercase tracking-wider">
+                  <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-y border-slate-200 dark:border-slate-700 text-[11px] uppercase tracking-wider">
                     <th className="py-2.5 px-3 whitespace-nowrap">Tanggal</th>
                     <th className="py-2.5 px-3 whitespace-nowrap">No. Jurnal</th>
                     <th className="py-2.5 px-3 whitespace-nowrap">Sumber</th>
@@ -837,23 +837,23 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                     <th className="py-2.5 px-2 text-center whitespace-nowrap">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                   {/* Beginning Balance Row */}
-                  <tr className="bg-slate-50/60 font-semibold text-slate-600">
-                    <td className="py-2 px-3 text-slate-400">-</td>
-                    <td className="py-2 px-3 font-mono text-[11px] text-slate-400">SALDO-AWAL</td>
+                  <tr className="bg-slate-50/60 dark:bg-slate-800/50 font-semibold text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-3 text-slate-400 dark:text-slate-500">-</td>
+                    <td className="py-2 px-3 font-mono text-[11px] text-slate-400 dark:text-slate-500">SALDO-AWAL</td>
                     <td className="py-2 px-3">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-bold">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold">
                         Bagan Akun
                       </span>
                     </td>
-                    <td className="py-2 px-3 text-slate-400">-</td>
-                    <td className="py-2 px-3 font-bold text-slate-700">
+                    <td className="py-2 px-3 text-slate-400 dark:text-slate-500">-</td>
+                    <td className="py-2 px-3 font-bold text-slate-700 dark:text-slate-200">
                       Saldo Awal Akun {currentSelectedAccount.noAkun}
                     </td>
-                    <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
-                    <td className="py-2 px-3 text-right font-mono text-slate-400">-</td>
-                    <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 bg-slate-100/60">
+                    <td className="py-2 px-3 text-right font-mono text-slate-400 dark:text-slate-500">-</td>
+                    <td className="py-2 px-3 text-right font-mono text-slate-400 dark:text-slate-500">-</td>
+                    <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100/60 dark:bg-slate-800">
                       {formatRupiah(currentSelectedAccount.saldoAwal)}
                     </td>
                     <td className="py-2 px-2 text-center">-</td>
@@ -862,7 +862,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                   {/* Transactions Rows */}
                   {currentSelectedAccount.transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400">
+                      <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
                         Tidak ada transaksi mutasi untuk akun ini pada periode yang dipilih.
                       </td>
                     </tr>
@@ -873,14 +873,14 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                       return (
                         <tr
                           key={`${tx.journalId}-${idx}`}
-                          className={`hover:bg-slate-50 transition-colors ${
-                            tx.isReversalEntry ? 'bg-amber-50/30' : tx.isReversed ? 'opacity-70 bg-slate-50/40 line-through' : ''
+                          className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                            tx.isReversalEntry ? 'bg-amber-50/30 dark:bg-amber-950/20' : tx.isReversed ? 'opacity-70 bg-slate-50/40 dark:bg-slate-800/30 line-through' : ''
                           }`}
                         >
-                          <td className="py-2.5 px-3 whitespace-nowrap text-slate-600">
+                          <td className="py-2.5 px-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
                             {tx.tanggalJurnal}
                           </td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-[11px] text-[#05828e] whitespace-nowrap">
+                          <td className="py-2.5 px-3 font-mono font-bold text-[11px] text-[#05828e] dark:text-teal-400 whitespace-nowrap">
                             {tx.nomorJurnal}
                           </td>
                           <td className="py-2.5 px-3 whitespace-nowrap">
@@ -891,29 +891,29 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                               <span>{badge.label}</span>
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                             {tx.nomorReferensi}
                           </td>
                           <td className="py-2.5 px-3">
-                            <div className="font-medium text-slate-900">{tx.keterangan}</div>
+                            <div className="font-medium text-slate-900 dark:text-slate-100">{tx.keterangan}</div>
                             {tx.programKegiatan && tx.programKegiatan !== '-' && (
-                              <div className="text-[10.5px] text-slate-400">{tx.programKegiatan}</div>
+                              <div className="text-[10.5px] text-slate-400 dark:text-slate-500">{tx.programKegiatan}</div>
                             )}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800 whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
                             {formatTableCellAmount(tx.debet)}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800 whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
                             {formatTableCellAmount(tx.kredit)}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 bg-teal-50/30 whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-teal-50/30 dark:bg-teal-950/30 whitespace-nowrap">
                             {formatRupiah(tx.runningBalance)}
                           </td>
                           <td className="py-2.5 px-2 text-center whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => onSelectJournalDetail && onSelectJournalDetail(tx.originalEntry)}
-                              className="px-2 py-1 text-[10.5px] font-semibold text-[#05828e] hover:text-[#046e78] hover:bg-teal-50 rounded cursor-pointer transition-colors"
+                              className="px-2 py-1 text-[10.5px] font-semibold text-[#05828e] dark:text-teal-400 hover:text-[#046e78] dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50 rounded cursor-pointer transition-colors"
                               title="Lihat detail voucher jurnal double-entry"
                             >
                               Detail
@@ -925,17 +925,17 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                   )}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
+                  <tr className="bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
                     <td colSpan={5} className="py-2.5 px-3 text-right uppercase tracking-wider text-[11px]">
                       TOTAL MUTASI PERIODE INI:
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-teal-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-teal-800 dark:text-teal-400">
                       {formatRupiah(currentSelectedAccount.totalDebet)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-blue-800">
+                    <td className="py-2.5 px-3 text-right font-mono text-blue-800 dark:text-blue-400">
                       {formatRupiah(currentSelectedAccount.totalKredit)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-base font-extrabold text-[#05828e] bg-teal-100/50">
+                    <td className="py-2.5 px-3 text-right font-mono text-base font-extrabold text-[#05828e] dark:text-teal-300 bg-teal-100/50 dark:bg-teal-950/60">
                       {formatRupiah(currentSelectedAccount.saldoAkhir)}
                     </td>
                     <td></td>
@@ -953,10 +953,10 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {viewMode === 'all' && (
         <div className="space-y-3">
           {filteredAccounts.length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-400">
-              <BookOpen className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-600">Tidak ada akun ditemukan</p>
-              <p className="text-xs text-slate-400 mt-1">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center text-slate-400 dark:text-slate-500">
+              <BookOpen className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada akun ditemukan</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                 Coba ubah kata kunci pencarian atau matikan opsi "Hanya yang ada mutasi".
               </p>
             </div>
@@ -966,34 +966,34 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
               return (
                 <div
                   key={acc.noAkun}
-                  className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden transition-all"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs overflow-hidden transition-all"
                 >
                   {/* Account Accordion Header */}
                   <div
                     onClick={() => toggleAccountExpansion(acc.noAkun)}
-                    className="p-3.5 bg-slate-50/80 hover:bg-slate-100/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none transition-colors"
+                    className="p-3.5 bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100/80 dark:hover:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 cursor-pointer select-none transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="p-1 rounded bg-white border border-slate-200 text-slate-500">
+                      <span className="p-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
                         {isExpanded ? (
                           <ChevronDown className="w-4 h-4" />
                         ) : (
                           <ChevronRight className="w-4 h-4" />
                         )}
                       </span>
-                      <span className="font-mono font-bold text-sm text-[#05828e] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                      <span className="font-mono font-bold text-sm text-[#05828e] dark:text-teal-400 bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded border border-teal-200 dark:border-teal-800">
                         {acc.noAkun}
                       </span>
                       <div>
-                        <span className="font-bold text-slate-800 text-sm">{acc.namaAkun}</span>
-                        <span className="ml-2 px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-200 text-slate-700 uppercase">
+                        <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">{acc.namaAkun}</span>
+                        <span className="ml-2 px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 uppercase">
                           {acc.kelompok}
                         </span>
                         <span
                           className={`ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-bold uppercase ${
                             acc.pos === 'D'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
+                              : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                           }`}
                         >
                           {acc.pos === 'D' ? 'Debet' : 'Kredit'}
@@ -1002,13 +1002,13 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                     </div>
 
                     <div className="flex items-center gap-4 text-xs font-mono ml-auto">
-                      <div className="hidden sm:block text-slate-500">
+                      <div className="hidden sm:block text-slate-500 dark:text-slate-400">
                         <span className="font-sans font-semibold text-[10.5px] uppercase mr-1">
                           Saldo Awal:
                         </span>
                         <span>{formatRupiah(acc.saldoAwal)}</span>
                       </div>
-                      <div className="text-slate-600">
+                      <div className="text-slate-600 dark:text-slate-300">
                         <span className="font-sans font-semibold text-[10.5px] uppercase mr-1">
                           Mutasi:
                         </span>
@@ -1017,13 +1017,13 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                           {formatTableCellAmount(acc.totalKredit)}
                         </span>
                       </div>
-                      <div className="font-bold text-[#05828e] bg-white px-2.5 py-1 rounded-md border border-teal-200">
+                      <div className="font-bold text-[#05828e] dark:text-teal-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-md border border-teal-200 dark:border-teal-800">
                         <span className="font-sans font-semibold text-[10.5px] uppercase mr-1">
                           Saldo Akhir:
                         </span>
                         <span>{formatRupiah(acc.saldoAkhir)}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-sans">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 font-sans">
                         ({acc.transactions.length} tx)
                       </span>
                     </div>
@@ -1034,7 +1034,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                     <div className="overflow-x-auto p-3">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
-                          <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-[11px]">
+                          <tr className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700 text-[11px]">
                             <th className="py-2 px-2.5">Tanggal</th>
                             <th className="py-2 px-2.5">No. Jurnal</th>
                             <th className="py-2 px-2.5">Sumber</th>
@@ -1046,9 +1046,9 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                             <th className="py-2 px-1 text-center">Aksi</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                           {/* Saldo awal row */}
-                          <tr className="bg-slate-50/50 text-slate-500 italic">
+                          <tr className="bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 italic">
                             <td className="py-1.5 px-2.5">-</td>
                             <td className="py-1.5 px-2.5 font-mono text-[10.5px]">SALDO-AWAL</td>
                             <td className="py-1.5 px-2.5">-</td>
@@ -1056,7 +1056,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                             <td className="py-1.5 px-2.5 font-semibold">Saldo Awal Akun</td>
                             <td className="py-1.5 px-2.5 text-right">-</td>
                             <td className="py-1.5 px-2.5 text-right">-</td>
-                            <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-800">
+                            <td className="py-1.5 px-2.5 text-right font-mono font-bold text-slate-800 dark:text-slate-200">
                               {formatRupiah(acc.saldoAwal)}
                             </td>
                             <td></td>
@@ -1064,7 +1064,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
 
                           {acc.transactions.length === 0 ? (
                             <tr>
-                              <td colSpan={9} className="py-3 text-center text-slate-400 text-xs">
+                              <td colSpan={9} className="py-3 text-center text-slate-400 dark:text-slate-500 text-xs">
                                 Tidak ada mutasi transaksi pada periode ini.
                               </td>
                             </tr>
@@ -1072,9 +1072,9 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                             acc.transactions.map((tx, idx) => {
                               const badge = getSourceBadge(tx.sumberTransaksi);
                               return (
-                                <tr key={`${tx.journalId}-${idx}`} className="hover:bg-slate-50">
+                                <tr key={`${tx.journalId}-${idx}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                                   <td className="py-2 px-2.5 whitespace-nowrap">{tx.tanggalJurnal}</td>
-                                  <td className="py-2 px-2.5 font-mono font-semibold text-[#05828e] whitespace-nowrap text-[11px]">
+                                  <td className="py-2 px-2.5 font-mono font-semibold text-[#05828e] dark:text-teal-400 whitespace-nowrap text-[11px]">
                                     {tx.nomorJurnal}
                                   </td>
                                   <td className="py-2 px-2.5 whitespace-nowrap">
@@ -1084,11 +1084,11 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                                       {badge.label}
                                     </span>
                                   </td>
-                                  <td className="py-2 px-2.5 font-mono text-slate-500 text-[11px] whitespace-nowrap">
+                                  <td className="py-2 px-2.5 font-mono text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
                                     {tx.nomorReferensi}
                                   </td>
                                   <td className="py-2 px-2.5">
-                                    <div className="font-medium text-slate-800">{tx.keterangan}</div>
+                                    <div className="font-medium text-slate-800 dark:text-slate-200">{tx.keterangan}</div>
                                   </td>
                                   <td className="py-2 px-2.5 text-right font-mono">
                                     {formatTableCellAmount(tx.debet)}
@@ -1096,7 +1096,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                                   <td className="py-2 px-2.5 text-right font-mono">
                                     {formatTableCellAmount(tx.kredit)}
                                   </td>
-                                  <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-900 bg-teal-50/20">
+                                  <td className="py-2 px-2.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-teal-50/20 dark:bg-teal-950/30">
                                     {formatRupiah(tx.runningBalance)}
                                   </td>
                                   <td className="py-2 px-1 text-center">
@@ -1105,7 +1105,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                                       onClick={() =>
                                         onSelectJournalDetail && onSelectJournalDetail(tx.originalEntry)
                                       }
-                                      className="text-[#05828e] hover:underline text-[10.5px] font-semibold cursor-pointer"
+                                      className="text-[#05828e] dark:text-teal-400 hover:underline text-[10.5px] font-semibold cursor-pointer"
                                     >
                                       Detail
                                     </button>
@@ -1129,18 +1129,18 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
       {/* MODE 3: NERACA SALDO (TRIAL BALANCE)                           */}
       {/* -------------------------------------------------------------- */}
       {viewMode === 'trialBalance' && (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
-          <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs overflow-hidden">
+          <div className="p-4 bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                 Neraca Saldo (Trial Balance) Konsolidasi
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Memverifikasi seluruh saldo akun COA untuk memastikan Total Debet sama dengan Total Kredit.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>100% SEIMBANG</span>
               </span>
@@ -1150,7 +1150,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+                <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 text-[11px] uppercase tracking-wider">
                   <th className="py-3 px-3">Kode Akun</th>
                   <th className="py-3 px-3">Nama Akun COA</th>
                   <th className="py-3 px-3">Kelompok</th>
@@ -1162,7 +1162,7 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                   <th className="py-3 px-2 text-center">Mutasi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
                 {filteredAccounts.map((acc) => (
                   <tr
                     key={acc.noAkun}
@@ -1170,55 +1170,55 @@ export const BukuBesarGeneralLedgerView: React.FC<BukuBesarGeneralLedgerProps> =
                       setSelectedAccountNo(acc.noAkun);
                       setViewMode('single');
                     }}
-                    className="hover:bg-teal-50/40 transition-colors cursor-pointer group"
+                    className="hover:bg-teal-50/40 dark:hover:bg-teal-950/30 transition-colors cursor-pointer group"
                     title="Klik untuk membuka Buku Besar akun ini"
                   >
-                    <td className="py-2.5 px-3 font-mono font-bold text-[#05828e] group-hover:underline">
+                    <td className="py-2.5 px-3 font-mono font-bold text-[#05828e] dark:text-teal-400 group-hover:underline">
                       {acc.noAkun}
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-slate-900">{acc.namaAkun}</td>
-                    <td className="py-2.5 px-3 text-slate-500 text-[11px]">{acc.kelompok}</td>
+                    <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">{acc.namaAkun}</td>
+                    <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">{acc.kelompok}</td>
                     <td className="py-2.5 px-2 text-center">
                       <span
                         className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                           acc.pos === 'D'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                         }`}
                       >
                         {acc.pos}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-600">
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-400">
                       {formatRupiah(acc.saldoAwal)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-teal-700 font-medium">
+                    <td className="py-2.5 px-3 text-right font-mono text-teal-700 dark:text-teal-400 font-medium">
                       {formatTableCellAmount(acc.totalDebet)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono text-blue-700 font-medium">
+                    <td className="py-2.5 px-3 text-right font-mono text-blue-700 dark:text-blue-400 font-medium">
                       {formatTableCellAmount(acc.totalKredit)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 bg-slate-50/50">
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/50">
                       {formatRupiah(acc.saldoAkhir)}
                     </td>
-                    <td className="py-2.5 px-2 text-center text-[11px] text-slate-400 font-mono">
+                    <td className="py-2.5 px-2 text-center text-[11px] text-slate-400 dark:text-slate-500 font-mono">
                       {acc.transactions.length}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-100 font-bold text-slate-900 border-t-2 border-slate-300">
+                <tr className="bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-700">
                   <td colSpan={5} className="py-3 px-3 text-right uppercase tracking-wider text-[11px]">
                     TOTAL KONSOLIDASI (TRIAL BALANCE):
                   </td>
-                  <td className="py-3 px-3 text-right font-mono text-teal-800 text-sm">
+                  <td className="py-3 px-3 text-right font-mono text-teal-800 dark:text-teal-400 text-sm">
                     {formatRupiah(aggregateStats.grandDebet)}
                   </td>
-                  <td className="py-3 px-3 text-right font-mono text-blue-800 text-sm">
+                  <td className="py-3 px-3 text-right font-mono text-blue-800 dark:text-blue-400 text-sm">
                     {formatRupiah(aggregateStats.grandKredit)}
                   </td>
-                  <td className="py-3 px-3 text-right font-mono text-emerald-800 text-sm">
+                  <td className="py-3 px-3 text-right font-mono text-emerald-800 dark:text-emerald-400 text-sm">
                     {formatRupiah(aggregateStats.grandDebet - aggregateStats.grandKredit)}
                   </td>
                   <td></td>

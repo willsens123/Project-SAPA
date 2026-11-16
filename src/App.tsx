@@ -5,9 +5,15 @@ import { testFirestoreConnection } from './firebase/config';
 import {
   subscribeToMemberAccounts,
   saveMemberAccountsToFirestore,
+  saveRememberedMemberRef,
+  loadRememberedMemberRef,
+  clearRememberedMemberRef,
 } from './firebase/authAccountService';
 import { AuthPortalView } from './components/AuthPortalView';
+import { useAppTheme } from './utils/themeManager';
 import { TableToolbar } from './components/TableToolbar';
+import { isProjectPersiapanInRange } from './utils/projectPersiapanFilter';
+import { ProjectTableSummaryCards } from './components/ProjectTableSummaryCards';
 import { ProjectTable } from './components/ProjectTable';
 import { FormProyekSapa } from './components/FormProyekSapa';
 import { ProjectDetailModal } from './components/ProjectDetailModal';
@@ -500,6 +506,8 @@ const VIA_TRANSAKSI_DONASI_STORAGE_KEY = 'master_via_transaksi_donasi_v1';
 const JENIS_VIA_DONASI_STORAGE_KEY = 'master_jenis_via_donasi_v1';
 
 export default function App() {
+  const { theme, toggleTheme } = useAppTheme();
+
   const [projects, setProjects] = useState<ProjectItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -2443,13 +2451,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDivisi, setSelectedDivisi] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [persiapanFilterStart, setPersiapanFilterStart] = useState('');
+  const [persiapanFilterEnd, setPersiapanFilterEnd] = useState('');
 
   // View state: 'table' | 'form' | 'jenisProyek' | 'report' | 'transaksiSalur' | 'formTransaksiSalur'
   const [currentView, setCurrentView] = useState<AppView>('home');
 
-  // Sesi Login Anggota (HANYA di memori React — tidak pernah disimpan di localStorage)
-  // Setiap refresh / logout mewajibkan pengguna login kembali terlebih dahulu.
+  // Sesi Login Anggota di memori React; opsional Remember Me hanya menyimpan referensi ID akun (bukan password)
   const [authenticatedUser, setAuthenticatedUser] = useState<KaryawanItem | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState<boolean>(() =>
+    Boolean(loadRememberedMemberRef())
+  );
+  const skipAutoRestoreRef = React.useRef<boolean>(false);
   const [authInitialMode, setAuthInitialMode] = useState<'register' | 'login'>('register');
   const [logoutNotice, setLogoutNotice] = useState<string | null>(null);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
@@ -2462,27 +2475,75 @@ export default function App() {
     clearLegacyAuthLocalStorage();
     testFirestoreConnection();
 
+    const restoreRememberedFromList = (accounts: KaryawanItem[]) => {
+      const remembered = loadRememberedMemberRef();
+      if (!remembered || skipAutoRestoreRef.current) {
+        setIsRestoringSession(false);
+        return;
+      }
+
+      const matched = accounts.find(
+        (a) =>
+          a.id === remembered.userId ||
+          (a.emailLogin || '').trim().toLowerCase() ===
+            remembered.emailLogin.trim().toLowerCase()
+      );
+
+      if (matched && matched.aktif !== false) {
+        setAuthenticatedUser((prev) => prev || matched);
+        setCurrentDivisi(matched.divisi || 'MAD');
+        setLogoutNotice(null);
+      } else {
+        clearRememberedMemberRef();
+      }
+      setIsRestoringSession(false);
+    };
+
     const unsubscribe = subscribeToMemberAccounts(
       (accounts) => {
         setKaryawanList(accounts);
         setIsLoadingAccounts(false);
+
+        const remembered = loadRememberedMemberRef();
+
         setAuthenticatedUser((prev) => {
-          if (!prev) return null;
+          if (!prev) {
+            if (remembered && !skipAutoRestoreRef.current) {
+              const matched = accounts.find(
+                (a) =>
+                  a.id === remembered.userId ||
+                  (a.emailLogin || '').trim().toLowerCase() ===
+                    remembered.emailLogin.trim().toLowerCase()
+              );
+              if (matched && matched.aktif !== false) {
+                setCurrentDivisi(matched.divisi || 'MAD');
+                return matched;
+              }
+              clearRememberedMemberRef();
+            }
+            return null;
+          }
+
           const fresh = accounts.find((a) => a.id === prev.id);
           if (!fresh || fresh.aktif === false) {
+            clearRememberedMemberRef();
             setAuthInitialMode('login');
             setLogoutNotice('Akun Anda telah diperbarui atau dinonaktifkan. Silakan login kembali.');
             return null;
           }
           return fresh;
         });
+
+        setIsRestoringSession(false);
       },
       () => {
         setIsLoadingAccounts(false);
+        setIsRestoringSession(false);
       },
       (errMessage) => {
         console.error('Gagal memuat daftar akun anggota dari Firestore:', errMessage);
         setIsLoadingAccounts(false);
+        restoreRememberedFromList(INITIAL_KARYAWAN);
       }
     );
 
@@ -2505,6 +2566,9 @@ export default function App() {
 
   const handleLogout = () => {
     clearLegacyAuthLocalStorage();
+    clearRememberedMemberRef();
+    skipAutoRestoreRef.current = true;
+    setIsRestoringSession(false);
     setAuthenticatedUser(null);
     setJustLoggedIn(false);
     setAuthInitialMode('login');
@@ -4101,6 +4165,7 @@ export default function App() {
         item.divisi.toLowerCase().includes(q) ||
         item.lokasi.toLowerCase().includes(q) ||
         item.tanggal.toLowerCase().includes(q) ||
+        (item.dateRangePersiapan || '').toLowerCase().includes(q) ||
         item.status.toLowerCase().includes(q);
       if (!match) return false;
     }
@@ -4112,6 +4177,14 @@ export default function App() {
 
     // Status filter
     if (selectedStatus !== 'ALL' && item.status !== selectedStatus) {
+      return false;
+    }
+
+    // Date Range Persiapan filter
+    if (
+      (persiapanFilterStart || persiapanFilterEnd) &&
+      !isProjectPersiapanInRange(item, persiapanFilterStart, persiapanFilterEnd)
+    ) {
       return false;
     }
 
@@ -4234,6 +4307,17 @@ export default function App() {
     return 'Proyek SAPA';
   };
 
+  if (!authenticatedUser && isRestoringSession) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#05828e] animate-spin motion-reduce:animate-none" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Memulihkan sesi anggota...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!authenticatedUser) {
     return (
       <AuthPortalView
@@ -4241,13 +4325,21 @@ export default function App() {
         isLoadingAccounts={isLoadingAccounts}
         initialMode={authInitialMode}
         logoutNotice={logoutNotice}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onRegisterSuccess={(createdAccount, updatedList) => {
           setKaryawanList(updatedList);
           setLogoutNotice(null);
           showToast(`Akun "${createdAccount.emailLogin}" berhasil didaftarkan ke Firestore. Silakan login.`);
         }}
-        onLoginSuccess={(user) => {
+        onLoginSuccess={(user, rememberMe) => {
           clearLegacyAuthLocalStorage();
+          skipAutoRestoreRef.current = false;
+          if (rememberMe) {
+            saveRememberedMemberRef(user);
+          } else {
+            clearRememberedMemberRef();
+          }
           setJustLoggedIn(true);
           setAuthenticatedUser(user);
           setCurrentDivisi(user.divisi || 'MAD');
@@ -4260,10 +4352,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-row font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-row font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 dark:bg-slate-800 dark:border dark:border-slate-700 text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <span>{toastMessage}</span>
         </div>
       )}
@@ -4296,7 +4388,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col min-w-0 bg-[#f8fafc] ${
+        className={`flex-1 flex flex-col min-w-0 bg-[#f8fafc] dark:bg-slate-950 ${
           justLoggedIn ? 'animate-sapa-dashboard-enter' : ''
         }`}
       >
@@ -4311,6 +4403,8 @@ export default function App() {
             onManualSync={forceManualSync}
             currentUser={authenticatedUser}
             onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={toggleTheme}
             onBackToTable={
               currentView === 'formTransaksiAjar'
                 ? () => {
@@ -4533,8 +4627,32 @@ export default function App() {
           {/* View 1: Main Proyek SAPA Table */}
           {currentView === 'table' && (
             <>
+              {/* Summary KPI Cards Section Above Project Table */}
+              <div className="mt-3 sm:mt-4">
+                <ProjectTableSummaryCards
+                  projects={projects}
+                  salurOrders={salurOrders}
+                  salurProducts={salurItems}
+                  donasiOrders={donasiOrders}
+                  activeStatusFilter={selectedStatus}
+                  onSelectStatusFilter={setSelectedStatus}
+                  onFilterCurrentMonthPersiapan={(monthStartIso, monthEndIso) => {
+                    if (
+                      persiapanFilterStart === monthStartIso &&
+                      persiapanFilterEnd === monthEndIso
+                    ) {
+                      setPersiapanFilterStart('');
+                      setPersiapanFilterEnd('');
+                    } else {
+                      setPersiapanFilterStart(monthStartIso);
+                      setPersiapanFilterEnd(monthEndIso);
+                    }
+                  }}
+                />
+              </div>
+
               {/* Toolbar with EyeOff, Search, Sliders, + Add */}
-              <div className="mt-2 sm:mt-4">
+              <div className="mt-2 sm:mt-3">
                 <TableToolbar
                   onAddClick={() => {
                     setEditingProject(null);
@@ -4550,6 +4668,16 @@ export default function App() {
                   divisiOptions={divisiNames}
                   selectedStatus={selectedStatus}
                   onSelectStatus={setSelectedStatus}
+                  persiapanStartDate={persiapanFilterStart}
+                  persiapanEndDate={persiapanFilterEnd}
+                  onPersiapanStartDateChange={setPersiapanFilterStart}
+                  onPersiapanEndDateChange={setPersiapanFilterEnd}
+                  onResetPersiapanRange={() => {
+                    setPersiapanFilterStart('');
+                    setPersiapanFilterEnd('');
+                  }}
+                  filteredCount={filteredProjects.length}
+                  totalCount={projects.length}
                 />
               </div>
 

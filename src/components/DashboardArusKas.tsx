@@ -519,14 +519,14 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload as MonthlyCashflowPoint;
       return (
-        <div className="bg-white/95 backdrop-blur-xs border border-slate-200 rounded-xl shadow-xl p-3.5 text-xs z-50 min-w-[220px]">
-          <div className="font-bold text-slate-800 pb-2 mb-2 border-b border-slate-100 flex items-center justify-between">
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3.5 text-xs z-50 min-w-[220px]">
+          <div className="font-bold text-slate-800 dark:text-slate-100 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <span>{dataPoint.monthName} {dataPoint.year}</span>
             <span
               className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                 dataPoint.netCashflow >= 0
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-rose-50 text-rose-700'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300'
               }`}
             >
               {dataPoint.netCashflow >= 0 ? 'Surplus' : 'Defisit'}
@@ -535,39 +535,39 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600">
+              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]" />
                 <span>Pemasukan:</span>
               </span>
-              <span className="font-semibold text-emerald-700">
+              <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                 {formatRupiah(dataPoint.pemasukan)}
               </span>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-600">
+              <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e]" />
                 <span>Pengeluaran:</span>
               </span>
-              <span className="font-semibold text-rose-600">
+              <span className="font-semibold text-rose-600 dark:text-rose-400">
                 {formatRupiah(dataPoint.pengeluaran)}
               </span>
             </div>
 
-            <div className="pt-2 mt-1 border-t border-slate-100 flex items-center justify-between font-bold">
-              <span className="text-slate-700">Arus Kas Bersih:</span>
+            <div className="pt-2 mt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between font-bold">
+              <span className="text-slate-700 dark:text-slate-200">Arus Kas Bersih:</span>
               <span
                 className={
-                  dataPoint.netCashflow >= 0 ? 'text-emerald-700' : 'text-rose-600'
+                  dataPoint.netCashflow >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 }
               >
                 {formatRupiah(dataPoint.netCashflow)}
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
               <span>Saldo Akumulatif:</span>
-              <span className="font-medium text-[#05828e]">
+              <span className="font-medium text-[#05828e] dark:text-teal-400">
                 {formatRupiah(dataPoint.saldoKumulatif)}
               </span>
             </div>
@@ -581,21 +581,21 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
   return (
     <div className="w-full space-y-5 animate-in fade-in duration-200">
       {/* Header Bar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#05828e] to-teal-700 text-white flex items-center justify-center shadow-xs">
             <TrendingUp className="w-5 h-5 stroke-[2.5]" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-slate-800">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 Dashboard Visualisasi Arus Kas (Cash Flow)
               </h2>
-              <span className="text-xs font-semibold text-[#05828e]">
+              <span className="text-xs font-semibold text-[#05828e] dark:text-teal-400">
                 Real-Time Recharts · {hasCustomDateRange ? `Periode ${customRangeLabel}` : 'Semua Periode'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Grafik dinamis perbandingan tren pemasukan (Inflow) dan pengeluaran (Outflow) per bulan berbasis mutasi kas yayasan.
             </p>
           </div>
@@ -604,15 +604,15 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         {/* Controls: Chart Type, Year Filter, Export */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Chart View Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-medium">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
             <button
               type="button"
               onClick={() => setChartType('composed')}
               title="Grafik Gabungan: Bar In/Out + Line Net"
               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
                 chartType === 'composed'
-                  ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-teal-400 shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -624,8 +624,8 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
               title="Grafik Batang Komparasi"
               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
                 chartType === 'bar'
-                  ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-teal-400 shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -637,8 +637,8 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
               title="Grafik Area Tren"
               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
                 chartType === 'area'
-                  ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-teal-400 shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5" />
@@ -647,12 +647,12 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
           </div>
 
           {/* Year Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-transparent text-slate-700 font-semibold outline-none cursor-pointer"
+              className="bg-transparent text-slate-700 dark:text-slate-200 font-semibold outline-none cursor-pointer dark:[&>option]:bg-slate-900"
             >
               <option value="ALL">Semua Tahun</option>
               {availableYears.map((yr) => (
@@ -668,7 +668,7 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
             type="button"
             onClick={handleExportCsv}
             title="Unduh data arus kas bulanan ke CSV"
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:text-[#05828e] text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-600 hover:text-[#05828e] dark:hover:text-teal-400 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Ekspor CSV</span>
@@ -679,52 +679,52 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
       {/* KPI Cards: Executive Financial Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* Card 1: Total Pemasukan */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-emerald-300 transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total Pemasukan Kas
             </span>
-            <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+            <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
               <TrendingUp className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-emerald-600 mt-2 tracking-tight">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2 tracking-tight">
             {formatRupiah(summaryTotals.totalIn)}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
             <span>Rata-rata: {formatShortRupiah(summaryTotals.avgMonthlyIn)} / bln</span>
           </div>
         </div>
 
         {/* Card 2: Total Pengeluaran */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-rose-300 transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-rose-300 dark:hover:border-rose-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Total Pengeluaran Kas
             </span>
-            <span className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
+            <span className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400">
               <TrendingDown className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-rose-600 mt-2 tracking-tight">
+          <div className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400 mt-2 tracking-tight">
             {formatRupiah(summaryTotals.totalOut)}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
             <span>Rata-rata: {formatShortRupiah(summaryTotals.avgMonthlyOut)} / bln</span>
           </div>
         </div>
 
         {/* Card 3: Arus Kas Bersih (Net Cash Flow) */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-teal-300 transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-teal-300 dark:hover:border-teal-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Arus Kas Bersih (Net)
             </span>
             <span
               className={`p-1.5 rounded-lg ${
                 summaryTotals.netTotal >= 0
-                  ? 'bg-teal-50 text-[#05828e]'
-                  : 'bg-amber-50 text-amber-600'
+                  ? 'bg-teal-50 dark:bg-teal-950/50 text-[#05828e] dark:text-teal-400'
+                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
               }`}
             >
               <Scale className="w-4 h-4" />
@@ -732,15 +732,15 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
           </div>
           <div
             className={`text-xl sm:text-2xl font-bold mt-2 tracking-tight ${
-              summaryTotals.netTotal >= 0 ? 'text-[#05828e]' : 'text-rose-600'
+              summaryTotals.netTotal >= 0 ? 'text-[#05828e] dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
             }`}
           >
             {formatRupiah(summaryTotals.netTotal)}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
             <span>
               Status:{' '}
-              <strong className={summaryTotals.netTotal >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+              <strong className={summaryTotals.netTotal >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
                 {summaryTotals.netTotal >= 0 ? 'Surplus Kas' : 'Defisit Kas'}
               </strong>
             </span>
@@ -748,34 +748,34 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         </div>
 
         {/* Card 4: Bulan Puncak */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-purple-300 transition-colors">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs relative overflow-hidden group hover:border-purple-300 dark:hover:border-purple-700 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Bulan Arus Kas Puncak
             </span>
-            <span className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+            <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400">
               <Sparkles className="w-4 h-4" />
             </span>
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-800 mt-2 tracking-tight truncate">
+          <div className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mt-2 tracking-tight truncate">
             {summaryTotals.peakMonth
               ? `${summaryTotals.peakMonth.monthName} '${String(summaryTotals.peakMonth.year).slice(-2)}`
               : '-'}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <div className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
             <span>Inflow: {summaryTotals.peakMonth ? formatShortRupiah(summaryTotals.peakMonth.pemasukan) : '-'}</span>
           </div>
         </div>
       </div>
 
       {/* MAIN CHART CONTAINER */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
+            <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
               <span>Tren Bulanan Arus Kas Yayasan ({selectedYear === 'ALL' ? 'Semua Periode' : `Tahun ${selectedYear}`})</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Sumbu horizontal menampilkan bulan transaksi; sumbu vertikal menampilkan nominal nominal rupiah.
             </p>
           </div>
@@ -783,16 +783,16 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-[#10b981]" />
-              <span className="text-slate-600 font-medium">Pemasukan (Inflow)</span>
+              <span className="text-slate-600 dark:text-slate-300 font-medium">Pemasukan (Inflow)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-[#f43f5e]" />
-              <span className="text-slate-600 font-medium">Pengeluaran (Outflow)</span>
+              <span className="text-slate-600 dark:text-slate-300 font-medium">Pengeluaran (Outflow)</span>
             </div>
             {chartType === 'composed' && (
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 bg-[#05828e]" />
-                <span className="text-slate-600 font-medium">Net Arus Kas</span>
+                <span className="w-3 h-0.5 bg-[#05828e] dark:bg-teal-400" />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">Net Arus Kas</span>
               </div>
             )}
           </div>
@@ -806,23 +806,23 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                 data={monthlyData}
                 margin={{ top: 15, right: 20, left: 20, bottom: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                 <XAxis
                   dataKey="shortLabel"
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                 />
                 <YAxis
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                   tickFormatter={(val) => formatShortRupiah(val)}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1} />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeOpacity={0.45} strokeWidth={1} />
                 <Bar
                   dataKey="pemasukan"
                   name="Pemasukan"
@@ -841,9 +841,9 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                   type="monotone"
                   dataKey="netCashflow"
                   name="Arus Kas Bersih"
-                  stroke="#05828e"
+                  stroke="#14b8a6"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: '#05828e', strokeWidth: 1.5, stroke: '#ffffff' }}
+                  dot={{ r: 4, fill: '#14b8a6', strokeWidth: 1.5, stroke: '#0f172a' }}
                   activeDot={{ r: 6 }}
                 />
               </ComposedChart>
@@ -852,19 +852,19 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                 data={monthlyData}
                 margin={{ top: 15, right: 20, left: 20, bottom: 20 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                 <XAxis
                   dataKey="shortLabel"
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                 />
                 <YAxis
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                   tickFormatter={(val) => formatShortRupiah(val)}
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -874,7 +874,7 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                   iconType="circle"
                   wrapperStyle={{ paddingBottom: 12, fontSize: 12 }}
                 />
-                <ReferenceLine y={0} stroke="#cbd5e1" />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeOpacity={0.45} />
                 <Bar
                   dataKey="pemasukan"
                   name="Pemasukan"
@@ -905,19 +905,19 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                     <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                 <XAxis
                   dataKey="shortLabel"
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                 />
                 <YAxis
                   stroke="#94a3b8"
                   fontSize={11}
                   tickLine={false}
-                  axisLine={{ stroke: '#e2e8f0' }}
+                  axisLine={{ stroke: '#94a3b8', strokeOpacity: 0.35 }}
                   tickFormatter={(val) => formatShortRupiah(val)}
                 />
                 <Tooltip content={<CustomTooltip />} />
@@ -954,13 +954,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
       {/* SECONDARY ROW: Komposisi Sumber Pemasukan vs Pos Pengeluaran */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Komposisi Pemasukan */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-emerald-600" />
+              <PieIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Komposisi Sumber Pemasukan Kas</span>
             </span>
-            <span className="text-xs text-slate-400 font-normal">
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">
               {formatRupiah(summaryTotals.totalIn)}
             </span>
           </h4>
@@ -978,11 +978,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                     paddingAngle={4}
                   >
                     {categoryPemasukan.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                     ))}
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => [formatRupiah(Number(value)), 'Nominal']}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '0.75rem', fontSize: '12px' }}
+                    itemStyle={{ color: '#e2e8f0' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -995,11 +997,11 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                   : '0';
                 return (
                   <div key={c.name} className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-slate-600 truncate max-w-[150px]">
+                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                       <span className="truncate">{c.name}</span>
                     </span>
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">
                       {pct}%
                     </span>
                   </div>
@@ -1010,13 +1012,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         </div>
 
         {/* Right: Komposisi Pengeluaran */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-          <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-rose-600" />
+              <PieIcon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               <span>Komposisi Alokasi Pengeluaran Kas</span>
             </span>
-            <span className="text-xs text-slate-400 font-normal">
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">
               {formatRupiah(summaryTotals.totalOut)}
             </span>
           </h4>
@@ -1034,11 +1036,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                     paddingAngle={4}
                   >
                     {categoryPengeluaran.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
                     ))}
                   </Pie>
                   <Tooltip
                     formatter={(value: any) => [formatRupiah(Number(value)), 'Nominal']}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc', borderRadius: '0.75rem', fontSize: '12px' }}
+                    itemStyle={{ color: '#e2e8f0' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -1051,11 +1055,11 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                   : '0';
                 return (
                   <div key={c.name} className="flex items-center justify-between">
-                    <span className="flex items-center gap-2 text-slate-600 truncate max-w-[150px]">
+                    <span className="flex items-center gap-2 text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                       <span className="truncate">{c.name}</span>
                     </span>
-                    <span className="font-semibold text-slate-800">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">
                       {pct}%
                     </span>
                   </div>
@@ -1067,13 +1071,13 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
       </div>
 
       {/* MONTHLY SUMMARY STATEMENT TABLE */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h4 className="text-sm font-bold text-slate-800">
+            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
               Tabel Rincian Arus Kas Bulanan
             </h4>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Rekapitulasi total penerimaan dan pengeluaran kas per periode dengan indikator surplus/defisit.
             </p>
           </div>
@@ -1082,7 +1086,7 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[750px] text-xs sm:text-[13px]">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px] bg-slate-50/60">
+              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase text-[11px] bg-slate-50/60 dark:bg-slate-800/60">
                 <th className="py-3 px-4">Periode Bulan</th>
                 <th className="py-3 px-4 text-right">Pemasukan (Inflow)</th>
                 <th className="py-3 px-4 text-right">Pengeluaran (Outflow)</th>
@@ -1091,34 +1095,34 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
                 <th className="py-3 px-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               {monthlyData.map((pt) => (
-                <tr key={pt.key} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                <tr key={pt.key} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                     {pt.monthName} {pt.year}
                   </td>
-                  <td className="py-3 px-4 text-right text-emerald-700 font-medium whitespace-nowrap">
+                  <td className="py-3 px-4 text-right text-emerald-700 dark:text-emerald-400 font-medium whitespace-nowrap">
                     {formatRupiah(pt.pemasukan)}
                   </td>
-                  <td className="py-3 px-4 text-right text-rose-600 font-medium whitespace-nowrap">
+                  <td className="py-3 px-4 text-right text-rose-600 dark:text-rose-400 font-medium whitespace-nowrap">
                     {formatRupiah(pt.pengeluaran)}
                   </td>
                   <td
                     className={`py-3 px-4 text-right font-bold whitespace-nowrap ${
-                      pt.netCashflow >= 0 ? 'text-[#05828e]' : 'text-rose-600'
+                      pt.netCashflow >= 0 ? 'text-[#05828e] dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
                     }`}
                   >
                     {formatRupiah(pt.netCashflow)}
                   </td>
-                  <td className="py-3 px-4 text-right text-slate-700 font-mono text-xs whitespace-nowrap">
+                  <td className="py-3 px-4 text-right text-slate-700 dark:text-slate-300 font-mono text-xs whitespace-nowrap">
                     {formatRupiah(pt.saldoKumulatif)}
                   </td>
                   <td className="py-3 px-4 text-center whitespace-nowrap">
                     <span
                       className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                         pt.netCashflow >= 0
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                          : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
                       }`}
                     >
                       {pt.netCashflow >= 0 ? 'Surplus' : 'Defisit'}
@@ -1128,32 +1132,32 @@ export const DashboardArusKas: React.FC<DashboardArusKasProps> = ({
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-slate-200 bg-slate-50 font-bold text-slate-800">
-                <td className="py-3.5 px-4 uppercase text-[11px] text-slate-600">
+              <tr className="border-t-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 font-bold text-slate-800 dark:text-slate-100">
+                <td className="py-3.5 px-4 uppercase text-[11px] text-slate-600 dark:text-slate-300">
                   Total Akumulasi
                 </td>
-                <td className="py-3.5 px-4 text-right text-emerald-700">
+                <td className="py-3.5 px-4 text-right text-emerald-700 dark:text-emerald-400">
                   {formatRupiah(summaryTotals.totalIn)}
                 </td>
-                <td className="py-3.5 px-4 text-right text-rose-600">
+                <td className="py-3.5 px-4 text-right text-rose-600 dark:text-rose-400">
                   {formatRupiah(summaryTotals.totalOut)}
                 </td>
                 <td
                   className={`py-3.5 px-4 text-right ${
-                    summaryTotals.netTotal >= 0 ? 'text-[#05828e]' : 'text-rose-600'
+                    summaryTotals.netTotal >= 0 ? 'text-[#05828e] dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
                   }`}
                 >
                   {formatRupiah(summaryTotals.netTotal)}
                 </td>
-                <td className="py-3.5 px-4 text-right text-[#05828e]">
+                <td className="py-3.5 px-4 text-right text-[#05828e] dark:text-teal-400">
                   {formatRupiah(summaryTotals.endingBalance)}
                 </td>
                 <td className="py-3.5 px-4 text-center">
                   <span
                     className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                       summaryTotals.netTotal >= 0
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-rose-100 text-rose-800'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
                     }`}
                   >
                     {summaryTotals.netTotal >= 0 ? 'Net Surplus' : 'Net Defisit'}

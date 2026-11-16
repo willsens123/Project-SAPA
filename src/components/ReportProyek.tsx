@@ -44,7 +44,7 @@ const SectionCollapse: React.FC<SectionCollapseProps> = ({
       <button
         type="button"
         onClick={onToggle}
-        className="flex items-center gap-2 text-[#05828e] hover:text-[#046c76] text-[17px] sm:text-lg font-bold tracking-tight text-left cursor-pointer transition-colors"
+        className="flex items-center gap-2 text-[#05828e] dark:text-[#2dd4bf] hover:text-[#046c76] dark:hover:text-[#5eead4] text-[17px] sm:text-lg font-bold tracking-tight text-left cursor-pointer transition-colors"
       >
         <span
           className={`inline-block transition-transform duration-200 text-xs sm:text-sm ${
@@ -79,17 +79,17 @@ const CardToolbarHeader: React.FC<CardToolbarHeaderProps> = ({
   onNext,
 }) => {
   return (
-    <div className="flex items-center justify-between gap-2 pb-3 mb-1 border-b border-slate-100">
-      <div className="text-sm sm:text-[14px] font-semibold text-slate-800">
+    <div className="flex items-center justify-between gap-2 pb-3 mb-1 border-b border-slate-100 dark:border-slate-800">
+      <div className="text-sm sm:text-[14px] font-semibold text-slate-800 dark:text-slate-100">
         {title}
       </div>
-      <div className="flex items-center gap-2 text-[#05828e]">
+      <div className="flex items-center gap-2 text-[#05828e] dark:text-[#2dd4bf]">
         <button
           type="button"
           onClick={onFilterClick}
           title="Filter"
           aria-label="Filter"
-          className="p-1 rounded-md hover:bg-slate-100 text-[#05828e] transition-colors cursor-pointer"
+          className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-[#05828e] dark:text-[#2dd4bf] transition-colors cursor-pointer"
         >
           <SlidersHorizontal className="w-4 h-4 rotate-90" />
         </button>
@@ -199,19 +199,19 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
               onClick={onBack}
               title="Kembali ke Tabel Proyek"
               aria-label="Kembali ke Tabel Proyek"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 shadow-sm flex items-center justify-center transition-all cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white shadow-sm flex items-center justify-center transition-all cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
             </button>
 
             <div className="relative max-w-xs sm:max-w-sm w-full">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search here..."
-                className="w-full pl-9 pr-4 py-2 bg-white rounded-full text-xs sm:text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-white/80 shadow-xs transition-all"
+                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 rounded-full text-xs sm:text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-white/80 dark:focus:ring-teal-400/50 shadow-xs transition-all"
               />
             </div>
           </div>
@@ -240,7 +240,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                 onClick={() => setActiveTab('OVERVIEW')}
                 className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'OVERVIEW'
-                    ? 'bg-white text-slate-800 shadow-sm'
+                    ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm'
                     : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -252,7 +252,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                 onClick={() => setActiveTab('TEAMS')}
                 className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'TEAMS'
-                    ? 'bg-white text-slate-800 shadow-sm'
+                    ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm'
                     : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -264,7 +264,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                 onClick={() => setActiveTab('PROJECTS')}
                 className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === 'PROJECTS'
-                    ? 'bg-white text-slate-800 shadow-sm'
+                    ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm'
                     : 'text-white hover:bg-white/10'
                 }`}
               >
@@ -279,32 +279,32 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       {/* Top 3 Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {/* Card 1: Posisi Keuangan */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-slate-800 mb-4">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-4">
               Posisi Keuangan
             </h3>
             <div className="flex flex-col gap-2.5 text-xs sm:text-[13px]">
-              <div className="flex items-center justify-between text-slate-600">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                 <span>Pemasukan</span>
-                <span className="font-medium text-slate-800">Rp10.000.000</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">Rp10.000.000</span>
               </div>
-              <div className="flex items-center justify-between text-slate-600">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                 <span>Pengeluaran (Item)</span>
-                <span className="font-medium text-slate-800">Rp7.000.000</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">Rp7.000.000</span>
               </div>
-              <div className="flex items-center justify-between text-slate-600">
+              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                 <span>Pengeluaran</span>
-                <span className="font-medium text-slate-800">Rp2.000.000</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">Rp2.000.000</span>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 font-bold text-slate-900 text-sm">
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-sm">
                 <span>Saldo Akhir</span>
                 <span>Rp1.000.000</span>
               </div>
             </div>
           </div>
 
-          <p className="text-[10px] text-slate-400 mt-4 leading-normal">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-4 leading-normal">
             *Saldo Akhir disalurkan ke dalam Pos Pemasukan YPPLN.
             <br />
             (20% Penerbitan, 20% Kegiatan, 30% Operasional Dharma, 30% Operasional Non-Dharma)
@@ -312,85 +312,85 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
         </div>
 
         {/* Card 2: Realisasi Lainnya */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-xs">
-          <h3 className="text-sm font-semibold text-slate-800 mb-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-4">
             Realisasi Lainnya
           </h3>
           <div className="flex flex-col gap-2.5 text-xs sm:text-[13px]">
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Customer</span>
               <div>
-                <span className="font-medium text-slate-800">100 orang</span>
-                <span className="text-[#05828e] ml-1.5 font-medium">(+50 orang)</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">100 orang</span>
+                <span className="text-[#05828e] dark:text-[#2dd4bf] ml-1.5 font-medium">(+50 orang)</span>
               </div>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Donatur</span>
               <div>
-                <span className="font-medium text-slate-800">100 orang</span>
-                <span className="text-[#05828e] ml-1.5 font-medium">(+50 orang)</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">100 orang</span>
+                <span className="text-[#05828e] dark:text-[#2dd4bf] ml-1.5 font-medium">(+50 orang)</span>
               </div>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Item</span>
-              <span className="font-medium text-slate-800">100 buah</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">100 buah</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Promo Terpakai</span>
-              <span className="font-medium text-slate-800">20x</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">20x</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Orang dihubungi</span>
-              <span className="font-medium text-slate-800">200 orang</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">200 orang</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>% Rate</span>
-              <span className="font-medium text-slate-800">20%</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">20%</span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Informasi Kegiatan */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-xs">
-          <h3 className="text-sm font-semibold text-slate-800 mb-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-4">
             Informasi Kegiatan
           </h3>
           <div className="flex flex-col gap-2.5 text-xs sm:text-[13px]">
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Divisi</span>
-              <span className="font-medium text-slate-800">{project?.divisi || 'EVE'}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">{project?.divisi || 'EVE'}</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Tanggal</span>
-              <span className="font-medium text-slate-800">
+              <span className="font-medium text-slate-800 dark:text-slate-200">
                 {project?.tanggal || '11 Nov 2021 - 12 Nov 2021'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Date Range Persiapan</span>
-              <span className="font-medium text-slate-800">
+              <span className="font-medium text-slate-800 dark:text-slate-200">
                 {project?.dateRangePersiapan || '5 Nov 2021 - 13 Nov 2021'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Detail Lokasi</span>
-              <span className="font-medium text-slate-800">{project?.lokasi || 'Online'}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">{project?.lokasi || 'Online'}</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Keterangan</span>
-              <span className="font-medium text-slate-800">{project?.keterangan || '-'}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">{project?.keterangan || '-'}</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Link Foto</span>
-              <span className="font-medium text-slate-700">drive.google.com/foto</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">drive.google.com/foto</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Link Laporan</span>
-              <span className="font-medium text-slate-700">drive.google.com/lapor</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">drive.google.com/lapor</span>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
+            <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
               <span>Acc by</span>
-              <span className="font-medium text-slate-800">Agustino - 15 Nov 2021</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">Agustino - 15 Nov 2021</span>
             </div>
           </div>
         </div>
@@ -406,9 +406,9 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       >
         <div className="flex flex-col gap-4">
           {/* Card 1: PM Timeline with Month Selector & Milestones */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
             <CardToolbarHeader
-              title={<span className="font-semibold text-slate-800 text-sm sm:text-base">PM</span>}
+              title={<span className="font-semibold text-slate-800 dark:text-slate-100 text-sm sm:text-base">PM</span>}
               onPrev={handlePrevMonth}
               onNext={handleNextMonth}
             />
@@ -418,7 +418,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="w-5 h-5 rounded-full bg-teal-50 hover:bg-teal-100 text-[#05828e] flex items-center justify-center text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                className="w-5 h-5 rounded-full bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center text-xs font-bold shrink-0 transition-colors cursor-pointer"
                 title="Bulan sebelumnya"
               >
                 ‹
@@ -434,7 +434,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-[#008d91] text-white shadow-2xs scale-105'
-                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                       }`}
                     >
                       {m}
@@ -445,7 +445,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="w-5 h-5 rounded-full bg-teal-50 hover:bg-teal-100 text-[#05828e] flex items-center justify-center text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                className="w-5 h-5 rounded-full bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center text-xs font-bold shrink-0 transition-colors cursor-pointer"
                 title="Bulan berikutnya"
               >
                 ›
@@ -460,63 +460,63 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
 
                 {/* Node 1: WhatsApp / Message Icon */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900">
                     <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 fill-white" />
                   </div>
                   <div className="text-center mt-2.5">
-                    <div className="text-xs font-bold text-slate-800">Judul</div>
-                    <div className="text-[10px] text-slate-400">Judul Kecil</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Judul</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500">Judul Kecil</div>
                   </div>
                 </div>
 
                 {/* Duration Badge 1: 2 Bulan */}
-                <div className="relative z-10 -mt-7 bg-white border border-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
-                  <Clock className="w-3 h-3 text-[#008d91]" />
+                <div className="relative z-10 -mt-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
+                  <Clock className="w-3 h-3 text-[#008d91] dark:text-[#2dd4bf]" />
                   <span>2 Bulan</span>
                 </div>
 
                 {/* Node 2: Rocket Icon */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900">
                     <Rocket className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="text-center mt-2.5">
-                    <div className="text-xs font-bold text-slate-800">Judul</div>
-                    <div className="text-[10px] text-slate-400">Judul Kecil</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Judul</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500">Judul Kecil</div>
                   </div>
                 </div>
 
                 {/* Duration Badge 2: 3 Bulan */}
-                <div className="relative z-10 -mt-7 bg-white border border-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
-                  <Clock className="w-3 h-3 text-[#008d91]" />
+                <div className="relative z-10 -mt-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
+                  <Clock className="w-3 h-3 text-[#008d91] dark:text-[#2dd4bf]" />
                   <span>3 Bulan</span>
                 </div>
 
                 {/* Node 3: Shopping Cart Icon */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900">
                     <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="text-center mt-2.5">
-                    <div className="text-xs font-bold text-slate-800">Judul</div>
-                    <div className="text-[10px] text-slate-400">Judul Kecil</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Judul</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500">Judul Kecil</div>
                   </div>
                 </div>
 
                 {/* Duration Badge 3: 2 Bulan */}
-                <div className="relative z-10 -mt-7 bg-white border border-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
-                  <Clock className="w-3 h-3 text-[#008d91]" />
+                <div className="relative z-10 -mt-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shadow-2xs">
+                  <Clock className="w-3 h-3 text-[#008d91] dark:text-[#2dd4bf]" />
                   <span>2 Bulan</span>
                 </div>
 
                 {/* Node 4: User / Person Icon */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#008d91] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-slate-900">
                     <User className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="text-center mt-2.5">
-                    <div className="text-xs font-bold text-slate-800">Judul</div>
-                    <div className="text-[10px] text-slate-400">Judul Kecil</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Judul</div>
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500">Judul Kecil</div>
                   </div>
                 </div>
               </div>
@@ -524,84 +524,84 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 2: Template - PM (4 buah) */}
-          <div className="max-w-md bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Template - PM{' '}
-                  <span className="text-[#008d91] font-semibold">(4 buah)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(4 buah)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 dark:text-slate-500 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Tanggal</th>
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">% Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
-                    <td className="py-2.5 px-2 text-slate-600 whitespace-nowrap">15 Okt 2021</td>
+                    <td className="py-2.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">15 Okt 2021</td>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-[#e83e8c] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                           T
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px]">Template A</div>
-                          <div className="text-[10px] text-slate-400">Template</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">Template A</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Template</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center font-medium text-slate-700">Yes</td>
+                    <td className="py-2.5 px-2 text-center font-medium text-slate-700 dark:text-slate-300">Yes</td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-2 text-slate-600 whitespace-nowrap">16 Okt 2021</td>
+                    <td className="py-2.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">16 Okt 2021</td>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-[#e83e8c] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                           T
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px]">Template B</div>
-                          <div className="text-[10px] text-slate-400">Template</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">Template B</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Template</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center font-medium text-slate-700">Yes</td>
+                    <td className="py-2.5 px-2 text-center font-medium text-slate-700 dark:text-slate-300">Yes</td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-2 text-slate-600 whitespace-nowrap">15 Nov 2021</td>
+                    <td className="py-2.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">15 Nov 2021</td>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-[#e83e8c] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                           T
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px]">Template C</div>
-                          <div className="text-[10px] text-slate-400">Template</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">Template C</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Template</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center text-slate-400">-</td>
+                    <td className="py-2.5 px-2 text-center text-slate-400 dark:text-slate-500">-</td>
                   </tr>
                   <tr>
-                    <td className="py-2.5 px-2 text-slate-600 whitespace-nowrap">15 Nov 2021</td>
+                    <td className="py-2.5 px-2 text-slate-600 dark:text-slate-400 whitespace-nowrap">15 Nov 2021</td>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-[#e83e8c] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                           T
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px]">Template D</div>
-                          <div className="text-[10px] text-slate-400">Template</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">Template D</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Template</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center text-slate-400">-</td>
+                    <td className="py-2.5 px-2 text-center text-slate-400 dark:text-slate-500">-</td>
                   </tr>
                 </tbody>
               </table>
@@ -620,75 +620,75 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Card 1: Traksaksi - Item (100 buah - RpXXXXXXX) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Traksaksi - Item{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah - RpXXXXXXX)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah - RpXXXXXXX)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">Tersalur</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="jalan-menuju" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Jalan Menuju Kemahatahuan
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="demi-kepentingan" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Demi Kepentingan Semua Makhluk
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp89.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">2 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="menjadi-buddha" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Menjadi Buddha di Tempat Kerja
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXX</td>
                   </tr>
                 </tbody>
               </table>
@@ -696,24 +696,24 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 2: Traksaksi - Promo (20 buah) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Traksaksi - Promo{' '}
-                  <span className="text-[#008d91] font-semibold">(20 buah)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(20 buah)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -721,19 +721,19 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           P
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Promo Event 100th LIOH
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-slate-400">Mf: Rp200.000</span>
-                            <span className="px-1.5 py-0.2 bg-teal-50 text-[#008d91] rounded text-[9px] font-semibold">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Mf: Rp200.000</span>
+                            <span className="px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-[#2dd4bf] rounded text-[9px] font-semibold">
                               Ongoing
                             </span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">2x</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">2x</td>
                   </tr>
                 </tbody>
               </table>
@@ -741,71 +741,71 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 3: Hadiah - Item (100 buah) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Hadiah - Item{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="jalan-menuju" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Jalan Menuju Kemahatahuan
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="demi-kepentingan" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Demi Kepentingan Semua Makhluk
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp89.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">2 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">2 buah</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
                         <BookCover coverKey="menjadi-buddha" size="sm" className="!w-9 !h-11 shrink-0 rounded" />
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Menjadi Buddha di Tempat Kerja
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                 </tbody>
               </table>
@@ -824,25 +824,25 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Card 1: Traksaksi - Item (100 buah - RpXXXXXXX) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Traksaksi - Item{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah - RpXXXXXXX)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah - RpXXXXXXX)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">Tersalur</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -850,17 +850,17 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -869,17 +869,17 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXXXX</td>
                   </tr>
                 </tbody>
               </table>
@@ -887,24 +887,24 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 2: Kerja Sama Ajar (100 buah) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Kerja Sama Ajar{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -912,16 +912,16 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -930,16 +930,16 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                 </tbody>
               </table>
@@ -947,24 +947,24 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 3: Media Partner (100 buah) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Media Partner{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -972,16 +972,16 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -990,16 +990,16 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             South East Asia Lamrim Festival 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Rp125.000 <span className="mx-1">•</span> Stok 100
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">1 buah</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">1 buah</td>
                   </tr>
                 </tbody>
               </table>
@@ -1018,25 +1018,25 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Card 1: Traksaksi - Item (100 buah - RpXXXXXXX) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Traksaksi - Item{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah - RpXXXXXXX)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah - RpXXXXXXX)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">Tersalur</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -1044,20 +1044,20 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           D
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Donasi Patron Rutin
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             (Sesuai Komitmen)
                           </div>
-                          <div className="text-[9px] text-[#008d91] font-semibold">
+                          <div className="text-[9px] text-[#008d91] dark:text-[#2dd4bf] font-semibold">
                             Dharma Patron
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -1066,14 +1066,14 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           D
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Donasi Buku Berbayar
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Donasi Buku Berbayar - MAD
                           </div>
                           <div className="mt-0.5">
-                            <span className="px-1.5 py-0.2 bg-teal-50 text-[#008d91] rounded text-[9px] font-semibold">
+                            <span className="px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-[#2dd4bf] rounded text-[9px] font-semibold">
                               Ongoing
                             </span>
                           </div>
@@ -1081,7 +1081,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">2 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -1090,14 +1090,14 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           E
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Empat Segel Agung
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Dharma Patron Non-Rutin - PLN
                           </div>
                           <div className="mt-0.5">
-                            <span className="px-1.5 py-0.2 bg-teal-50 text-[#008d91] rounded text-[9px] font-semibold">
+                            <span className="px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-[#2dd4bf] rounded text-[9px] font-semibold">
                               Ongoing
                             </span>
                           </div>
@@ -1105,7 +1105,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                 </tbody>
               </table>
@@ -1113,25 +1113,25 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 2: Kerja Sama Donasi (100 buah - RpXXXXXXXXX) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Kerja Sama Donasi{' '}
-                  <span className="text-[#008d91] font-semibold">(100 buah - RpXXXXXXXXX)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(100 buah - RpXXXXXXXXX)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">Hasil</th>
                     <th className="py-2.5 px-2 text-right">Hasil</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -1139,14 +1139,14 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           M
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Magha Puja 2021
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Magha Puja Dana - MAD
                           </div>
                           <div className="mt-0.5">
-                            <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 rounded text-[9px] font-semibold">
+                            <span className="px-1.5 py-0.2 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 rounded text-[9px] font-semibold">
                               Rutin
                             </span>
                           </div>
@@ -1154,7 +1154,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">200 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                 </tbody>
               </table>
@@ -1162,25 +1162,25 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Card 3: Sponsor (RpXXXXXXXX) */}
-          <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Sponsor{' '}
-                  <span className="text-[#008d91] font-semibold">(RpXXXXXXXX)</span>
+                  <span className="text-[#008d91] dark:text-[#2dd4bf] font-semibold">(RpXXXXXXXX)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-100 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-100 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Item</th>
                     <th className="py-2.5 px-2 text-center">Tersalur</th>
                     <th className="py-2.5 px-2 text-right">Tersalur</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -1188,20 +1188,20 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           D
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Donasi Patron Rutin
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             (Sesuai Komitmen)
                           </div>
-                          <div className="text-[9px] text-[#008d91] font-semibold">
+                          <div className="text-[9px] text-[#008d91] dark:text-[#2dd4bf] font-semibold">
                             Dharma Patron
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -1210,14 +1210,14 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           D
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Donasi Buku Berbayar
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Donasi Buku Berbayar - MAD
                           </div>
                           <div className="mt-0.5">
-                            <span className="px-1.5 py-0.2 bg-teal-50 text-[#008d91] rounded text-[9px] font-semibold">
+                            <span className="px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-[#2dd4bf] rounded text-[9px] font-semibold">
                               Ongoing
                             </span>
                           </div>
@@ -1225,7 +1225,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">2 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-2">
@@ -1234,14 +1234,14 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           E
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800 text-[11px] leading-tight">
+                          <div className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] leading-tight">
                             Empat Segel Agung
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
                             Dharma Patron Non-Rutin - PLN
                           </div>
                           <div className="mt-0.5">
-                            <span className="px-1.5 py-0.2 bg-teal-50 text-[#008d91] rounded text-[9px] font-semibold">
+                            <span className="px-1.5 py-0.2 bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-[#2dd4bf] rounded text-[9px] font-semibold">
                               Ongoing
                             </span>
                           </div>
@@ -1249,7 +1249,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                       </div>
                     </td>
                     <td className="py-2.5 px-2 text-center font-medium whitespace-nowrap">1 buah</td>
-                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 whitespace-nowrap">RpXXXXXXX</td>
+                    <td className="py-2.5 px-2 text-right font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">RpXXXXXXX</td>
                   </tr>
                 </tbody>
               </table>
@@ -1268,26 +1268,26 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Customer Table */}
-          <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="lg:col-span-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader
               title={
                 <span>
                   Customer - Ajak{' '}
-                  <span className="text-[#05828e] font-semibold">(150 orang)</span>
+                  <span className="text-[#05828e] dark:text-[#2dd4bf] font-semibold">(150 orang)</span>
                 </span>
               }
             />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-50 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-50 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Nama Customer</th>
                     <th className="py-2.5 px-2">Variable Item</th>
                     <th className="py-2.5 px-2">Terverifikasi</th>
                     <th className="py-2.5 px-2">New Customer</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">
                       <div className="flex items-center gap-2.5">
@@ -1295,10 +1295,10 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           A
                         </div>
                         <div>
-                          <div className="font-bold text-slate-800 text-[11px]">
+                          <div className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
                             00031 Agustino Ong
                           </div>
-                          <div className="text-[10px] text-slate-400">Ko Agus</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Ko Agus</div>
                         </div>
                       </div>
                     </td>
@@ -1313,10 +1313,10 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           C
                         </div>
                         <div>
-                          <div className="font-bold text-slate-800 text-[11px]">
+                          <div className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
                             00019 Cindy Budiman
                           </div>
-                          <div className="text-[10px] text-slate-400">Ci Pao</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Ci Pao</div>
                         </div>
                       </div>
                     </td>
@@ -1331,10 +1331,10 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                           S
                         </div>
                         <div>
-                          <div className="font-bold text-slate-800 text-[11px]">
+                          <div className="font-bold text-slate-800 dark:text-slate-200 text-[11px]">
                             00018 Silvia Fukada
                           </div>
-                          <div className="text-[10px] text-slate-400">Ci Silvia</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500">Ci Silvia</div>
                         </div>
                       </div>
                     </td>
@@ -1348,17 +1348,17 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Range Usia */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader title="Range Usia" />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-50 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-50 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Usia</th>
                     <th className="py-2.5 px-2">Jumlah</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">&lt; 20 tahun</td>
                     <td className="py-2.5 px-2">50 orang</td>
@@ -1377,17 +1377,17 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
           </div>
 
           {/* Pekerjaan */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+          <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
             <CardToolbarHeader title="Pekerjaan" />
             <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 font-medium border-b border-slate-50 text-[11px]">
+                  <tr className="text-slate-400 font-medium border-b border-slate-50 dark:border-slate-800 text-[11px]">
                     <th className="py-2.5 px-2">Pekerjaan</th>
                     <th className="py-2.5 px-2">Jumlah</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                   <tr>
                     <td className="py-2.5 px-2">Karyawan Swasta</td>
                     <td className="py-2.5 px-2">50 orang</td>
@@ -1407,7 +1407,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
         </div>
 
         {/* Indonesia Map */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 shadow-xs mt-2">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 sm:p-6 shadow-xs mt-2">
           <CardToolbarHeader title="Chart - Customer" />
           <div className="mt-3">
             <div className="text-sm font-semibold text-slate-700 mb-2">
@@ -1426,19 +1426,19 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
         isOpen={openSections.rincianPemasukan}
         onToggle={() => toggleSection('rincianPemasukan')}
       >
-        <div className="max-w-md bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+        <div className="max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
           <CardToolbarHeader
             title={
               <span>
                 Pemasukan{' '}
-                <span className="text-[#05828e] font-semibold">(RpXXXXXXXX)</span>
+                <span className="text-[#05828e] dark:text-[#2dd4bf] font-semibold">(RpXXXXXXXX)</span>
               </span>
             }
           />
           <div className="overflow-x-auto mt-2">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-400 font-medium border-b border-slate-50 text-[11px]">
+                <tr className="text-slate-400 font-medium border-b border-slate-50 dark:border-slate-800 text-[11px]">
                   <th className="py-2.5 px-2">DB</th>
                   <th className="py-2.5 px-2">Divisi</th>
                   <th className="py-2.5 px-2">Kebutuhan</th>
@@ -1446,7 +1446,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                   <th className="py-2.5 px-2 text-right">Nominal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 text-slate-700">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                 <tr>
                   <td className="py-2.5 px-2 font-medium text-slate-600">DB</td>
                   <td className="py-2.5 px-2">{project?.divisi || 'EVE'}</td>
@@ -1470,19 +1470,19 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
         isOpen={openSections.rincianPengeluaran}
         onToggle={() => toggleSection('rincianPengeluaran')}
       >
-        <div className="max-w-md bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+        <div className="max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-xs">
           <CardToolbarHeader
             title={
               <span>
                 Pengeluaran{' '}
-                <span className="text-[#05828e] font-semibold">(RpXXXXXXXX)</span>
+                <span className="text-[#05828e] dark:text-[#2dd4bf] font-semibold">(RpXXXXXXXX)</span>
               </span>
             }
           />
           <div className="overflow-x-auto mt-2">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="text-slate-400 font-medium border-b border-slate-50 text-[11px]">
+                <tr className="text-slate-400 font-medium border-b border-slate-50 dark:border-slate-800 text-[11px]">
                   <th className="py-2.5 px-2">CR</th>
                   <th className="py-2.5 px-2">Divisi</th>
                   <th className="py-2.5 px-2">Kebutuhan</th>
@@ -1490,7 +1490,7 @@ export const ReportProyek: React.FC<ReportProyekProps> = ({ project, onBack }) =
                   <th className="py-2.5 px-2 text-right">Nominal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 text-slate-700">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
                 <tr>
                   <td className="py-2.5 px-2 font-medium text-slate-600">CR</td>
                   <td className="py-2.5 px-2">{project?.divisi || 'EVE'}</td>

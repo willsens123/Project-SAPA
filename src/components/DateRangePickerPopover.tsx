@@ -227,7 +227,7 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/5"
+        className="fixed inset-0 z-40 bg-black/5 dark:bg-black/30"
         onClick={onClose}
       />
 
@@ -235,18 +235,18 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
       <div
         ref={containerRef}
         onClick={(e) => e.stopPropagation()}
-        className={`absolute z-50 top-full mt-2 left-0 sm:left-auto bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-4 w-[340px] sm:w-[380px] font-['Plus_Jakarta_Sans',sans-serif] animate-in fade-in zoom-in-95 duration-150 ${className}`}
+        className={`absolute z-50 top-full mt-2 left-0 sm:left-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 p-4 w-[340px] sm:w-[380px] font-['Plus_Jakarta_Sans',sans-serif] animate-in fade-in zoom-in-95 duration-150 ${className}`}
       >
         {/* Header Title & Close */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
-            <Calendar className="w-4 h-4 text-[#008d91]" />
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-bold text-sm">
+            <Calendar className="w-4 h-4 text-[#008d91] dark:text-teal-400" />
             <span>Pilih Rentang Tanggal</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -255,101 +255,101 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
         {/* Start Date & End Date Inputs row */}
         <div className="grid grid-cols-2 gap-2.5 my-3">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
               Dari Tanggal (Awal)
             </label>
             <input
               type="date"
               value={toISODate(selectedStart)}
               onChange={(e) => handleNativeStartChange(e.target.value)}
-              className="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 rounded-xl text-slate-700 bg-slate-50/50 focus:bg-white focus:border-[#008d91] outline-none cursor-pointer"
+              className="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#008d91] dark:focus:border-teal-500 outline-none cursor-pointer"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+            <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
               Sampai Tanggal (Akhir)
             </label>
             <input
               type="date"
               value={toISODate(selectedEnd)}
               onChange={(e) => handleNativeEndChange(e.target.value)}
-              className="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 rounded-xl text-slate-700 bg-slate-50/50 focus:bg-white focus:border-[#008d91] outline-none cursor-pointer"
+              className="w-full text-xs font-semibold px-2.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 focus:border-[#008d91] dark:focus:border-teal-500 outline-none cursor-pointer"
             />
           </div>
         </div>
 
         {/* Quick Range Presets */}
-        <div className="flex flex-wrap gap-1.5 mb-3 pt-1 border-t border-slate-100">
+        <div className="flex flex-wrap gap-1.5 mb-3 pt-1 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={() => applyPreset(0)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             Hari Ini
           </button>
           <button
             type="button"
             onClick={() => applyPreset(7)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +7 Hari
           </button>
           <button
             type="button"
             onClick={() => applyPreset(14)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +14 Hari
           </button>
           <button
             type="button"
             onClick={() => applyPreset(30)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +30 Hari
           </button>
           <button
             type="button"
             onClick={() => applyPreset(0, true, 1)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +1 Bulan
           </button>
           <button
             type="button"
             onClick={() => applyPreset(0, true, 3)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +3 Bulan
           </button>
           <button
             type="button"
             onClick={() => applyPreset(0, true, 12)}
-            className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-teal-50 hover:text-[#008d91] text-slate-600 rounded-lg transition-colors cursor-pointer"
+            className="px-2 py-1 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 hover:text-[#008d91] dark:hover:text-teal-300 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer"
           >
             +1 Tahun
           </button>
         </div>
 
         {/* Month Navigation Header */}
-        <div className="flex items-center justify-between py-1.5 px-1 mb-2 bg-slate-50/70 rounded-xl border border-slate-100">
+        <div className="flex items-center justify-between py-1.5 px-1 mb-2 bg-slate-50/70 dark:bg-slate-800/70 rounded-xl border border-slate-100 dark:border-slate-700">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="p-1 hover:bg-white text-slate-600 rounded-lg transition-colors cursor-pointer shadow-2xs"
+            className="p-1 hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer shadow-2xs"
             title="Bulan Sebelumnya"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span className="text-xs font-bold text-slate-800">
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
             {MONTH_NAMES[viewMonth]} {viewYear}
           </span>
 
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-1 hover:bg-white text-slate-600 rounded-lg transition-colors cursor-pointer shadow-2xs"
+            className="p-1 hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors cursor-pointer shadow-2xs"
             title="Bulan Berikutnya"
           >
             <ChevronRight className="w-4 h-4" />
@@ -359,7 +359,7 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
         {/* Days Header */}
         <div className="grid grid-cols-7 gap-1 text-center mb-1">
           {DAY_NAMES.map((name) => (
-            <div key={name} className="text-[11px] font-bold text-slate-400 py-1">
+            <div key={name} className="text-[11px] font-bold text-slate-400 dark:text-slate-500 py-1">
               {name}
             </div>
           ))}
@@ -371,7 +371,7 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
           {Array.from({ length: firstDayOfMonth }).map((_, i) => (
             <div
               key={`prev-${i}`}
-              className="text-[11px] text-slate-300 py-1.5 cursor-default select-none"
+              className="text-[11px] text-slate-300 dark:text-slate-600 py-1.5 cursor-default select-none"
             >
               {daysInPrevMonth - firstDayOfMonth + i + 1}
             </div>
@@ -407,8 +407,8 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
                   isStart || isEnd
                     ? 'bg-[#008d91] text-white font-bold shadow-xs'
                     : isBetween || isHoverBetween
-                    ? 'bg-teal-50 text-[#008d91] font-semibold'
-                    : 'text-slate-700 hover:bg-slate-100 font-medium'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 font-semibold'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium'
                 }`}
               >
                 {dayNum}
@@ -418,10 +418,10 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
         </div>
 
         {/* Selected Range Display & Apply Action */}
-        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-          <div className="text-[11px] text-slate-500 truncate">
+        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
             {selectedStart && selectedEnd ? (
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
                 {formatToIndoStr(selectedStart)} - {formatToIndoStr(selectedEnd)}
               </span>
             ) : selectedStart ? (
@@ -434,7 +434,7 @@ export const DateRangePickerPopover: React.FC<DateRangePickerPopoverProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-xs text-slate-500 hover:bg-slate-100 rounded-xl cursor-pointer"
+              className="px-3 py-1.5 text-xs text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
             >
               Tutup
             </button>

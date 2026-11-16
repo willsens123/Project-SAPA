@@ -422,23 +422,23 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* Top Banner & Balance Verification Card */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[#05828e] mt-0.5">
+            <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-[#05828e] dark:text-teal-400 mt-0.5">
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                   Ringkasan Konsolidasi Jurnal Umum
                 </h2>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   100% Seimbang
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Mengkonsolidasikan seluruh entri akuntansi berpasangan dari Mutasi Bank, Transaksi S-SALUR, D-DONASI, A-AJAR, dan Pengeluaran Proyek.
               </p>
             </div>
@@ -449,10 +449,10 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
             <button
               type="button"
               onClick={handleExportConsolidatedCSV}
-              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
               title="Unduh data konsolidasi format CSV"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Ekspor CSV</span>
             </button>
             {onOpenPdfModal && (
@@ -479,31 +479,31 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
                 onClick={() => setSelectedSourceFilter(isSelected ? 'ALL' : src.key)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                   isSelected
-                    ? 'border-[#05828e] ring-2 ring-[#05828e]/20 bg-teal-50/50 shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs'
+                    ? 'border-[#05828e] ring-2 ring-[#05828e]/20 bg-teal-50/50 dark:bg-teal-950/40 shadow-xs'
+                    : 'bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-2xs'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${src.badgeBg}`}>
                     {src.code}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-500">
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     {src.count} Jurnal
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-800 truncate" title={src.label}>
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate" title={src.label}>
                   {src.label}
                 </div>
-                <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-0.5 text-[11px]">
-                  <div className="flex justify-between text-slate-600">
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/70 flex flex-col gap-0.5 text-[11px]">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Debet:</span>
-                    <span className="font-mono font-semibold text-slate-800">
+                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                       {formatRupiah(src.totalDebet)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-slate-600">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Kredit:</span>
-                    <span className="font-mono font-semibold text-slate-800">
+                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                       {formatRupiah(src.totalKredit)}
                     </span>
                   </div>
@@ -514,24 +514,24 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
         </div>
 
         {/* Total Grand Debet = Kredit Indicator */}
-        <div className="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="mt-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">Total Konsolidasi Keseluruhan:</span>
-            <span className="text-slate-500">({sourceConsolidation.grandCount} Total Jurnal Tercatat)</span>
+            <span className="font-bold text-slate-700 dark:text-slate-200">Total Konsolidasi Keseluruhan:</span>
+            <span className="text-slate-500 dark:text-slate-400">({sourceConsolidation.grandCount} Total Jurnal Tercatat)</span>
           </div>
-          <div className="flex items-center gap-4 font-mono">
+          <div className="flex items-center gap-4 font-mono flex-wrap">
             <div>
-              <span className="text-slate-500 text-[11px] mr-1.5 uppercase font-sans font-semibold">Total Debet:</span>
-              <strong className="text-slate-900 font-bold">{formatRupiah(sourceConsolidation.grandDebet)}</strong>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] mr-1.5 uppercase font-sans font-semibold">Total Debet:</span>
+              <strong className="text-slate-900 dark:text-slate-100 font-bold">{formatRupiah(sourceConsolidation.grandDebet)}</strong>
             </div>
-            <div className="text-slate-300">|</div>
+            <div className="text-slate-300 dark:text-slate-600">|</div>
             <div>
-              <span className="text-slate-500 text-[11px] mr-1.5 uppercase font-sans font-semibold">Total Kredit:</span>
-              <strong className="text-slate-900 font-bold">{formatRupiah(sourceConsolidation.grandKredit)}</strong>
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] mr-1.5 uppercase font-sans font-semibold">Total Kredit:</span>
+              <strong className="text-slate-900 dark:text-slate-100 font-bold">{formatRupiah(sourceConsolidation.grandKredit)}</strong>
             </div>
-            <div className="text-slate-300">|</div>
+            <div className="text-slate-300 dark:text-slate-600">|</div>
             <div>
-              <span className="text-emerald-700 font-sans font-bold flex items-center gap-1">
+              <span className="text-emerald-700 dark:text-emerald-400 font-sans font-bold flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Selisih: Rp 0
               </span>
@@ -542,43 +542,43 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
 
       {/* Sub-Tabs Selector & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveSubTab('sumber')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'sumber'
-                ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-[#05828e]" />
+            <Layers className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
             <span>Tabel Ringkasan Per Sumber</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('matriksCoa')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'matriksCoa'
-                ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600" />
+            <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>Matriks Konsolidasi COA (Debet-Kredit)</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('tabelEntries')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
               activeSubTab === 'tabelEntries'
-                ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <Receipt className="w-3.5 h-3.5 text-purple-600" />
+            <Receipt className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             <span>Daftar Entri Terpasang</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700">
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
               {filteredRawEntries.length}
             </span>
           </button>
@@ -587,13 +587,13 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
         {/* Search & Quick Filters */}
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari akun / transaksi..."
-              className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#05828e] w-48 sm:w-60"
+              className="pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#05828e] w-48 sm:w-60"
             />
           </div>
 
@@ -601,7 +601,7 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
             <select
               value={selectedKelompokFilter}
               onChange={(e) => setSelectedKelompokFilter(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer"
+              className="px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-semibold focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer dark:[&>option]:bg-slate-900"
             >
               <option value="ALL">Semua Kelompok</option>
               <option value="AKTIVA">AKTIVA</option>
@@ -617,7 +617,7 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
             <button
               type="button"
               onClick={() => setSelectedSourceFilter('ALL')}
-              className="px-2 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-2 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
               title="Reset filter sumber"
             >
               <RotateCcw className="w-3 h-3" />
@@ -631,17 +631,17 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
       {/* SUB-TAB 1: TABEL RINGKASAN PER SUMBER (Debit vs Kredit)   */}
       {/* ========================================================= */}
       {activeSubTab === 'sumber' && (
-        <div className="bg-white border border-slate-300 rounded-xl shadow-xs overflow-hidden">
-          <div className="py-2.5 px-4 bg-slate-50 border-b border-slate-300 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-xs overflow-hidden">
+          <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-300 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
                 Tabel Ringkasan Konsolidasi Per Sumber Transaksi
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Memperlihatkan keseimbangan debit dan kredit berpasangan dari setiap modul operasional
               </p>
             </div>
-            <span className="text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
               Format Akuntansi Standar PSAK
             </span>
           </div>
@@ -649,18 +649,18 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                  <th className="py-2.5 px-4 border-r border-slate-300 min-w-[200px]">SUMBER TRANSAKSI</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300 text-center w-24">KODE</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300 text-center w-28">JML JURNAL</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 min-w-[200px]">AKUN DEBET DOMINAN</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 min-w-[200px]">AKUN KREDIT DOMINAN</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[140px]">TOTAL DEBET</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[140px]">TOTAL KREDIT</th>
+                <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[200px]">SUMBER TRANSAKSI</th>
+                  <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 text-center w-24">KODE</th>
+                  <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 text-center w-28">JML JURNAL</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[200px]">AKUN DEBET DOMINAN</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[200px]">AKUN KREDIT DOMINAN</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[140px]">TOTAL DEBET</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[140px]">TOTAL KREDIT</th>
                   <th className="py-2.5 px-3 text-center min-w-[110px]">STATUS AUDIT</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {sourceConsolidation.sourcesList.map((src) => {
                   const dbEntries = Object.entries(src.dbAccounts) as [string, { nama: string; total: number }][];
                   const topDb = dbEntries
@@ -681,42 +681,42 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
                   return (
                     <tr
                       key={src.key}
-                      className="hover:bg-teal-50/30 transition-colors"
+                      className="hover:bg-teal-50/30 dark:hover:bg-teal-950/30 transition-colors"
                     >
-                      <td className="py-3 px-4 border-r border-slate-200 font-bold text-slate-900">
+                      <td className="py-3 px-4 border-r border-slate-200 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100">
                         <div className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${src.badgeText}`} />
                           <span>{src.label}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-3 border-r border-slate-200 text-center">
+                      <td className="py-3 px-3 border-r border-slate-200 dark:border-slate-800 text-center">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${src.badgeBg}`}>
                           {src.code}
                         </span>
                       </td>
-                      <td className="py-3 px-3 border-r border-slate-200 text-center font-semibold text-slate-700">
+                      <td className="py-3 px-3 border-r border-slate-200 dark:border-slate-800 text-center font-semibold text-slate-700 dark:text-slate-300">
                         {src.count} Entri
                       </td>
-                      <td className="py-3 px-4 border-r border-slate-200 text-slate-700 text-[11px] truncate max-w-xs" title={topDb}>
+                      <td className="py-3 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-[11px] truncate max-w-xs" title={topDb}>
                         {topDb}
                       </td>
-                      <td className="py-3 px-4 border-r border-slate-200 text-slate-700 text-[11px] truncate max-w-xs" title={topKr}>
+                      <td className="py-3 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-[11px] truncate max-w-xs" title={topKr}>
                         {topKr}
                       </td>
-                      <td className="py-3 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                         {formatRupiah(src.totalDebet)}
                       </td>
-                      <td className="py-3 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                         {formatRupiah(src.totalKredit)}
                       </td>
                       <td className="py-3 px-3 text-center">
                         {isBalanced ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             <CheckCircle2 className="w-3 h-3" />
                             Seimbang
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                             Selisih
                           </span>
                         )}
@@ -726,24 +726,24 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-100 border-t-2 border-slate-300 text-slate-900 font-bold">
-                  <td colSpan={2} className="py-3 px-4 border-r border-slate-300 uppercase tracking-wider">
+                <tr className="bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold">
+                  <td colSpan={2} className="py-3 px-4 border-r border-slate-300 dark:border-slate-700 uppercase tracking-wider">
                     TOTAL KONSOLIDASI
                   </td>
-                  <td className="py-3 px-3 border-r border-slate-300 text-center">
+                  <td className="py-3 px-3 border-r border-slate-300 dark:border-slate-700 text-center">
                     {sourceConsolidation.grandCount} Entri
                   </td>
-                  <td colSpan={2} className="py-3 px-4 border-r border-slate-300 text-slate-500 text-[11px] italic">
+                  <td colSpan={2} className="py-3 px-4 border-r border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-[11px] italic">
                     Konsolidasi Mutasi, Salur, Donasi, Ajar, Pengeluaran
                   </td>
-                  <td className="py-3 px-4 border-r border-slate-300 text-right font-mono text-emerald-800 text-sm">
+                  <td className="py-3 px-4 border-r border-slate-300 dark:border-slate-700 text-right font-mono text-emerald-800 dark:text-emerald-400 text-sm">
                     {formatRupiah(sourceConsolidation.grandDebet)}
                   </td>
-                  <td className="py-3 px-4 border-r border-slate-300 text-right font-mono text-emerald-800 text-sm">
+                  <td className="py-3 px-4 border-r border-slate-300 dark:border-slate-700 text-right font-mono text-emerald-800 dark:text-emerald-400 text-sm">
                     {formatRupiah(sourceConsolidation.grandKredit)}
                   </td>
                   <td className="py-3 px-3 text-center">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
                       <CheckCircle2 className="w-3 h-3" />
                       100% OK
                     </span>
@@ -759,23 +759,23 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
       {/* SUB-TAB 2: MATRIKS KONSOLIDASI PER AKUN COA (Debet-Kredit Multi-Sumber)   */}
       {/* ========================================================================= */}
       {activeSubTab === 'matriksCoa' && (
-        <div className="bg-white border border-slate-300 rounded-xl shadow-xs overflow-hidden">
-          <div className="py-2.5 px-4 bg-slate-50 border-b border-slate-300 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-xs overflow-hidden">
+          <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-300 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
                 Matriks Debet-Kredit Konsolidasian per Akun COA
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Rincian mutasi debit dan kredit tiap akun COA yang bersumber dari Mutasi Bank, S-SALUR, D-DONASI, dan A-AJAR
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={onlyActiveAccounts}
                   onChange={(e) => setOnlyActiveAccounts(e.target.checked)}
-                  className="rounded border-slate-300 text-[#05828e] focus:ring-[#05828e] cursor-pointer"
+                  className="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-[#05828e] focus:ring-[#05828e] cursor-pointer"
                 />
                 <span>Hanya Akun yang Memiliki Mutasi</span>
               </label>
@@ -785,104 +785,104 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-bold uppercase text-[10.5px]">
-                  <th rowSpan={2} className="py-2 px-3 border-r border-slate-300 w-20">NO AKUN</th>
-                  <th rowSpan={2} className="py-2 px-3 border-r border-slate-300 min-w-[200px]">NAMA AKUN COA</th>
-                  <th rowSpan={2} className="py-2 px-2.5 border-r border-slate-300 text-center w-24">KELOMPOK</th>
-                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 text-center bg-teal-50/70 text-teal-900">
+                <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[10.5px]">
+                  <th rowSpan={2} className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 w-20">NO AKUN</th>
+                  <th rowSpan={2} className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 min-w-[200px]">NAMA AKUN COA</th>
+                  <th rowSpan={2} className="py-2 px-2.5 border-r border-slate-300 dark:border-slate-700 text-center w-24">KELOMPOK</th>
+                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-center bg-teal-50/70 dark:bg-teal-950/50 text-teal-900 dark:text-teal-300">
                     MUTASI BANK
                   </th>
-                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 text-center bg-emerald-50/70 text-emerald-900">
+                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-center bg-emerald-50/70 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-300">
                     S-SALUR
                   </th>
-                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 text-center bg-amber-50/70 text-amber-900">
+                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-center bg-amber-50/70 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300">
                     D-DONASI
                   </th>
-                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 text-center bg-purple-50/70 text-purple-900">
+                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-center bg-purple-50/70 dark:bg-purple-950/50 text-purple-900 dark:text-purple-300">
                     A-AJAR
                   </th>
-                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 text-center bg-slate-200 text-slate-900 font-extrabold">
+                  <th colSpan={2} className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-center bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-extrabold">
                     TOTAL KONSOLIDASI
                   </th>
                   <th rowSpan={2} className="py-2 px-3 text-right min-w-[130px]">SALDO AKHIR</th>
                 </tr>
-                <tr className="bg-slate-50 border-b border-slate-300 text-slate-600 font-bold text-[10px]">
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-teal-50/40">DB</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-teal-50/40">KR</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-emerald-50/40">DB</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-emerald-50/40">KR</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-amber-50/40">DB</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-amber-50/40">KR</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-purple-50/40">DB</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-20 bg-purple-50/40">KR</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-24 bg-slate-200/80 font-bold text-slate-900">TOTAL DB</th>
-                  <th className="py-1 px-2 border-r border-slate-300 text-right w-24 bg-slate-200/80 font-bold text-slate-900">TOTAL KR</th>
+                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-[10px]">
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-teal-50/40 dark:bg-teal-950/30">DB</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-teal-50/40 dark:bg-teal-950/30">KR</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-emerald-50/40 dark:bg-emerald-950/30">DB</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-emerald-50/40 dark:bg-emerald-950/30">KR</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-amber-50/40 dark:bg-amber-950/30">DB</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-amber-50/40 dark:bg-amber-950/30">KR</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-purple-50/40 dark:bg-purple-950/30">DB</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-20 bg-purple-50/40 dark:bg-purple-950/30">KR</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-24 bg-slate-200/80 dark:bg-slate-700/80 font-bold text-slate-900 dark:text-slate-100">TOTAL DB</th>
+                  <th className="py-1 px-2 border-r border-slate-300 dark:border-slate-700 text-right w-24 bg-slate-200/80 dark:bg-slate-700/80 font-bold text-slate-900 dark:text-slate-100">TOTAL KR</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {filteredConsolidatedAccounts.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="py-8 text-center text-slate-400">
+                    <td colSpan={14} className="py-8 text-center text-slate-400 dark:text-slate-500">
                       Tidak ada akun COA yang sesuai dengan kriteria filter.
                     </td>
                   </tr>
                 ) : (
                   filteredConsolidatedAccounts.map((acc) => (
-                    <tr key={acc.noAkun} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-2 px-3 border-r border-slate-200 font-mono font-bold text-slate-900">
+                    <tr key={acc.noAkun} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-mono font-bold text-slate-900 dark:text-slate-100">
                         {acc.noAkun}
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-200 font-semibold text-slate-800">
+                      <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                         {acc.namaAkun}
                       </td>
-                      <td className="py-2 px-2.5 border-r border-slate-200 text-center">
-                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 text-slate-700">
+                      <td className="py-2 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center">
+                        <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {acc.kelompok}
                         </span>
                       </td>
 
                       {/* Mutasi Bank */}
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-slate-700">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-slate-700 dark:text-slate-300">
                         {formatTableCellAmount(acc.mutasiDb)}
                       </td>
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-slate-700">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-slate-700 dark:text-slate-300">
                         {formatTableCellAmount(acc.mutasiKr)}
                       </td>
 
                       {/* S-SALUR */}
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-emerald-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-emerald-800 dark:text-emerald-400">
                         {formatTableCellAmount(acc.salurDb)}
                       </td>
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-emerald-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-emerald-800 dark:text-emerald-400">
                         {formatTableCellAmount(acc.salurKr)}
                       </td>
 
                       {/* D-DONASI */}
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-amber-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-amber-800 dark:text-amber-400">
                         {formatTableCellAmount(acc.donasiDb)}
                       </td>
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-amber-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-amber-800 dark:text-amber-400">
                         {formatTableCellAmount(acc.donasiKr)}
                       </td>
 
                       {/* A-AJAR */}
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-purple-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-purple-800 dark:text-purple-400">
                         {formatTableCellAmount(acc.ajarDb)}
                       </td>
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono text-[11px] text-purple-800">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-[11px] text-purple-800 dark:text-purple-400">
                         {formatTableCellAmount(acc.ajarKr)}
                       </td>
 
                       {/* Total Konsolidasi */}
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono font-bold text-slate-900 bg-slate-50/70">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-50/70 dark:bg-slate-800/40">
                         {formatTableCellAmount(acc.totalDebet)}
                       </td>
-                      <td className="py-2 px-2 border-r border-slate-200 text-right font-mono font-bold text-slate-900 bg-slate-50/70">
+                      <td className="py-2 px-2 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-50/70 dark:bg-slate-800/40">
                         {formatTableCellAmount(acc.totalKredit)}
                       </td>
 
                       {/* Saldo Akhir */}
-                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                         {formatRupiah(acc.saldoAkhir)}
                       </td>
                     </tr>
@@ -898,19 +898,19 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
       {/* SUB-TAB 3: DAFTAR ENTRI TERPASANG (Format Tabel Debit-Kredit Konsolidasian)*/}
       {/* ========================================================================= */}
       {activeSubTab === 'tabelEntries' && (
-        <div className="bg-white border border-slate-300 rounded-xl shadow-xs overflow-hidden">
-          <div className="py-2.5 px-4 bg-slate-50 border-b border-slate-300 flex flex-wrap items-center justify-between gap-2">
+        <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-xs overflow-hidden">
+          <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-300 dark:border-slate-700 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
                 Tabel Rinci Entri Konsolidasi Jurnal Umum (Debet - Kredit)
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Menampilkan {filteredRawEntries.length} transaksi berpasangan seimbang dari mutasi dan sistem
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-slate-600 font-semibold">
-                Filter: <strong className="text-slate-900">{selectedSourceFilter}</strong>
+              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
+                Filter: <strong className="text-slate-900 dark:text-slate-100">{selectedSourceFilter}</strong>
               </span>
             </div>
           </div>
@@ -918,22 +918,22 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                  <th className="py-2.5 px-3 border-r border-slate-300 min-w-[85px] w-24">TANGGAL</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300 min-w-[110px]">NO JURNAL</th>
-                  <th className="py-2.5 px-3 border-r border-slate-300 text-center w-28">SUMBER</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 min-w-[260px]">KETERANGAN TRANSAKSI</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300 text-center w-16">AKUN DB</th>
-                  <th className="py-2.5 px-2.5 border-r border-slate-300 text-center w-16">AKUN KR</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[125px]">DEBET</th>
-                  <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[125px]">KREDIT</th>
+                <tr className="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                  <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 min-w-[85px] w-24">TANGGAL</th>
+                  <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 min-w-[110px]">NO JURNAL</th>
+                  <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 text-center w-28">SUMBER</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[260px]">KETERANGAN TRANSAKSI</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-300 dark:border-slate-700 text-center w-16">AKUN DB</th>
+                  <th className="py-2.5 px-2.5 border-r border-slate-300 dark:border-slate-700 text-center w-16">AKUN KR</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[125px]">DEBET</th>
+                  <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[125px]">KREDIT</th>
                   <th className="py-2.5 px-3 text-center w-24">STATUS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                 {filteredRawEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400">
+                    <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500">
                       Tidak ada entri jurnal ditemukan.
                     </td>
                   </tr>
@@ -943,54 +943,54 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
                     const otherLines = j.lines.slice(1);
                     const sourceBadgeClass =
                       j.sumberTransaksi === 'Mutasi Bank'
-                        ? 'bg-teal-50 text-teal-800 border-teal-200'
+                        ? 'bg-teal-50 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800'
                         : j.sumberTransaksi === 'Transaksi Salur'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                         : j.sumberTransaksi === 'Transaksi Donasi'
-                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                         : j.sumberTransaksi === 'Transaksi Ajar'
-                        ? 'bg-purple-50 text-purple-800 border-purple-200'
-                        : 'bg-rose-50 text-rose-800 border-rose-200';
+                        ? 'bg-purple-50 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                        : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800';
 
                     return (
                       <React.Fragment key={j.id}>
                         <tr
                           onClick={() => onSelectJournalDetail && onSelectJournalDetail(j)}
-                          className="hover:bg-teal-50/30 transition-colors cursor-pointer"
+                          className="hover:bg-teal-50/30 dark:hover:bg-teal-950/30 transition-colors cursor-pointer"
                         >
-                          <td className="py-2 px-3 border-r border-slate-200 font-mono text-slate-700">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-mono text-slate-700 dark:text-slate-300">
                             {j.tanggalJurnal}
                           </td>
-                          <td className="py-2 px-3 border-r border-slate-200 font-mono font-bold text-[#05828e]">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-mono font-bold text-[#05828e] dark:text-teal-400">
                             {j.nomorJurnal}
                           </td>
-                          <td className="py-2 px-3 border-r border-slate-200 text-center">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 text-center">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${sourceBadgeClass}`}>
                               {j.sumberTransaksi.replace('Transaksi ', '')}
                             </span>
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-200 text-slate-800">
+                          <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">
                             <div className="font-semibold">{j.keteranganTransaksi}</div>
-                            <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-2 mt-0.5">
                               <span>Ref: {j.nomorReferensiBank}</span>
                               <span>•</span>
                               <span>{j.rekeningBank}</span>
                             </div>
                           </td>
-                          <td className="py-2 px-2.5 border-r border-slate-200 text-center font-mono font-bold text-slate-800">
+                          <td className="py-2 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
                             {firstLine?.kodeAkunDb || '-'}
                           </td>
-                          <td className="py-2 px-2.5 border-r border-slate-200 text-center font-mono font-bold text-slate-800">
+                          <td className="py-2 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
                             {firstLine?.kodeAkunKr || '-'}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                          <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                             {formatTableCellAmount(firstLine?.nominalDebet || 0)}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                          <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                             {formatTableCellAmount(firstLine?.nominalKredit || 0)}
                           </td>
                           <td className="py-2 px-3 text-center">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                               <CheckCircle2 className="w-3 h-3" />
                               Seimbang
                             </span>
@@ -1001,27 +1001,27 @@ export const RingkasanJurnalConsolidatedView: React.FC<RingkasanJurnalConsolidat
                           <tr
                             key={line.id}
                             onClick={() => onSelectJournalDetail && onSelectJournalDetail(j)}
-                            className="bg-slate-50/50 hover:bg-teal-50/30 transition-colors cursor-pointer border-t border-slate-100"
+                            className="bg-slate-50/50 dark:bg-slate-800/40 hover:bg-teal-50/30 dark:hover:bg-teal-950/30 transition-colors cursor-pointer border-t border-slate-100 dark:border-slate-800"
                           >
-                            <td className="py-1 px-3 border-r border-slate-200 text-slate-400 text-center font-mono">↳</td>
-                            <td className="py-1 px-3 border-r border-slate-200 text-slate-400 text-[10px] italic">Baris Kedua</td>
-                            <td className="py-1 px-3 border-r border-slate-200"></td>
-                            <td className="py-1 px-4 border-r border-slate-200 text-slate-600 pl-8 text-[11px]">
+                            <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-center font-mono">↳</td>
+                            <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-[10px] italic">Baris Kedua</td>
+                            <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-800"></td>
+                            <td className="py-1 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 pl-8 text-[11px]">
                               {line.keterangan || line.namaAkun}
                             </td>
-                            <td className="py-1 px-2.5 border-r border-slate-200 text-center font-mono text-slate-600">
+                            <td className="py-1 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono text-slate-600 dark:text-slate-400">
                               {line.kodeAkunDb || '-'}
                             </td>
-                            <td className="py-1 px-2.5 border-r border-slate-200 text-center font-mono text-slate-600">
+                            <td className="py-1 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono text-slate-600 dark:text-slate-400">
                               {line.kodeAkunKr || '-'}
                             </td>
-                            <td className="py-1 px-4 border-r border-slate-200 text-right font-mono text-slate-700">
+                            <td className="py-1 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-slate-700 dark:text-slate-300">
                               {formatTableCellAmount(line.nominalDebet || 0)}
                             </td>
-                            <td className="py-1 px-4 border-r border-slate-200 text-right font-mono text-slate-700">
+                            <td className="py-1 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-slate-700 dark:text-slate-300">
                               {formatTableCellAmount(line.nominalKredit || 0)}
                             </td>
-                            <td className="py-1 px-3 border-r border-slate-200"></td>
+                            <td className="py-1 px-3 border-r border-slate-200 dark:border-slate-800"></td>
                           </tr>
                         ))}
                       </React.Fragment>

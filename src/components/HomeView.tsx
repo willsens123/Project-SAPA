@@ -673,7 +673,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col gap-5 text-slate-800 animate-in fade-in duration-200 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="w-full flex flex-col gap-5 text-slate-800 dark:text-slate-100 animate-in fade-in duration-200 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* ============================================================== */}
       {/* TOP ACTION BAR: Matching Transaksi S-SALUR and Identitas       */}
       {/* ============================================================== */}
@@ -697,7 +697,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm md:text-base font-semibold transition-all cursor-pointer shadow-xs ${
                   isActive
                     ? 'bg-[#008d91] text-white'
-                    : 'bg-[#a8a8a8] hover:bg-[#999999] text-white'
+                    : 'bg-[#a8a8a8] hover:bg-[#999999] dark:bg-slate-800 dark:hover:bg-slate-700 text-white dark:text-slate-200'
                 }`}
               >
                 {tab.label}
@@ -714,7 +714,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             id="btn-home-deadline-bell"
             title={`Notifikasi Deadline Proyek Ongoing (≤ 7 Hari): ${visibleDeadlineNotifications.length}`}
             onClick={handleFocusDeadlineNotifications}
-            className="relative p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-[#008d91] hover:border-teal-300 hover:bg-teal-50/60 transition-colors cursor-pointer"
+            className="relative p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#008d91] dark:hover:text-teal-400 hover:border-teal-300 dark:hover:border-teal-600 hover:bg-teal-50/60 dark:hover:bg-teal-950/60 transition-colors cursor-pointer"
           >
             <Bell className="w-5 h-5 stroke-[1.8]" />
             {visibleDeadlineNotifications.length > 0 && (
@@ -729,7 +729,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             title="Sembunyikan Kolom / Tampilan"
             onClick={() => onShowToast('Mode privasi tampilan diaktifkan')}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <EyeOff className="w-5 h-5 stroke-[1.8]" />
           </button>
@@ -739,7 +739,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             title="Cari"
             onClick={() => onShowToast('Pencarian cepat diaktifkan')}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <Search className="w-5 h-5 stroke-[1.8]" />
           </button>
@@ -749,7 +749,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             type="button"
             title="Filter & Pengaturan"
             onClick={() => onShowToast('Menampilkan pengaturan filter')}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            className="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
           </button>
@@ -932,24 +932,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* CARD 1: CALENDAR                                             */}
         {/* ------------------------------------------------------------ */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
           <div>
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008d91] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold">
                   <CalendarIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">Calendar</h3>
-                  <span className="text-[10px] text-slate-400">Jadwal & Pengingat</span>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Calendar</h3>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Jadwal & Pengingat</span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setIsAddCalEventOpen(true)}
-                className="p-1.5 rounded-lg bg-teal-50 text-[#008d91] hover:bg-teal-100 transition-colors cursor-pointer text-xs font-bold flex items-center gap-1 shadow-2xs"
+                className="p-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-colors cursor-pointer text-xs font-bold flex items-center gap-1 shadow-2xs"
                 title="Tambah Tanggal Rapat atau Reminder Pribadi"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -969,11 +969,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     setCalMonth((m) => m - 1);
                   }
                 }}
-                className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 cursor-pointer"
+                className="w-6 h-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs font-bold text-slate-700">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
                 {MONTH_NAMES[calMonth]} {calYear}
               </span>
               <button
@@ -986,7 +986,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     setCalMonth((m) => m + 1);
                   }
                 }}
-                className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 cursor-pointer"
+                className="w-6 h-6 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -994,7 +994,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             {/* Interactive Mini Calendar Days */}
             <div className="mt-2.5">
-              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 mb-1">
+              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1">
                 <span>Min</span>
                 <span>Sen</span>
                 <span>Sel</span>
@@ -1027,8 +1027,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         isSelected
                           ? 'bg-[#008d91] text-white shadow-xs'
                           : isToday
-                          ? 'bg-teal-50 text-[#008d91] font-bold ring-1 ring-[#008d91]'
-                          : 'text-slate-600 hover:bg-slate-50'
+                          ? 'bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 font-bold ring-1 ring-[#008d91] dark:ring-teal-500'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
                     >
                       <span>{dayNum}</span>
@@ -1045,7 +1045,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-2.5 border-t border-slate-100 text-[10px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" /> Tgl Khusus
               </span>
@@ -1067,20 +1067,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   key={evt.id}
                   className={`p-2 rounded-xl text-xs border flex items-start justify-between gap-2 ${
                     evt.type === 'rapat'
-                      ? 'bg-purple-50/60 border-purple-100 text-purple-900'
-                      : 'bg-amber-50/60 border-amber-100 text-amber-900'
+                      ? 'bg-purple-50/60 dark:bg-purple-950/35 border-purple-100 dark:border-purple-900/50 text-purple-900 dark:text-purple-200'
+                      : 'bg-amber-50/60 dark:bg-amber-950/35 border-amber-100 dark:border-amber-900/50 text-amber-900 dark:text-amber-200'
                   }`}
                 >
                   <div>
                     <div className="flex items-center gap-1.5 font-bold">
                       {evt.type === 'rapat' ? (
-                        <span className="text-[10px] bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded">Rapat</span>
+                        <span className="text-[10px] bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-1.5 py-0.5 rounded">Rapat</span>
                       ) : (
-                        <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">Reminder</span>
+                        <span className="text-[10px] bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-1.5 py-0.5 rounded">Reminder</span>
                       )}
                       <span className="truncate">{evt.title}</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>{evt.date}</span>
                       {evt.time && <span>• {evt.time} WIB</span>}
                     </div>
@@ -1088,7 +1088,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteCalEvent(evt.id)}
-                    className="text-slate-400 hover:text-red-500 p-1 cursor-pointer transition-colors"
+                    className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 cursor-pointer transition-colors"
                     title="Hapus"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -1102,24 +1102,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* CARD 2: NOTES PRIBADI                                        */}
         {/* ------------------------------------------------------------ */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
           <div>
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
                   <Pin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">Notes Pribadi</h3>
-                  <span className="text-[10px] text-slate-400">Khusus ID: {currentUser.kodeKaryawan || '00031'}</span>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Notes Pribadi</h3>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Khusus ID: {currentUser.kodeKaryawan || '00031'}</span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setIsAddingNote(!isAddingNote)}
-                className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer text-xs font-bold flex items-center gap-1 shadow-2xs"
+                className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors cursor-pointer text-xs font-bold flex items-center gap-1 shadow-2xs"
                 title="Tulis Catatan Baru"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1129,13 +1129,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             {/* Add Note Form */}
             {isAddingNote && (
-              <div className="mt-3 p-2.5 bg-amber-50/50 rounded-2xl border border-amber-200 animate-in fade-in space-y-2">
+              <div className="mt-3 p-2.5 bg-amber-50/50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/70 animate-in fade-in space-y-2">
                 <textarea
                   rows={2}
                   placeholder="Tulis catatan pribadi di sini..."
                   value={newNoteText}
                   onChange={(e) => setNewNoteText(e.target.value)}
-                  className="w-full p-2 text-xs bg-white border border-amber-200 rounded-xl focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full p-2 text-xs bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:outline-none focus:border-amber-500 resize-none"
                 />
                 <div className="flex items-center justify-end gap-1.5">
                   <button
@@ -1144,7 +1144,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       setIsAddingNote(false);
                       setNewNoteText('');
                     }}
-                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                    className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
                   >
                     Batal
                   </button>
@@ -1162,7 +1162,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Notes List */}
             <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-1">
               {personalNotes.length === 0 ? (
-                <div className="text-center py-8 text-xs text-slate-400 italic">
+                <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 italic">
                   Belum ada catatan pribadi. Klik + Catatan untuk menambahkan.
                 </div>
               ) : (
@@ -1171,10 +1171,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     key={note.id}
                     className={`p-3 rounded-2xl border transition-all flex flex-col justify-between gap-2 ${
                       note.isDone
-                        ? 'bg-slate-50 border-slate-100 opacity-70'
+                        ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 opacity-70'
                         : note.isPinned
-                        ? 'bg-amber-50/40 border-amber-200 shadow-2xs'
-                        : 'bg-white border-slate-100 hover:border-slate-200'
+                        ? 'bg-amber-50/40 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/70 shadow-2xs'
+                        : 'bg-white dark:bg-slate-800/60 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -1182,7 +1182,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleNoteDone(note.id)}
-                          className="mt-0.5 text-slate-400 hover:text-emerald-600 cursor-pointer"
+                          className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer"
                         >
                           {note.isDone ? (
                             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -1190,7 +1190,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                             <Circle className="w-4 h-4" />
                           )}
                         </button>
-                        <p className={`text-xs text-slate-800 leading-snug ${note.isDone ? 'line-through text-slate-400' : ''}`}>
+                        <p className={`text-xs text-slate-800 dark:text-slate-100 leading-snug ${note.isDone ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
                           {note.text}
                         </p>
                       </div>
@@ -1200,7 +1200,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                           type="button"
                           onClick={() => handleToggleNotePin(note.id)}
                           className={`p-1 rounded cursor-pointer ${
-                            note.isPinned ? 'text-amber-500' : 'text-slate-300 hover:text-slate-500'
+                            note.isPinned ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400'
                           }`}
                           title={note.isPinned ? 'Lepas pin' : 'Pin catatan'}
                         >
@@ -1209,7 +1209,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDeleteNote(note.id)}
-                          className="p-1 rounded text-slate-300 hover:text-red-500 cursor-pointer"
+                          className="p-1 rounded text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 cursor-pointer"
                           title="Hapus"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1217,7 +1217,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 self-end font-medium">
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 self-end font-medium">
                       {note.date}
                     </div>
                   </div>
@@ -1230,66 +1230,66 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* CARD 3: TANGGAL KHUSUS                                       */}
         {/* ------------------------------------------------------------ */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
           <div>
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
                   <Star className="w-4 h-4 fill-rose-500 text-rose-500" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">Tanggal Khusus</h3>
-                  <span className="text-[10px] text-slate-400">Rentang ±2 Minggu</span>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Tanggal Khusus</h3>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Rentang ±2 Minggu</span>
                 </div>
               </div>
 
-              <span className="text-[10px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-full">
                 {tanggalKhususList.length} Acara
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-500 mt-2.5 leading-tight">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2.5 leading-tight">
               Ulang tahun Identitas & hari khusus Organisasi dimana Anda adalah PIC atau yang di-star:
             </p>
 
             {/* List Tanggal Khusus */}
             <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-1">
               {tanggalKhususList.length === 0 ? (
-                <div className="text-center py-8 text-xs text-slate-400 italic">
+                <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 italic">
                   Tidak ada tanggal ulang tahun atau tanggal khusus dalam rentang 2 minggu ini.
                 </div>
               ) : (
                 tanggalKhususList.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl border border-slate-100 hover:border-slate-200 bg-gradient-to-r from-rose-50/30 to-transparent transition-all flex items-center justify-between gap-2"
+                    className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-gradient-to-r from-rose-50/30 dark:from-rose-950/20 to-transparent transition-all flex items-center justify-between gap-2"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-sm shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm shadow-2xs">
                         {item.type === 'identitas_ultah' ? '🎂' : '🏢'}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs text-slate-800">{item.name}</span>
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-100">{item.name}</span>
                           {item.isStarred && (
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {item.subText}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end shrink-0">
-                      <span className="text-xs font-bold text-[#008d91]">{item.dateStr}</span>
+                      <span className="text-xs font-bold text-[#008d91] dark:text-teal-400">{item.dateStr}</span>
                       <span className={`text-[10px] font-semibold ${
                         item.diffDays === 0
-                          ? 'text-rose-600 font-bold'
+                          ? 'text-rose-600 dark:text-rose-400 font-bold'
                           : item.diffDays > 0
-                          ? 'text-amber-600'
-                          : 'text-slate-400'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-slate-400 dark:text-slate-500'
                       }`}>
                         {item.diffDays === 0
                           ? 'Hari ini!'
@@ -1308,30 +1308,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* ------------------------------------------------------------ */}
         {/* CARD 4: ONGOING & TARGET                                     */}
         {/* ------------------------------------------------------------ */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs flex flex-col justify-between">
           <div>
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008d91] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-800">Ongoing & Target</h3>
-                  <span className="text-[10px] text-slate-400">Divisi: {activeDivisi}</span>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Ongoing & Target</h3>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Divisi: {activeDivisi}</span>
                 </div>
               </div>
             </div>
 
             {/* Segmented Pill Tabs matching S-SALUR style */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl mt-3">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mt-3">
               <button
                 type="button"
                 onClick={() => setOngoingTab('pm')}
                 className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                   ongoingTab === 'pm'
                     ? 'bg-[#008d91] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 List PM ({userPMList.length})
@@ -1342,7 +1342,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                   ongoingTab === 'todo'
                     ? 'bg-[#008d91] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 To-Do ({userTodoList.length})
@@ -1353,7 +1353,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
                   ongoingTab === 'proyek'
                     ? 'bg-[#008d91] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Proyek ({ongoingProjects.length})
@@ -1365,7 +1365,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {ongoingTab === 'pm' && (
                 <>
                   {userPMList.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                    <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 italic">
                       Tidak ada List PM yang aktif untuk divisi ini.
                     </div>
                   ) : (
@@ -1373,19 +1373,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       <div
                         key={pm.id}
                         onClick={() => onNavigateView('listPM')}
-                        className="p-3 rounded-2xl border border-slate-100 hover:border-slate-200 bg-slate-50/50 transition-all cursor-pointer space-y-2"
+                        className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 transition-all cursor-pointer space-y-2"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-800">{pm.proyekSapa}</span>
-                          <span className="text-[10px] bg-teal-100 text-[#008d91] font-bold px-2 py-0.5 rounded-full">
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-100">{pm.proyekSapa}</span>
+                          <span className="text-[10px] bg-teal-100 dark:bg-teal-950/80 text-[#008d91] dark:text-teal-300 font-bold px-2 py-0.5 rounded-full">
                             {pm.proyekKode}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                           <span>Target: {pm.targetCount} target</span>
-                          <span className="font-bold text-[#008d91]">{pm.progressPercent}%</span>
+                          <span className="font-bold text-[#008d91] dark:text-teal-400">{pm.progressPercent}%</span>
                         </div>
-                        <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                           <div
                             className="bg-[#008d91] h-1.5 rounded-full transition-all"
                             style={{ width: `${pm.progressPercent}%` }}
@@ -1400,14 +1400,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {ongoingTab === 'todo' && (
                 <>
                   {userTodoList.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                    <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 italic">
                       Tidak ada tugas to-do aktif.
                     </div>
                   ) : (
                     userTodoList.map((item) => (
                       <div
                         key={item.task.id}
-                        className="p-2.5 rounded-2xl border border-slate-100 hover:border-slate-200 bg-white transition-all flex items-start gap-2.5"
+                        className="p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-800/60 transition-all flex items-start gap-2.5"
                       >
                         <button
                           type="button"
@@ -1421,10 +1421,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs text-slate-800 font-medium leading-snug ${item.task.completed ? 'line-through text-slate-400' : ''}`}>
+                          <p className={`text-xs text-slate-800 dark:text-slate-100 font-medium leading-snug ${item.task.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
                             {item.task.task}
                           </p>
-                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 mt-1">
                             <span className="truncate">{item.projectName}</span>
                             {item.task.deadline && <span>• Deadline: {item.task.deadline}</span>}
                           </div>
@@ -1438,7 +1438,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {ongoingTab === 'proyek' && (
                 <>
                   {ongoingProjects.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-slate-400 italic">
+                    <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 italic">
                       Tidak ada proyek berstatus Ongoing untuk divisi {activeDivisi}.
                     </div>
                   ) : (
@@ -1446,19 +1446,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       <div
                         key={p.id}
                         onClick={() => onOpenProjectReport && onOpenProjectReport(p)}
-                        className="p-3 rounded-2xl border border-teal-100 bg-teal-50/40 hover:bg-teal-50 transition-all cursor-pointer space-y-1.5"
+                        className="p-3 rounded-2xl border border-teal-100 dark:border-teal-900/50 bg-teal-50/40 dark:bg-teal-950/30 hover:bg-teal-50 dark:hover:bg-teal-950/50 transition-all cursor-pointer space-y-1.5"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-800">{p.namaKegiatan}</span>
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">
+                          <span className="font-bold text-xs text-slate-800 dark:text-slate-100">{p.namaKegiatan}</span>
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full">
                             Ongoing
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-500 flex items-center justify-between">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                           <span>{p.jenisProyek}</span>
-                          <span className="text-[#008d91] font-semibold">{p.tanggal}</span>
+                          <span className="text-[#008d91] dark:text-teal-400 font-semibold">{p.tanggal}</span>
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate">
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                           Lokasi: {p.lokasi}
                         </div>
                       </div>
@@ -1490,14 +1490,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008d91] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold">
               <FolderGit2 className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
                 Report Proyek SAPA Divisi {activeDivisi} (Sedang Berjalan)
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Laporan & metrik realisasi per proyek yang sedang berlangsung
               </p>
             </div>
@@ -1506,7 +1506,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateView('table')}
-            className="text-xs font-bold text-[#008d91] hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-bold text-[#008d91] dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             Lihat Semua Proyek SAPA
             <ChevronRight className="w-3.5 h-3.5" />
@@ -1518,7 +1518,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {displayedOngoingProjects.map((proj, idx) => (
             <div
               key={proj.id}
-              className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-5 hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-5 hover:shadow-md transition-shadow"
             >
               {/* Top Row: Title, Divisi, Ongoing Badge */}
               <div className="flex items-start justify-between gap-3">
@@ -1528,12 +1528,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-800">{proj.namaKegiatan}</h3>
-                      <span className="text-[11px] bg-teal-50 text-[#008d91] font-bold px-2.5 py-0.5 rounded-full border border-teal-200">
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">{proj.namaKegiatan}</h3>
+                      <span className="text-[11px] bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 font-bold px-2.5 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                         {proj.divisi}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>{proj.jenisProyek}</span>
                       <span>•</span>
                       <span>{proj.tanggal}</span>
@@ -1543,50 +1543,50 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   </div>
                 </div>
 
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shrink-0">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 shrink-0">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Ongoing
                 </span>
               </div>
 
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/70 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700/80 text-xs">
                 <div>
-                  <span className="text-slate-400 text-[11px] block">Target Pemasukan</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Target Pemasukan</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     {idx === 0 ? 'Rp15.000.000' : 'Rp25.000.000'}
                   </span>
-                  <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">
                     {idx === 0 ? 'Rp12.500.000 (83%)' : 'Rp21.800.000 (87%)'}
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-slate-400 text-[11px] block">Realisasi Pengeluaran</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Realisasi Pengeluaran</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     {idx === 0 ? 'Rp3.200.000' : 'Rp5.400.000'}
                   </span>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
                     Operasional & Stand
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-slate-400 text-[11px] block">Item / Buku Terjual</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Item / Buku Terjual</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     {idx === 0 ? '85 Buah' : '160 Buah'}
                   </span>
-                  <span className="text-[10px] text-[#008d91] font-semibold block mt-0.5">
+                  <span className="text-[10px] text-[#008d91] dark:text-teal-400 font-semibold block mt-0.5">
                     Target: {idx === 0 ? '100' : '180'}
                   </span>
                 </div>
 
                 <div>
-                  <span className="text-slate-400 text-[11px] block">Customer / Partisipan</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Customer / Partisipan</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     {idx === 0 ? '42 Orang' : '88 Orang'}
                   </span>
-                  <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-0.5">
                     +15 Relawan
                   </span>
                 </div>
@@ -1594,11 +1594,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               {/* Progress Bar & Sub-tasks */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
                   <span>Progres Aktivitas & To-Do Tim</span>
-                  <span className="text-[#008d91] font-bold">{idx === 0 ? '75%' : '88%'}</span>
+                  <span className="text-[#008d91] dark:text-teal-400 font-bold">{idx === 0 ? '75%' : '88%'}</span>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-[#008d91] to-emerald-500 h-2 rounded-full transition-all"
                     style={{ width: idx === 0 ? '75%' : '88%' }}
@@ -1607,16 +1607,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
 
               {/* Container Action Buttons */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                <div className="text-[11px] text-slate-400">
-                  PIC Divisi: <span className="font-semibold text-slate-700">{currentUser.namaLengkap}</span>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                  PIC Divisi: <span className="font-semibold text-slate-700 dark:text-slate-200">{currentUser.namaLengkap}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => onOpenProjectDetail && onOpenProjectDetail(proj)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
                   >
                     Detail Proyek
                   </button>
@@ -1640,16 +1640,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* "Bagian bawah adalah report untuk masing-masing divisi.        */}
       {/* Yang dicontohkan adalah report untuk divisi MAD."              */}
       {/* ============================================================== */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-8 shadow-xs space-y-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-8 shadow-xs space-y-6">
         {/* Header with Divisi Tabs */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#008d91] flex items-center justify-center font-bold text-xl shadow-xs">
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold text-xl shadow-xs">
               <BarChart3 className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                   Report Divisi {activeDivisi}{' '}
                   {activeDivisi === 'MAD'
                     ? '(Marketing & Distribusi)'
@@ -1661,7 +1661,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     ? '(Fundraising)'
                     : ''}
                 </h2>
-                <span className="text-xs bg-teal-50 text-[#008d91] font-bold px-3 py-1 rounded-full border border-teal-200">
+                <span className="text-xs bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 font-bold px-3 py-1 rounded-full border border-teal-200 dark:border-teal-800">
                   {activeDivisi === 'MAD'
                     ? 'Divisi: MAD'
                     : activeDivisi === 'PNB'
@@ -1673,7 +1673,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     : `Contoh Divisi: ${activeDivisi}`}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 {activeDivisi === 'MAD'
                   ? 'Laporan real-time omzet penjualan, transaksi buku berbayar, sebaran nusantara, dan katalog S-SALUR'
                   : activeDivisi === 'PNB'
@@ -1688,7 +1688,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Quick Division Switcher for Report */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl overflow-x-auto max-w-full">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl overflow-x-auto max-w-full">
             {['MAD', 'KEU', 'UMM', 'FUN', 'PNB', 'EVE', 'CPR', 'MRK', 'CAM', 'OPS', 'PRO', 'MED', 'IT'].map((divCode) => (
               <button
                 key={divCode}
@@ -1697,7 +1697,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   activeDivisi === divCode
                     ? 'bg-[#008d91] text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {divCode}
@@ -1749,58 +1749,58 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* 4 KPI Top Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* KPI 1: Omset Penjualan */}
-          <div className="bg-gradient-to-br from-teal-50/50 to-white p-5 rounded-2xl border border-teal-100 shadow-2xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-2">
+          <div className="bg-gradient-to-br from-teal-50/50 to-white dark:from-teal-950/30 dark:to-slate-900 p-5 rounded-2xl border border-teal-100 dark:border-teal-900/50 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
               <span>Total Omset Penjualan</span>
-              <DollarSign className="w-4 h-4 text-[#008d91]" />
+              <DollarSign className="w-4 h-4 text-[#008d91] dark:text-teal-400" />
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               Rp48.750.000
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold mt-2">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-2">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>+18.4% dari bulan lalu</span>
             </div>
           </div>
 
           {/* KPI 2: Buku Terdistribusi */}
-          <div className="bg-gradient-to-br from-cyan-50/50 to-white p-5 rounded-2xl border border-cyan-100 shadow-2xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-2">
+          <div className="bg-gradient-to-br from-cyan-50/50 to-white dark:from-cyan-950/30 dark:to-slate-900 p-5 rounded-2xl border border-cyan-100 dark:border-cyan-900/50 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
               <span>Buku / Item Terdistribusi</span>
-              <Package className="w-4 h-4 text-cyan-600" />
+              <Package className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               684 Eksemplar
             </div>
-            <div className="text-xs text-slate-500 font-semibold mt-2">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-2">
               Target: 750 eksemplar (91.2%)
             </div>
           </div>
 
           {/* KPI 3: Pengiriman Resi */}
-          <div className="bg-gradient-to-br from-amber-50/50 to-white p-5 rounded-2xl border border-amber-100 shadow-2xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-2">
+          <div className="bg-gradient-to-br from-amber-50/50 to-white dark:from-amber-950/30 dark:to-slate-900 p-5 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
               <span>Paket Pengiriman Resi</span>
-              <Truck className="w-4 h-4 text-amber-600" />
+              <Truck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               156 Paket
             </div>
-            <div className="text-xs text-emerald-600 font-semibold mt-2">
+            <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-2">
               142 Terkirim • 14 Dalam Proses
             </div>
           </div>
 
           {/* KPI 4: CS & Call Center */}
-          <div className="bg-gradient-to-br from-purple-50/50 to-white p-5 rounded-2xl border border-purple-100 shadow-2xs">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-2">
+          <div className="bg-gradient-to-br from-purple-50/50 to-white dark:from-purple-950/30 dark:to-slate-900 p-5 rounded-2xl border border-purple-100 dark:border-purple-900/50 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium mb-2">
               <span>CS Call Center & Kepuasan</span>
-              <PhoneCall className="w-4 h-4 text-purple-600" />
+              <PhoneCall className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             </div>
-            <div className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               98.7% Puas
             </div>
-            <div className="text-xs text-slate-500 font-semibold mt-2">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-2">
               Rata-rata respon: 2.4 menit
             </div>
           </div>
@@ -1809,49 +1809,49 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* 3 Detail Breakdown Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
           {/* Card 1: Performa Channel Transaksi (Via Channel) */}
-          <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 space-y-4">
+          <div className="bg-slate-50/60 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-800">Channel Transaksi (Via)</h4>
-              <span className="text-[11px] text-slate-400">Total 156 Order</span>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">Channel Transaksi (Via)</h4>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">Total 156 Order</span>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-slate-700">Call Center</span>
-                  <span className="font-bold text-slate-900">82 tx (Rp26.400.000)</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Call Center</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">82 tx (Rp26.400.000)</span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div className="bg-[#008d91] h-2 rounded-full" style={{ width: '54%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-slate-700">Instagram / Medsos</span>
-                  <span className="font-bold text-slate-900">34 tx (Rp11.200.000)</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Instagram / Medsos</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">34 tx (Rp11.200.000)</span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div className="bg-cyan-500 h-2 rounded-full" style={{ width: '23%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-slate-700">Tokopedia / Marketplace</span>
-                  <span className="font-bold text-slate-900">25 tx (Rp7.850.000)</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Tokopedia / Marketplace</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">25 tx (Rp7.850.000)</span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '16%' }} />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-slate-700">Stand Offline Vihara</span>
-                  <span className="font-bold text-slate-900">15 tx (Rp3.300.000)</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Stand Offline Vihara</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">15 tx (Rp3.300.000)</span>
                 </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div className="bg-amber-500 h-2 rounded-full" style={{ width: '7%' }} />
                 </div>
               </div>
@@ -1860,17 +1860,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <button
               type="button"
               onClick={() => onNavigateView('transaksiSalur')}
-              className="w-full py-2 text-center text-xs font-bold text-[#008d91] bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors cursor-pointer"
+              className="w-full py-2 text-center text-xs font-bold text-[#008d91] dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 rounded-xl transition-colors cursor-pointer"
             >
               Buka Semua Transaksi S-SALUR →
             </button>
           </div>
 
           {/* Card 2: Top 5 Buku Terlaris S-SALUR MAD */}
-          <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 space-y-4">
+          <div className="bg-slate-50/60 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-800">Top 5 Buku Terlaris</h4>
-              <span className="text-[11px] text-slate-400">Distribusi MAD</span>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">Top 5 Buku Terlaris</h4>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">Distribusi MAD</span>
             </div>
 
             <div className="space-y-2.5 text-xs">
@@ -1881,16 +1881,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 { title: 'Intisari Amerta Sutra Hati', count: '78 pcs', rev: 'Rp7.410.000' },
                 { title: 'Menjadi Buddha Tanpa Batas', count: '61 pcs', rev: 'Rp5.795.000' },
               ].map((book, bIdx) => (
-                <div key={bIdx} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-100">
+                <div key={bIdx} className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px] flex items-center justify-center">
                       {bIdx + 1}
                     </span>
-                    <span className="font-semibold text-slate-800 truncate max-w-[150px]">{book.title}</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[150px]">{book.title}</span>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-[#008d91] block">{book.count}</span>
-                    <span className="text-[10px] text-slate-400">{book.rev}</span>
+                    <span className="font-bold text-[#008d91] dark:text-teal-400 block">{book.count}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">{book.rev}</span>
                   </div>
                 </div>
               ))}
@@ -1899,61 +1899,61 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <button
               type="button"
               onClick={() => onNavigateView('itemSalur')}
-              className="w-full py-2 text-center text-xs font-bold text-[#008d91] bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors cursor-pointer"
+              className="w-full py-2 text-center text-xs font-bold text-[#008d91] dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 rounded-xl transition-colors cursor-pointer"
             >
               Lihat Katalog Item S-SALUR →
             </button>
           </div>
 
           {/* Card 3: Distribusi Agen Resi Pengiriman */}
-          <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 space-y-4">
+          <div className="bg-slate-50/60 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-slate-800">Distribusi Agen Resi</h4>
-              <span className="text-[11px] text-slate-400">Total Biaya Ongkir</span>
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">Distribusi Agen Resi</h4>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">Total Biaya Ongkir</span>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-800 block">JNE Express (Reguler/YES)</span>
-                  <span className="text-[11px] text-slate-500">78 Resi terkirim</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 block">JNE Express (Reguler/YES)</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">78 Resi terkirim</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900 block">Rp780.000</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">100% On-time</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Rp780.000</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">100% On-time</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-800 block">J&T Express</span>
-                  <span className="text-[11px] text-slate-500">45 Resi terkirim</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 block">J&T Express</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">45 Resi terkirim</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900 block">Rp450.000</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">98% On-time</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Rp450.000</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">98% On-time</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-800 block">SiCepat</span>
-                  <span className="text-[11px] text-slate-500">23 Resi terkirim</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 block">SiCepat</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">23 Resi terkirim</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900 block">Rp230.000</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">100% On-time</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Rp230.000</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">100% On-time</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between">
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-800 block">Lion Parcel</span>
-                  <span className="text-[11px] text-slate-500">10 Resi terkirim</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 block">Lion Parcel</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">10 Resi terkirim</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-slate-900 block">Rp100.000</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">95% On-time</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">Rp100.000</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">95% On-time</span>
                 </div>
               </div>
             </div>
@@ -1961,7 +1961,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <button
               type="button"
               onClick={() => onNavigateView('resi')}
-              className="w-full py-2 text-center text-xs font-bold text-[#008d91] bg-teal-50 hover:bg-teal-100 rounded-xl transition-colors cursor-pointer"
+              className="w-full py-2 text-center text-xs font-bold text-[#008d91] dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/60 rounded-xl transition-colors cursor-pointer"
             >
               Buka Dashboard Resi Pengiriman →
             </button>
@@ -1969,43 +1969,43 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         {/* Keuangan & Anggaran Divisi MAD */}
-        <div className="bg-gradient-to-r from-slate-50 to-teal-50/20 p-5 sm:p-6 rounded-2xl border border-slate-100">
+        <div className="bg-gradient-to-r from-slate-50 to-teal-50/20 dark:from-slate-800/70 dark:to-teal-950/20 p-5 sm:p-6 rounded-2xl border border-slate-100 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
             <div>
-              <h4 className="text-sm font-bold text-slate-800">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 Alokasi Anggaran & Realisasi Keuangan Divisi {activeDivisi}
               </h4>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Plafon anggaran operasional tim dan realisasi per bulan berjalan
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="font-bold text-slate-700">Total Plafon: Rp20.000.000</span>
-              <span className="text-slate-300">•</span>
-              <span className="font-bold text-emerald-600">Sisa Anggaran: Rp4.350.000</span>
+              <span className="font-bold text-slate-700 dark:text-slate-200">Total Plafon: Rp20.000.000</span>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">Sisa Anggaran: Rp4.350.000</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 bg-white rounded-xl border border-slate-100">
-              <span className="text-[11px] text-slate-400 block">Subsidi Ongkos Kirim</span>
-              <span className="font-bold text-slate-800 text-sm">Rp3.800.000</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">156 transaksi</span>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 block">Subsidi Ongkos Kirim</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">Rp3.800.000</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">156 transaksi</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-slate-100">
-              <span className="text-[11px] text-slate-400 block">Kemasan & Packing Kardus</span>
-              <span className="font-bold text-slate-800 text-sm">Rp4.200.000</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Plastik wrap, lakban, bubble</span>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 block">Kemasan & Packing Kardus</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">Rp4.200.000</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">Plastik wrap, lakban, bubble</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-slate-100">
-              <span className="text-[11px] text-slate-400 block">Stand Offline & Banner</span>
-              <span className="font-bold text-slate-800 text-sm">Rp3.650.000</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Vihara Buddhayana Bogor</span>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 block">Stand Offline & Banner</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">Rp3.650.000</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">Vihara Buddhayana Bogor</span>
             </div>
-            <div className="p-3 bg-white rounded-xl border border-slate-100">
-              <span className="text-[11px] text-slate-400 block">Iklan & Promosi Digital</span>
-              <span className="font-bold text-slate-800 text-sm">Rp4.000.000</span>
-              <span className="text-[10px] text-slate-500 block mt-0.5">Instagram & WhatsApp blast</span>
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 block">Iklan & Promosi Digital</span>
+              <span className="font-bold text-slate-800 dark:text-slate-100 text-sm">Rp4.000.000</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">Instagram & WhatsApp blast</span>
             </div>
           </div>
         </div>

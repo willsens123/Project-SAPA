@@ -331,9 +331,9 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
   };
 
   return (
-    <div className={`w-full flex flex-col bg-slate-50/50 rounded-2xl border border-slate-200/80 p-3 sm:p-5 ${className}`}>
+    <div className={`w-full flex flex-col bg-slate-50/50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 sm:p-5 ${className}`}>
       {/* Top Filter Bar: Island tabs & Toggle City Pins */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-200/70">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-slate-200/70 dark:border-slate-800">
         <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none">
           {[
             { id: 'SEMUA', label: 'Semua Pulau' },
@@ -352,7 +352,7 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedIsland === tab.id
                   ? 'bg-[#05828e] text-white shadow-xs'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700'
               }`}
             >
               {tab.label}
@@ -366,8 +366,8 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
             onClick={() => setShowCityPins(!showCityPins)}
             className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border ${
               showCityPins
-                ? 'bg-teal-50 text-[#05828e] border-teal-200'
-                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                ? 'bg-teal-50 dark:bg-teal-950/60 text-[#05828e] dark:text-[#2dd4bf] border-teal-200 dark:border-teal-800'
+                : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
             }`}
             title="Tampilkan / Sembunyikan Titik Kota"
           >
@@ -378,7 +378,7 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
       </div>
 
       {/* Main Interactive SVG Map */}
-      <div className="relative w-full h-[280px] sm:h-[380px] md:h-[420px] my-2 bg-gradient-to-b from-sky-50/40 via-white to-slate-50/60 rounded-xl overflow-hidden flex items-center justify-center p-1 sm:p-2">
+      <div className="relative w-full h-[280px] sm:h-[380px] md:h-[420px] my-2 bg-gradient-to-b from-sky-50/40 via-white to-slate-50/60 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 rounded-xl overflow-hidden flex items-center justify-center p-1 sm:p-2 border border-transparent dark:border-slate-800/80">
         <svg
           viewBox="0 0 1000 450"
           className="w-full h-full max-h-[420px] select-none"
@@ -880,13 +880,12 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
                       x={city.x}
                       y={city.y - 5}
                       textAnchor="middle"
-                      fill="#1e293b"
                       fontSize={isCityRegionActive ? '9' : '7.5'}
                       fontWeight={isCityRegionActive ? 'bold' : '600'}
                       className={`pointer-events-none select-none drop-shadow-2xs transition-all ${
                         isCityRegionActive
-                          ? 'opacity-100 fill-[#05828e]'
-                          : 'opacity-70 group-hover:opacity-100'
+                          ? 'opacity-100 fill-[#05828e] dark:fill-[#2dd4bf]'
+                          : 'opacity-70 group-hover:opacity-100 fill-slate-800 dark:fill-slate-200'
                       }`}
                     >
                       {city.name}
@@ -918,44 +917,44 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
       </div>
 
       {/* Region Detail Card at bottom of map */}
-      <div className="mt-2 p-3 sm:p-4 bg-white rounded-xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="mt-2 p-3 sm:p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#05828e] flex items-center justify-center shrink-0 border border-teal-200/60 font-bold">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center shrink-0 border border-teal-200/60 dark:border-teal-800/60 font-bold">
             <MapPin className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-bold text-slate-800 text-sm sm:text-base">
+              <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">
                 {activeRegion.name}
               </h4>
               <span
                 className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   activeRegion.status === 'Tinggi'
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                     : activeRegion.status === 'Sedang'
-                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                    : 'bg-slate-100 text-slate-600'
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                 }`}
               >
                 Distribusi {activeRegion.status}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Cakupan: {activeRegion.description}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0 md:pl-4 shrink-0">
+        <div className="flex items-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-2 md:pt-0 md:pl-4 shrink-0">
           <div>
-            <span className="text-[10.5px] text-slate-400 block font-medium">Jangkauan Kota</span>
-            <span className="text-sm font-bold text-slate-800">
+            <span className="text-[10.5px] text-slate-400 dark:text-slate-500 block font-medium">Jangkauan Kota</span>
+            <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
               {activeRegion.citiesCount} Kota / Kab
             </span>
           </div>
           <div>
-            <span className="text-[10.5px] text-slate-400 block font-medium">Total Partisipan</span>
-            <span className="text-sm font-bold text-[#05828e]">
+            <span className="text-[10.5px] text-slate-400 dark:text-slate-500 block font-medium">Total Partisipan</span>
+            <span className="text-sm font-bold text-[#05828e] dark:text-[#2dd4bf]">
               {activeRegion.customerCount.toLocaleString('id-ID')} Orang
             </span>
           </div>
@@ -963,23 +962,23 @@ export const IndonesiaMapSvg: React.FC<IndonesiaMapProps> = ({
       </div>
 
       {/* Legend Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-2 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-2 text-xs text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-xs bg-[#05828e]" />
-            <span className="font-medium text-slate-700">Verifikasi Tinggi / Utama</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">Verifikasi Tinggi / Utama</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-xs bg-[#f59e0b]" />
-            <span className="font-medium text-slate-700">Dalam Proses / Sedang</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">Dalam Proses / Sedang</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-xs bg-[#cbd5e1]" />
-            <span className="font-medium text-slate-600">Wilayah Rintisan</span>
+            <span className="font-medium text-slate-600 dark:text-slate-400">Wilayah Rintisan</span>
           </div>
         </div>
 
-        <div className="text-[11px] font-semibold text-[#05828e]">
+        <div className="text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf]">
           Total Nasional: 60 Kota, 30 Provinsi (14.050 Partisipan)
         </div>
       </div>

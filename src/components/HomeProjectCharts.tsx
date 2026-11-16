@@ -474,24 +474,24 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-7 shadow-xs space-y-6 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-7 shadow-xs space-y-6 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Header & Controls */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#008d91] flex items-center justify-center font-bold shadow-2xs">
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold shadow-2xs">
             <Target className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-slate-800">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 Visualisasi & Komparasi KPI Proyek per Divisi
               </h2>
-              <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
+              <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Target KPI Aktif
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Bandingkan performa proyek riil terhadap target spesifik masing-masing divisi secara otomatis
             </p>
           </div>
@@ -500,14 +500,14 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
         {/* Action Controls: View Tabs */}
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
           {/* Chart View Modes */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
             <button
               type="button"
               onClick={() => setChartMode('comparison')}
               className={`px-3 py-1 font-semibold rounded-lg transition-all cursor-pointer ${
                 chartMode === 'comparison'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-bold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Aktual vs Target
@@ -517,8 +517,8 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
               onClick={() => setChartMode('achievement')}
               className={`px-3 py-1 font-semibold rounded-lg transition-all cursor-pointer ${
                 chartMode === 'achievement'
-                  ? 'bg-white text-indigo-700 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-700 dark:text-indigo-300 shadow-2xs font-bold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Capaian KPI (%)
@@ -528,8 +528,8 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
               onClick={() => setChartMode('status')}
               className={`px-3 py-1 font-semibold rounded-lg transition-all cursor-pointer ${
                 chartMode === 'status'
-                  ? 'bg-white text-teal-800 shadow-2xs font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-300 shadow-2xs font-bold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               Status Proyek
@@ -540,54 +540,54 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
 
       {/* KPI Comparison Highlights Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <div className="p-3.5 rounded-2xl bg-teal-50/50 border border-teal-100">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1">
+        <div className="p-3.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/30 border border-teal-100 dark:border-teal-900/50">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
             <span>Total Proyek Riil</span>
-            <FolderGit2 className="w-3.5 h-3.5 text-[#008d91]" />
+            <FolderGit2 className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-800">
-            {totalActualProjects} <span className="text-xs font-semibold text-[#008d91]">Aktual</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100">
+            {totalActualProjects} <span className="text-xs font-semibold text-[#008d91] dark:text-teal-400">Aktual</span>
           </div>
-          <span className="text-[10px] text-teal-700 font-medium block mt-0.5">
+          <span className="text-[10px] text-teal-700 dark:text-teal-400 font-medium block mt-0.5">
             {totalOngoingProjects} Ongoing • {totalActualProjects - totalOngoingProjects} Done/Waiting
           </span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1">
+        <div className="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
             <span>Total Target KPI Divisi</span>
-            <Target className="w-3.5 h-3.5 text-indigo-600" />
+            <Target className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-indigo-950">
-            {totalTargetProjects} <span className="text-xs font-semibold text-indigo-600">Target</span>
+          <div className="text-xl sm:text-2xl font-black text-indigo-950 dark:text-indigo-200">
+            {totalTargetProjects} <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Target</span>
           </div>
-          <span className="text-[10px] text-indigo-700 font-medium block mt-0.5">
+          <span className="text-[10px] text-indigo-700 dark:text-indigo-400 font-medium block mt-0.5">
             Gabungan target 12 divisi
           </span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-100">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1">
+        <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
             <span>Rata-rata Capaian KPI</span>
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-emerald-900">
+          <div className="text-xl sm:text-2xl font-black text-emerald-900 dark:text-emerald-300">
             {averageAchievementRate}%
           </div>
-          <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium block mt-0.5">
             {averageAchievementRate >= 80 ? 'Performa sangat baik' : 'Perlu akselerasi'}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-cyan-50/50 border border-cyan-100">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] mb-1">
+        <div className="p-3.5 rounded-2xl bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900/50">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px] mb-1">
             <span>Divisi Terpilih (Fokus)</span>
-            <Activity className="w-3.5 h-3.5 text-cyan-600" />
+            <Activity className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-800">
+          <div className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100">
             {activeDivisi}
           </div>
-          <span className="text-[10px] text-cyan-700 font-medium block mt-0.5">
+          <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-medium block mt-0.5">
             {selectedDivStats.actual} riil / {selectedDivStats.target} target KPI
           </span>
         </div>
@@ -596,22 +596,22 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
       {/* Main Visualizations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Chart (8 Columns): Recharts Bar / Composed Chart */}
-        <div className="lg:col-span-8 bg-slate-50/60 p-4 sm:p-5 rounded-2xl border border-slate-100 space-y-3">
+        <div className="lg:col-span-8 bg-slate-50/60 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
                 {chartMode === 'comparison' && 'Perbandingan Aktual Proyek Riil vs Target KPI per Divisi'}
                 {chartMode === 'achievement' && 'Persentase Tingkat Capaian KPI per Divisi terhadap Benchmark 100%'}
                 {chartMode === 'status' && 'Distribusi Status Proyek Riil per Divisi (Ongoing, Done, Waiting)'}
               </h3>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">
                 Klik batang pada grafik untuk memilih divisi aktif di dashboard
               </span>
             </div>
 
             {/* Chart Legend Indicators */}
             {chartMode === 'comparison' && (
-              <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 shrink-0">
+              <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm bg-[#008d91]" /> Aktual Riil
                 </span>
@@ -622,21 +622,21 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
             )}
 
             {chartMode === 'achievement' && (
-              <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 shrink-0">
-                <span className="flex items-center gap-1 text-emerald-600">
+              <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> &gt;= 100%
                 </span>
-                <span className="flex items-center gap-1 text-[#008d91]">
+                <span className="flex items-center gap-1 text-[#008d91] dark:text-teal-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#008d91]" /> 75-99%
                 </span>
-                <span className="flex items-center gap-1 text-amber-600">
+                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> &lt; 75%
                 </span>
               </div>
             )}
 
             {chartMode === 'status' && (
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 shrink-0">
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 shrink-0">
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-sm bg-[#008d91]" /> Ongoing
                 </span>
@@ -663,16 +663,16 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                     }
                   }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                   <XAxis
                     dataKey="divisi"
-                    tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
-                    axisLine={{ stroke: '#cbd5e1' }}
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
+                    axisLine={{ stroke: '#475569', strokeOpacity: 0.35 }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -702,16 +702,16 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                     }
                   }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                   <XAxis
                     dataKey="divisi"
-                    tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
-                    axisLine={{ stroke: '#cbd5e1' }}
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
+                    axisLine={{ stroke: '#475569', strokeOpacity: 0.35 }}
                     tickLine={false}
                   />
                   <YAxis
                     unit="%"
-                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -758,16 +758,16 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                     }
                   }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#94a3b8" strokeOpacity={0.22} />
                   <XAxis
                     dataKey="divisi"
-                    tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
-                    axisLine={{ stroke: '#cbd5e1' }}
+                    tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }}
+                    axisLine={{ stroke: '#475569', strokeOpacity: 0.35 }}
                     tickLine={false}
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fontSize: 10, fill: '#64748b' }}
+                    tick={{ fontSize: 10, fill: '#94a3b8' }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -800,22 +800,22 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
         </div>
 
         {/* Right Chart (4 Columns): Recharts Donut Pie Chart */}
-        <div className="lg:col-span-4 bg-slate-50/60 p-4 sm:p-5 rounded-2xl border border-slate-100 space-y-3">
+        <div className="lg:col-span-4 bg-slate-50/60 dark:bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-800">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
                 Pangsa Proyek Berjalan
               </h3>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">
                 Distribusi {totalOngoingProjects} proyek Ongoing
               </span>
             </div>
-            <PieIcon className="w-4 h-4 text-[#008d91]" />
+            <PieIcon className="w-4 h-4 text-[#008d91] dark:text-teal-400" />
           </div>
 
           <div className="w-full h-[190px] flex items-center justify-center">
             {ongoingPieData.length === 0 ? (
-              <div className="text-xs text-slate-400 italic text-center py-10">
+              <div className="text-xs text-slate-400 dark:text-slate-500 italic text-center py-10">
                 Belum ada proyek berstatus Ongoing
               </div>
             ) : (
@@ -838,8 +838,8 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                             ? '#008d91'
                             : PIE_COLORS[index % PIE_COLORS.length]
                         }
-                        stroke={entry.divisi === activeDivisi ? '#004d50' : '#ffffff'}
-                        strokeWidth={entry.divisi === activeDivisi ? 2 : 1}
+                        stroke={entry.divisi === activeDivisi ? '#14b8a6' : 'transparent'}
+                        strokeWidth={entry.divisi === activeDivisi ? 2 : 0}
                       />
                     ))}
                   </Pie>
@@ -857,8 +857,8 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                 onClick={() => onSelectDivisi && onSelectDivisi(item.divisi)}
                 className={`flex items-center justify-between p-1.5 rounded-lg transition-colors cursor-pointer ${
                   item.divisi === activeDivisi
-                    ? 'bg-teal-50 text-[#008d91] font-bold'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 text-[#008d91] dark:text-teal-300 font-bold'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2 truncate">
@@ -868,7 +868,7 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                   />
                   <span className="truncate">{item.name}</span>
                 </div>
-                <span className="font-semibold text-slate-800 shrink-0">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 shrink-0">
                   {item.value} ({item.percent}%)
                 </span>
               </div>
@@ -880,22 +880,22 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
       {/* ============================================================== */}
       {/* KARTU KOMPARASI DETAIL KPI DIVISI TERPILIH                     */}
       {/* ============================================================== */}
-      <div className="bg-gradient-to-r from-slate-50 via-teal-50/20 to-indigo-50/20 p-5 sm:p-6 rounded-2xl border border-slate-200/90 space-y-4">
+      <div className="bg-gradient-to-r from-slate-50 via-teal-50/20 to-indigo-50/20 dark:from-slate-800/70 dark:via-teal-950/20 dark:to-indigo-950/20 p-5 sm:p-6 rounded-2xl border border-slate-200/90 dark:border-slate-800 space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-[#008d91] flex items-center justify-center font-bold shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[#008d91] dark:text-teal-400 flex items-center justify-center font-bold shadow-2xs">
               {selectedDivStats.divisi}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-slate-800">
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
                   Rincian Komparasi KPI Divisi {selectedDivStats.divisi}
                 </h4>
-                <span className="text-[10px] bg-teal-100 text-[#008d91] font-bold px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-teal-100 dark:bg-teal-950/80 text-[#008d91] dark:text-teal-300 font-bold px-2 py-0.5 rounded-full">
                   {selectedDivStats.achievementPercent}% Capaian Proyek
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {selectedDivKpi.catatanKpi || selectedDivKpi.namaDivisiLengkap}
               </p>
             </div>
@@ -905,25 +905,25 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
         {/* 4 Comparison Metric Columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {/* Metric 1: Jumlah Proyek */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-slate-500 text-[11px]">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span className="flex items-center gap-1">
-                <FolderGit2 className="w-3.5 h-3.5 text-[#008d91]" />
+                <FolderGit2 className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
                 Jumlah Proyek
               </span>
               <span className={`font-bold ${
-                selectedDivStats.actual >= selectedDivStats.target ? 'text-emerald-600' : 'text-amber-600'
+                selectedDivStats.actual >= selectedDivStats.target ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
               }`}>
                 {selectedDivStats.actual >= selectedDivStats.target ? 'Tercapai' : 'Kurang ' + (selectedDivStats.target - selectedDivStats.actual)}
               </span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-black text-slate-800">{selectedDivStats.actual} Proyek</span>
-              <span className="text-xs font-semibold text-indigo-600">
+              <span className="text-lg font-black text-slate-800 dark:text-slate-100">{selectedDivStats.actual} Proyek</span>
+              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                 Target: {selectedDivStats.target}
               </span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div
                 className={`h-1.5 rounded-full transition-all ${
                   selectedDivStats.achievementPercent >= 100 ? 'bg-emerald-500' : 'bg-[#008d91]'
@@ -931,31 +931,31 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                 style={{ width: `${Math.min(100, selectedDivStats.achievementPercent)}%` }}
               />
             </div>
-            <span className="text-[10px] text-slate-400 block">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
               {selectedDivStats.ongoing} Ongoing • {selectedDivStats.done} Selesai
             </span>
           </div>
 
           {/* Metric 2: Realisasi Anggaran */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-slate-500 text-[11px]">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span className="flex items-center gap-1">
-                <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                <DollarSign className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 Realisasi Anggaran
               </span>
-              <span className="font-bold text-slate-700">
+              <span className="font-bold text-slate-700 dark:text-slate-200">
                 {Math.round((selectedDivStats.budgetEstimate / selectedDivStats.targetBudget) * 100)}%
               </span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-sm font-black text-slate-800">
+              <span className="text-sm font-black text-slate-800 dark:text-slate-100">
                 Rp{(selectedDivStats.budgetEstimate / 1000000).toFixed(1)} Juta
               </span>
-              <span className="text-xs font-semibold text-indigo-600">
+              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                 Target: Rp{(selectedDivStats.targetBudget / 1000000).toFixed(1)}M
               </span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div
                 className="bg-amber-500 h-1.5 rounded-full transition-all"
                 style={{
@@ -963,31 +963,31 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                 }}
               />
             </div>
-            <span className="text-[10px] text-slate-400 block truncate">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block truncate">
               Target Divisi: Rp{selectedDivStats.targetBudget.toLocaleString('id-ID')}
             </span>
           </div>
 
           {/* Metric 3: Partisipan & Customer */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-slate-500 text-[11px]">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-cyan-600" />
+                <Users className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 Jangkauan Partisipan
               </span>
-              <span className="font-bold text-slate-700">
+              <span className="font-bold text-slate-700 dark:text-slate-200">
                 {Math.round((selectedDivStats.participantEstimate / selectedDivStats.targetPartisipan) * 100)}%
               </span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-black text-slate-800">
+              <span className="text-lg font-black text-slate-800 dark:text-slate-100">
                 {selectedDivStats.participantEstimate} Orang
               </span>
-              <span className="text-xs font-semibold text-indigo-600">
+              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                 Target: {selectedDivStats.targetPartisipan}
               </span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div
                 className="bg-cyan-500 h-1.5 rounded-full transition-all"
                 style={{
@@ -995,35 +995,35 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                 }}
               />
             </div>
-            <span className="text-[10px] text-slate-400 block">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
               Donatur & Pelanggan S-SALUR
             </span>
           </div>
 
           {/* Metric 4: Tingkat Penyelesaian */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between text-slate-500 text-[11px]">
+          <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[11px]">
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Tingkat Penyelesaian
               </span>
-              <span className="font-bold text-slate-700">
+              <span className="font-bold text-slate-700 dark:text-slate-200">
                 Target: {selectedDivStats.targetSelesaiPercent}%
               </span>
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-black text-slate-800">
+              <span className="text-lg font-black text-slate-800 dark:text-slate-100">
                 {selectedDivStats.completionRate}% Selesai
               </span>
               <span className={`text-xs font-bold ${
                 selectedDivStats.completionRate >= selectedDivStats.targetSelesaiPercent
-                  ? 'text-emerald-600'
-                  : 'text-amber-600'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-amber-600 dark:text-amber-400'
               }`}>
                 {selectedDivStats.completionRate >= selectedDivStats.targetSelesaiPercent ? 'Memenuhi' : 'On Progress'}
               </span>
             </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
               <div
                 className={`h-1.5 rounded-full transition-all ${
                   selectedDivStats.completionRate >= selectedDivStats.targetSelesaiPercent
@@ -1033,7 +1033,7 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
                 style={{ width: `${Math.min(100, selectedDivStats.completionRate)}%` }}
               />
             </div>
-            <span className="text-[10px] text-slate-400 block">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
               Berdasarkan persentase proyek status Done
             </span>
           </div>

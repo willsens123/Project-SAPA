@@ -763,7 +763,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
     <div className="w-full">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 dark:bg-slate-800 dark:border dark:border-slate-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -773,14 +773,14 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 mb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               Laporan Keuangan
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#05828e]/10 text-[#05828e]">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#05828e]/10 dark:bg-teal-500/20 text-[#05828e] dark:text-teal-300">
               Standar Akuntansi Yayasan
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Chart of Accounts (COA), Jurnal Umum Terintegrasi, Laporan Manajemen, & Saldo Kas Rekening
           </p>
         </div>
@@ -789,7 +789,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
           {/* Toggle Search Bar */}
           {isSearchOpen ? (
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-xs animate-in fade-in duration-150">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 shadow-xs animate-in fade-in duration-150">
               <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input
                 type="text"
@@ -797,13 +797,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari akun, jurnal, referensi..."
                 autoFocus
-                className="text-xs text-slate-700 outline-none w-44 sm:w-60"
+                className="text-xs text-slate-700 dark:text-slate-200 dark:placeholder-slate-500 bg-transparent outline-none w-44 sm:w-60"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -811,7 +811,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(false)}
-                className="text-slate-400 hover:text-slate-600 ml-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -821,7 +821,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               type="button"
               onClick={() => setIsSearchOpen(true)}
               title="Cari Data"
-              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer shadow-2xs"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -837,8 +837,8 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             title={isPrivacyMasked ? 'Tampilkan Nominal' : 'Samarkan Nominal'}
             className={`p-1.5 rounded-lg border transition-colors cursor-pointer shadow-2xs ${
               isPrivacyMasked
-                ? 'bg-amber-50 border-amber-300 text-amber-700 font-medium'
-                : 'border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700/60 text-amber-700 dark:text-amber-300 font-medium'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
             {isPrivacyMasked ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -853,16 +853,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               className={`p-1.5 rounded-lg border transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5 ${
                 isFilterOpen || selectedRekeningFilter !== 'ALL' || selectedKelompokCoaFilter !== 'ALL'
                   ? 'bg-[#05828e] border-[#05828e] text-white'
-                  : 'border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>
 
             {isFilterOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-4 z-40 animate-in fade-in duration-150">
-                <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-                  <span className="text-xs font-bold text-slate-800">Filter Laporan</span>
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-40 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100">Filter Laporan</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -879,13 +879,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
                 {/* Filter Kelompok COA */}
                 <div className="mb-3">
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Kelompok Akun (COA)
                   </label>
                   <select
                     value={selectedKelompokCoaFilter}
                     onChange={(e) => setSelectedKelompokCoaFilter(e.target.value)}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white outline-none"
+                    className="w-full text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 outline-none"
                   >
                     <option value="ALL">Semua Kelompok</option>
                     <option value="AKTIVA">10000 AKTIVA</option>
@@ -899,13 +899,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
                 {/* Filter Rekening Bank */}
                 <div className="mb-3">
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Rekening Bank
                   </label>
                   <select
                     value={selectedRekeningFilter}
                     onChange={(e) => setSelectedRekeningFilter(e.target.value)}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 focus:bg-white outline-none"
+                    className="w-full text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 outline-none"
                   >
                     <option value="ALL">Semua Rekening</option>
                     <option value="Rek Operasional BCA">Rek Operasional BCA</option>
@@ -916,7 +916,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
                 {/* Filter Kategori Dana */}
                 <div className="mb-2">
-                  <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Kategori Dana
                   </label>
                   <div className="flex flex-wrap gap-1.5">
@@ -928,7 +928,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                         className={`text-[10px] px-2 py-1 rounded-md transition-colors cursor-pointer ${
                           selectedKategoriDanaFilter === kat
                             ? 'bg-[#05828e] text-white font-medium'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
                         {kat === 'ALL' ? 'Semua' : kat}
@@ -946,16 +946,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('app-open-download-all-data'))}
               title="Unduh & Cadangkan Seluruh Data YPPLN (JSON / CSV Archive)"
-              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-[#05828e]" />
+              <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
               <span className="hidden sm:inline">Backup Semua Data</span>
               <span className="sm:hidden">Backup</span>
             </button>
 
             {activeTab === 'ringkasanJurnal' ? (
               <>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Konsolidasi 100% Seimbang</span>
                 </span>
@@ -963,9 +963,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={() => setActiveTab('jurnal')}
                   title="Kembali ke Daftar Jurnal Umum Rinci"
-                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Receipt className="w-3.5 h-3.5 text-slate-500" />
+                  <Receipt className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span>Jurnal Rinci</span>
                 </button>
                 <button
@@ -981,7 +981,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </>
             ) : activeTab === 'jurnal' ? (
               <>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-[#05828e] dark:text-teal-300 text-xs font-semibold">
                   <Check className="w-3.5 h-3.5" />
                   <span>Otomatis Mutasi ({journalEntries.length})</span>
                 </span>
@@ -989,7 +989,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={() => setActiveTab('ringkasanJurnal')}
                   title="Tampilkan Ringkasan Konsolidasi Debet-Kredit Mutasi, S-SALUR, D-DONASI, & A-AJAR"
-                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-[#05828e] dark:border-teal-500 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
                   <Scale className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Ringkasan Konsolidasi</span>
@@ -1008,16 +1008,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onNavigateToMutasi('BCA 888')}
-                    className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                   >
-                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     <span>Mutasi Bank</span>
                   </button>
                 )}
               </>
             ) : activeTab === 'grafikBulanan' ? (
               <>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-[#05828e] dark:text-teal-300 text-xs font-semibold">
                   <BarChart3 className="w-3.5 h-3.5" />
                   <span>Grafik Batang Recharts</span>
                 </span>
@@ -1025,7 +1025,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={() => setIsExportPdfModalOpen(true)}
                   title="Ekspor Laporan Keuangan ke format PDF"
-                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-[#05828e] dark:border-teal-500 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Ekspor PDF</span>
@@ -1037,9 +1037,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <button
                   type="button"
                   onClick={handleExportMutasiCsv}
-                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Ekspor CSV Mutasi</span>
                 </button>
                 {onNavigateToMutasi && (
@@ -1055,7 +1055,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </>
             ) : activeTab === 'arusKas' ? (
               <>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] text-xs font-semibold">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/60 text-[#05828e] dark:text-teal-300 text-xs font-semibold">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>Visualisasi Arus Kas Dinamis</span>
                 </span>
@@ -1063,7 +1063,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={() => setIsExportPdfModalOpen(true)}
                   title="Ekspor Laporan Keuangan ke format PDF"
-                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-[#05828e] dark:border-teal-500 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Ekspor PDF</span>
@@ -1076,7 +1076,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={() => setIsExportPdfModalOpen(true)}
                   title="Ekspor Laporan Keuangan ke format PDF"
-                  className="bg-white border border-[#05828e] text-[#05828e] hover:bg-teal-50 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-[#05828e] dark:border-teal-500 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Ekspor PDF</span>
@@ -1105,9 +1105,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <Printer className="w-3.5 h-3.5 text-slate-500" />
+                  <Printer className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                   <span>Cetak</span>
                 </button>
               </>
@@ -1117,18 +1117,18 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       </div>
 
       {/* Filter Rentang Tanggal Kustom (Periode Start Date & End Date) */}
-      <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-4 shadow-2xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 mb-4 shadow-2xs">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mr-1">
-              <Calendar className="w-4 h-4 text-[#05828e] shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 mr-1">
+              <Calendar className="w-4 h-4 text-[#05828e] dark:text-teal-400 shrink-0" />
               <span>Rentang Tanggal:</span>
             </div>
 
             <div className="flex items-center gap-1.5">
               <label
                 htmlFor="laporan-start-date"
-                className="text-[11px] font-semibold text-slate-500"
+                className="text-[11px] font-semibold text-slate-500 dark:text-slate-400"
               >
                 Dari
               </label>
@@ -1138,7 +1138,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 aria-label="Tanggal Mulai"
-                className="text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#05828e] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
+                className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-[#05828e] dark:focus:border-teal-500 rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
               />
             </div>
 
@@ -1147,7 +1147,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             <div className="flex items-center gap-1.5">
               <label
                 htmlFor="laporan-end-date"
-                className="text-[11px] font-semibold text-slate-500"
+                className="text-[11px] font-semibold text-slate-500 dark:text-slate-400"
               >
                 Sampai
               </label>
@@ -1157,12 +1157,12 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 aria-label="Tanggal Akhir"
-                className="text-xs font-medium text-slate-800 bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#05828e] rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
+                className="text-xs font-medium text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-[#05828e] dark:focus:border-teal-500 rounded-lg px-2.5 py-1.5 outline-none transition-colors cursor-pointer tabular-nums"
               />
             </div>
 
             {/* Preset Periode Cepat */}
-            <div className="flex flex-wrap items-center gap-1.5 xl:ml-2 xl:pl-2.5 xl:border-l xl:border-slate-200">
+            <div className="flex flex-wrap items-center gap-1.5 xl:ml-2 xl:pl-2.5 xl:border-l xl:border-slate-200 dark:xl:border-slate-700">
               {[
                 { label: 'Semua', start: '', end: '' },
                 { label: 'Nov 2021', start: '2021-11-01', end: '2021-11-30' },
@@ -1182,7 +1182,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
                       isSelected
                         ? 'bg-[#05828e] border-[#05828e] text-white'
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     {preset.label}
@@ -1197,7 +1197,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     setStartDate('');
                     setEndDate('');
                   }}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer flex items-center gap-1"
                   title="Hapus filter rentang tanggal"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -1208,20 +1208,20 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           </div>
 
           {/* Info periode aktif & jumlah data sinkron */}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 tabular-nums shrink-0">
-            <span className={hasCustomDateRange ? 'font-bold text-[#05828e]' : 'font-semibold text-slate-700'}>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 dark:text-slate-400 tabular-nums shrink-0">
+            <span className={hasCustomDateRange ? 'font-bold text-[#05828e] dark:text-teal-400' : 'font-semibold text-slate-700 dark:text-slate-200'}>
               {activeDateRangeLabel}
             </span>
-            <span className="text-slate-300">·</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
             <span>{dateFilteredMutasiItems.length} mutasi</span>
-            <span className="text-slate-300">·</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
             <span>{journalEntries.length} jurnal</span>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation matching Identitas UI */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-4 border-b border-slate-200 scrollbar-none">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-4 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
         {[
           { key: 'coa', label: 'COA', desc: 'Daftar Akun', badge: coaList.length },
           { key: 'tabelMutasi', label: 'Tabel Mutasi', desc: 'Mutasi Bank Terfilter', badge: mutasiTableItems.length },
@@ -1243,15 +1243,15 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-lg transition-all cursor-pointer whitespace-nowrap border-b-2 ${
                 isActive
-                  ? 'border-[#05828e] text-[#05828e] bg-teal-50/50'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  ? 'border-[#05828e] dark:border-teal-400 text-[#05828e] dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/40'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
               }`}
             >
               <span>{tab.label}</span>
               {tab.badge !== undefined && (
                 <span
                   className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    isActive ? 'bg-[#05828e] text-white' : 'bg-slate-100 text-slate-600'
+                    isActive ? 'bg-[#05828e] text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   {tab.badge}
@@ -1268,16 +1268,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {activeTab === 'coa' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Quick Info bar */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
-              <span className="font-bold text-slate-800">Chart of Accounts (COA)</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-slate-600">
-                Total Akun Terdaftar: <strong className="text-slate-900">{coaList.length}</strong>
+              <span className="font-bold text-slate-800 dark:text-slate-100">Chart of Accounts (COA)</span>
+              <span className="text-slate-400 dark:text-slate-600">|</span>
+              <span className="text-slate-600 dark:text-slate-400">
+                Total Akun Terdaftar: <strong className="text-slate-900 dark:text-white">{coaList.length}</strong>
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
+              <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full font-semibold border border-emerald-200 dark:border-emerald-800/60">
                 <Check className="w-3.5 h-3.5" />
                 Neraca Aktiva Seimbang
               </span>
@@ -1285,7 +1285,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateToCoa}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-[#05828e] hover:text-[#046e78] bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1 rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-[#05828e] dark:text-teal-300 hover:text-[#046e78] bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-950/70 border border-teal-200 dark:border-teal-800/60 px-3 py-1 rounded-lg transition-colors cursor-pointer"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   <span>Buka Menu COA</span>
@@ -1295,39 +1295,39 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           </div>
 
           {/* Table Container matching screenshot image_d574fecf.png */}
-          <div className="bg-white border border-slate-300 rounded-lg shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden">
             {/* Sheet Title matching exact image */}
-            <div className="py-2.5 text-center font-bold text-sm tracking-wide text-slate-900 bg-slate-100/90 border-b border-slate-300 uppercase">
+            <div className="py-2.5 text-center font-bold text-sm tracking-wide text-slate-900 dark:text-slate-100 bg-slate-100/90 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 uppercase">
               DAFTAR AKUN
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                    <th className="py-2 px-3 border-r border-slate-300 w-24">NO AKUN</th>
-                    <th className="py-2 px-4 border-r border-slate-300 min-w-[280px]">NAMA AKUN</th>
-                    <th className="py-2 px-3 border-r border-slate-300 text-center w-14">POS</th>
-                    <th className="py-2 px-4 border-r border-slate-300 text-right min-w-[130px]">DEBET</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                    <th className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 w-24">NO AKUN</th>
+                    <th className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[280px]">NAMA AKUN</th>
+                    <th className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 text-center w-14">POS</th>
+                    <th className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[130px]">DEBET</th>
                     <th className="py-2 px-4 text-right min-w-[130px]">KREDIT</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {filteredCoaList.map((acc) => {
                     if (acc.isHeader) {
                       // Category Header row (e.g. 10000 AKTIVA, 20000 KEWAJIBAN, etc.)
                       return (
                         <tr
                           key={acc.noAkun}
-                          className="bg-slate-100 font-extrabold text-slate-900 hover:bg-slate-150 transition-colors"
+                          className="bg-slate-100 dark:bg-slate-800 font-extrabold text-slate-900 dark:text-slate-100 hover:bg-slate-150 transition-colors"
                         >
-                          <td className="py-2 px-3 border-r border-slate-300 tracking-wider">
+                          <td className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 tracking-wider">
                             {acc.noAkun}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-300 font-black tracking-wide" colSpan={2}>
+                          <td className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 font-black tracking-wide" colSpan={2}>
                             {acc.namaAkun}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-300 text-right text-slate-400 font-normal">
+                          <td className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 text-right text-slate-400 font-normal">
                             -
                           </td>
                           <td className="py-2 px-4 text-right text-slate-400 font-normal">
@@ -1340,35 +1340,35 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     return (
                       <tr
                         key={acc.noAkun}
-                        className="hover:bg-teal-50/40 transition-colors group"
+                        className="hover:bg-teal-50/40 dark:hover:bg-teal-950/20 transition-colors group"
                       >
-                        <td className="py-1.5 px-3 border-r border-slate-200 font-mono text-slate-700">
+                        <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800 font-mono text-slate-700 dark:text-slate-300">
                           {acc.noAkun}
                         </td>
-                        <td className="py-1.5 px-4 border-r border-slate-200 text-slate-800">
+                        <td className="py-1.5 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">
                           <div className="flex items-center gap-2">
                             <span>{acc.namaAkun}</span>
                             {Number(acc.noAkun) >= 40002 && Number(acc.noAkun) <= 49990 && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-teal-50 text-teal-700 border border-teal-200 font-semibold shrink-0">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 font-semibold shrink-0">
                                 Item S-SALUR
                               </span>
                             )}
                             {['10001', '10002', '10003', '10004'].includes(acc.noAkun) && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-sky-50 text-sky-700 border border-sky-200 font-semibold shrink-0">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 font-semibold shrink-0">
                                 Pos Keuangan
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-1.5 px-3 border-r border-slate-200 text-center font-bold text-slate-600">
+                        <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center font-bold text-slate-600 dark:text-slate-400">
                           {acc.pos}
                         </td>
-                        <td className="py-1.5 px-4 border-r border-slate-200 text-right font-mono text-slate-800">
+                        <td className="py-1.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-slate-800 dark:text-slate-200">
                           {isPrivacyMasked
                             ? '••••'
                             : formatTableCellAmount(acc.saldoAwalDebet, true)}
                         </td>
-                        <td className="py-1.5 px-4 text-right font-mono text-slate-800">
+                        <td className="py-1.5 px-4 text-right font-mono text-slate-800 dark:text-slate-200">
                           {isPrivacyMasked
                             ? '••••'
                             : formatTableCellAmount(acc.saldoAwalKredit, false)}
@@ -1389,20 +1389,20 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {activeTab === 'jurnal' && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Quick Sub-view switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-2xs">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700">Tampilan Akuntansi:</span>
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Tampilan Akuntansi:</span>
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => setJurnalViewMode('kronologis')}
                   className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                     jurnalViewMode === 'kronologis'
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Receipt className="w-3.5 h-3.5 text-[#05828e]" />
+                  <Receipt className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
                   <span>Jurnal Umum (Kronologis)</span>
                 </button>
                 <button
@@ -1410,11 +1410,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   onClick={() => setJurnalViewMode('bukuBesar')}
                   className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                     jurnalViewMode === 'bukuBesar'
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                  <BookOpen className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Buku Besar (General Ledger)</span>
                 </button>
                 <button
@@ -1422,23 +1422,23 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   onClick={() => setJurnalViewMode('ringkasan')}
                   className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                     jurnalViewMode === 'ringkasan'
-                      ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                  <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Ringkasan Konsolidasi</span>
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/60">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>5 Modul Terintegrasi</span>
               </span>
               <span>•</span>
-              <span className="font-mono font-bold text-slate-700">{journalEntries.length} Jurnal</span>
+              <span className="font-mono font-bold text-slate-700 dark:text-slate-200">{journalEntries.length} Jurnal</span>
             </div>
           </div>
 
@@ -1467,7 +1467,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           ) : (
             <>
               {/* Rules and compliance banner: 100% auto generated & synchronized with COA */}
-              <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 border border-teal-200 rounded-xl p-4 text-xs text-slate-800 shadow-2xs">
+              <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 dark:from-teal-950/50 dark:via-slate-900 dark:to-teal-950/50 border border-teal-200 dark:border-teal-800/60 rounded-xl p-4 text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#05828e] text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
@@ -1475,17 +1475,17 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-bold text-slate-900 text-sm sm:text-base">
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                       Jurnal Umum Otomatis (Terintegrasi COA 10000 - 69999)
                     </h2>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60">
                       ✓ Sinkronisasi Aktif
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60">
                       5 Modul Transaksi
                     </span>
                   </div>
-                  <p className="text-[11.5px] text-slate-600 mt-1 leading-relaxed">
+                  <p className="text-[11.5px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                     Merekapitulasi seluruh transaksi keuangan secara otomatis dari <strong>Mutasi Bank</strong>, <strong>Transaksi S-SALUR</strong>, <strong>Transaksi D-DONASI</strong>, <strong>Transaksi A-AJAR</strong>, dan <strong>Pengeluaran</strong>. Seluruh entri berpedoman pada kode akun COA standar yayasan dan diaudit dengan prinsip <strong>Double-Entry (Total Debet = Total Kredit)</strong>.
                   </p>
                 </div>
@@ -1496,19 +1496,19 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <button
                   type="button"
                   onClick={handleExportJournalsCSV}
-                  className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
+                  className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
                   title="Unduh data Jurnal Umum Otomatis dalam format CSV"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Unduh CSV</span>
                 </button>
                 {onNavigateToCoa && (
                   <button
                     type="button"
                     onClick={onNavigateToCoa}
-                    className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 cursor-pointer shadow-2xs transition-colors flex items-center gap-1.5"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-[#05828e]" />
+                    <BookOpen className="w-3.5 h-3.5 text-[#05828e] dark:text-teal-400" />
                     <span>Sinkronisasi COA</span>
                   </button>
                 )}
@@ -1533,22 +1533,22 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setSelectedSourceFilter(selectedSourceFilter === 'mutasiBank' ? 'ALL' : 'mutasiBank')}
               className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                 selectedSourceFilter === 'mutasiBank'
-                  ? 'bg-teal-50 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-teal-300 hover:shadow-2xs'
+                  ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-1.5 py-0.5 rounded">
                   Mutasi Bank
                 </span>
-                <Landmark className="w-4 h-4 text-teal-600" />
+                <Landmark className="w-4 h-4 text-teal-600 dark:text-teal-400" />
               </div>
-              <div className="text-sm font-bold text-slate-800 font-mono mt-1.5">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono mt-1.5">
                 {isPrivacyMasked ? '••••' : formatRupiah(journalSourceStats.mutasiBank.total)}
               </div>
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1">
+              <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
                 <span>{journalSourceStats.mutasiBank.count} Jurnal</span>
-                <span className="font-mono text-teal-600 font-medium">10001 - 10205</span>
+                <span className="font-mono text-teal-600 dark:text-teal-400 font-medium">10001 - 10205</span>
               </div>
             </div>
 
@@ -1557,22 +1557,22 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setSelectedSourceFilter(selectedSourceFilter === 'salur' ? 'ALL' : 'salur')}
               className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                 selectedSourceFilter === 'salur'
-                  ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-2xs'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
                   S-SALUR
                 </span>
-                <BookOpen className="w-4 h-4 text-emerald-600" />
+                <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="text-sm font-bold text-slate-800 font-mono mt-1.5">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono mt-1.5">
                 {isPrivacyMasked ? '••••' : formatRupiah(journalSourceStats.salur.total)}
               </div>
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1">
+              <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
                 <span>{journalSourceStats.salur.count} Jurnal</span>
-                <span className="font-mono text-emerald-600 font-medium">40002 & 60600</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-medium">40002 & 60600</span>
               </div>
             </div>
 
@@ -1581,22 +1581,22 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setSelectedSourceFilter(selectedSourceFilter === 'donasi' ? 'ALL' : 'donasi')}
               className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                 selectedSourceFilter === 'donasi'
-                  ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-amber-300 hover:shadow-2xs'
+                  ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-amber-300 dark:hover:border-amber-700 hover:shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
                   D-DONASI
                 </span>
-                <Receipt className="w-4 h-4 text-amber-600" />
+                <Receipt className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               </div>
-              <div className="text-sm font-bold text-slate-800 font-mono mt-1.5">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono mt-1.5">
                 {isPrivacyMasked ? '••••' : formatRupiah(journalSourceStats.donasi.total)}
               </div>
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1">
+              <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
                 <span>{journalSourceStats.donasi.count} Jurnal</span>
-                <span className="font-mono text-amber-600 font-medium">49997 (20:20:30:30)</span>
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-medium">49997 (20:20:30:30)</span>
               </div>
             </div>
 
@@ -1605,22 +1605,22 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setSelectedSourceFilter(selectedSourceFilter === 'ajar' ? 'ALL' : 'ajar')}
               className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                 selectedSourceFilter === 'ajar'
-                  ? 'bg-purple-50 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-purple-300 hover:shadow-2xs'
+                  ? 'bg-purple-50 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-1.5 py-0.5 rounded">
                   A-AJAR
                 </span>
-                <Sparkles className="w-4 h-4 text-purple-600" />
+                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               </div>
-              <div className="text-sm font-bold text-slate-800 font-mono mt-1.5">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono mt-1.5">
                 {isPrivacyMasked ? '••••' : formatRupiah(journalSourceStats.ajar.total)}
               </div>
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1">
+              <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
                 <span>{journalSourceStats.ajar.count} Jurnal</span>
-                <span className="font-mono text-purple-600 font-medium">40301 -&gt; 10002</span>
+                <span className="font-mono text-purple-600 dark:text-purple-400 font-medium">40301 -&gt; 10002</span>
               </div>
             </div>
 
@@ -1629,73 +1629,73 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               onClick={() => setSelectedSourceFilter(selectedSourceFilter === 'pengeluaran' ? 'ALL' : 'pengeluaran')}
               className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                 selectedSourceFilter === 'pengeluaran'
-                  ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-500/20 shadow-xs'
-                  : 'bg-white border-slate-200 hover:border-rose-300 hover:shadow-2xs'
+                  ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/20 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-700 hover:shadow-2xs'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded">
                   Pengeluaran
                 </span>
-                <TrendingDown className="w-4 h-4 text-rose-600" />
+                <TrendingDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               </div>
-              <div className="text-sm font-bold text-slate-800 font-mono mt-1.5">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 font-mono mt-1.5">
                 {isPrivacyMasked ? '••••' : formatRupiah(journalSourceStats.pengeluaran.total)}
               </div>
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 mt-1">
+              <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400 mt-1">
                 <span>{journalSourceStats.pengeluaran.count} Jurnal</span>
-                <span className="font-mono text-rose-600 font-medium">50000 - 69999</span>
+                <span className="font-mono text-rose-600 dark:text-rose-400 font-medium">50000 - 69999</span>
               </div>
             </div>
           </div>
 
           {/* Audit Neraca Keseimbangan Jurnal (Double-Entry Balance Bar) */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <Scale className="w-5 h-5 text-[#05828e]" />
+                <Scale className="w-5 h-5 text-[#05828e] dark:text-teal-400" />
                 <div>
-                  <h3 className="font-bold text-slate-800 text-sm">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                     Audit Keseimbangan Entri Jurnal (Double-Entry Balance)
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Memverifikasi seluruh jurnal berpasangan seimbang matematis
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>100% SEIMBANG (Debet = Kredit)</span>
                 </span>
-                <span className="text-xs text-slate-500 font-medium">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   {balanceAuditStats.balancedCount} dari {balanceAuditStats.totalCount} Entri Terverifikasi
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3">
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700">
                 <span className="text-[10.5px] font-semibold text-slate-400 block uppercase tracking-wide">
                   Total Debet Terposting
                 </span>
-                <span className="text-base font-bold text-slate-800 font-mono mt-0.5 block">
+                <span className="text-base font-bold text-slate-800 dark:text-slate-100 font-mono mt-0.5 block">
                   {isPrivacyMasked ? '••••' : formatRupiah(balanceAuditStats.totalDebetAll)}
                 </span>
               </div>
-              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700">
                 <span className="text-[10.5px] font-semibold text-slate-400 block uppercase tracking-wide">
                   Total Kredit Terposting
                 </span>
-                <span className="text-base font-bold text-slate-800 font-mono mt-0.5 block">
+                <span className="text-base font-bold text-slate-800 dark:text-slate-100 font-mono mt-0.5 block">
                   {isPrivacyMasked ? '••••' : formatRupiah(balanceAuditStats.totalKreditAll)}
                 </span>
               </div>
-              <div className="p-2.5 rounded-lg bg-emerald-50/60 border border-emerald-200/80">
-                <span className="text-[10.5px] font-semibold text-emerald-700 block uppercase tracking-wide">
+              <div className="p-2.5 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50">
+                <span className="text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300 block uppercase tracking-wide">
                   Selisih Imbalance
                 </span>
-                <span className="text-base font-bold text-emerald-700 font-mono mt-0.5 block">
+                <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 font-mono mt-0.5 block">
                   Rp 0 (Seimbang Sempurna)
                 </span>
               </div>
@@ -1722,13 +1722,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                     selectedSourceFilter === chip.id
                       ? 'bg-[#05828e] text-white shadow-xs'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   <span>{chip.label}</span>
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      selectedSourceFilter === chip.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      selectedSourceFilter === chip.id ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     {chip.count}
@@ -1745,7 +1745,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <select
                   value={selectedCoaRangeFilter}
                   onChange={(e) => setSelectedCoaRangeFilter(e.target.value)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#05828e] cursor-pointer"
                 >
                   <option value="ALL">Semua Range Akun (10000 - 69999)</option>
                   <option value="aktiva">10001 - 10299 (Kas Bank &amp; Aktiva Proyek)</option>
@@ -1755,14 +1755,14 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </div>
 
               {/* Grouping View Switcher */}
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-medium">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setViewGroupBy('bank')}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                     viewGroupBy === 'bank'
-                      ? 'bg-white text-slate-800 font-bold shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-bold shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                   title="Kelompokkan berdasarkan Rekening Bank"
                 >
@@ -1773,8 +1773,8 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   onClick={() => setViewGroupBy('sumber')}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                     viewGroupBy === 'sumber'
-                      ? 'bg-white text-slate-800 font-bold shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-bold shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                   title="Kelompokkan berdasarkan Sumber Transaksi (Mutasi, Salur, Donasi, Ajar, Pengeluaran)"
                 >
@@ -1785,8 +1785,8 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   onClick={() => setViewGroupBy('all')}
                   className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                     viewGroupBy === 'all'
-                      ? 'bg-white text-slate-800 font-bold shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-bold shadow-2xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                   title="Daftar semua jurnal tanpa pengelompokan"
                 >
@@ -1800,16 +1800,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   type="button"
                   onClick={handleExportJournalsCSV}
                   title="Ekspor jurnal yang terfilter ke format CSV"
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span className="hidden sm:inline">CSV</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsExportPdfModalOpen(true)}
                   title="Ekspor Laporan PDF Lengkap (Arus Kas, Pos Keuangan & Jurnal Umum)"
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 border border-teal-200 text-[#05828e] hover:bg-teal-100 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800/60 text-[#05828e] dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-950/70 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Ekspor PDF</span>
@@ -1820,32 +1820,32 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
           {/* Grouped journals per bank / per source / all */}
           {Object.keys(displayedJournalGroups).length === 0 ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-400">
-              <Receipt className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-600">Tidak ada jurnal ditemukan</p>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center text-slate-400">
+              <Receipt className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Tidak ada jurnal ditemukan</p>
               <p className="text-xs text-slate-400 mt-1">Coba sesuaikan kata kunci pencarian atau filter sumber transaksi.</p>
             </div>
           ) : (
             (Object.entries(displayedJournalGroups) as [string, JournalEntry[]][]).map(([groupName, entries]) => (
               <div
                 key={groupName}
-                className="bg-white border border-slate-300 rounded-lg shadow-xs overflow-hidden mb-6"
+                className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden mb-6"
               >
                 {/* Title JURNAL UMUM matching screenshot */}
-                <div className="py-2 text-center font-bold text-sm tracking-wide text-slate-900 bg-white border-b border-slate-300 uppercase">
+                <div className="py-2 text-center font-bold text-sm tracking-wide text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-700 uppercase">
                   JURNAL UMUM OTOMATIS
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                        <th className="py-2 px-3 border-r border-slate-300 min-w-[85px] w-24">TANGGAL</th>
-                        <th className="py-2 px-4 border-r border-slate-300 min-w-[280px]">KETERANGAN TRANSAKSI</th>
-                        <th className="py-2 px-2.5 border-r border-slate-300 text-center w-16">AKUN DB</th>
-                        <th className="py-2 px-2.5 border-r border-slate-300 text-center w-16">AKUN KR</th>
-                        <th className="py-2 px-4 border-r border-slate-300 text-right min-w-[130px]">DEBET</th>
-                        <th className="py-2 px-4 border-r border-slate-300 text-right min-w-[130px]">KREDIT</th>
+                      <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                        <th className="py-2 px-3 border-r border-slate-300 dark:border-slate-700 min-w-[85px] w-24">TANGGAL</th>
+                        <th className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[280px]">KETERANGAN TRANSAKSI</th>
+                        <th className="py-2 px-2.5 border-r border-slate-300 dark:border-slate-700 text-center w-16">AKUN DB</th>
+                        <th className="py-2 px-2.5 border-r border-slate-300 dark:border-slate-700 text-center w-16">AKUN KR</th>
+                        <th className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[130px]">DEBET</th>
+                        <th className="py-2 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[130px]">KREDIT</th>
                         <th className="py-2 px-2.5 text-center w-20">AKSI</th>
                       </tr>
                     </thead>
@@ -1866,7 +1866,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                             : viewGroupBy === 'all'
                             ? 'bg-[#00899B] text-white'
                             : 'bg-[#8ec31f] text-slate-900'
-                        } font-bold border-b border-slate-300`}
+                        } font-bold border-b border-slate-300 dark:border-slate-700`}
                       >
                         <td colSpan={7} className="py-1.5 px-3 text-xs tracking-wide">
                           <div className="flex items-center justify-between">
@@ -1886,39 +1886,39 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                         return (
                           <React.Fragment key={entry.id}>
                             {/* Main Entry header sub-bar (shows entry number and metadata tag) */}
-                            <tr className={`border-t border-slate-300 ${isReversed ? 'bg-rose-50/50 opacity-75' : isReversalEntry ? 'bg-amber-50/50' : 'bg-slate-50/40'}`}>
-                              <td colSpan={7} className="py-1 px-3 text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                            <tr className={`border-t border-slate-300 dark:border-slate-700 ${isReversed ? 'bg-rose-50/50 dark:bg-rose-950/30 opacity-75' : isReversalEntry ? 'bg-amber-50/50 dark:bg-amber-950/30' : 'bg-slate-50/40 dark:bg-slate-800/40'}`}>
+                              <td colSpan={7} className="py-1 px-3 text-[10px] text-slate-500 dark:text-slate-400 font-mono flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <strong className="text-slate-800 font-bold">{entry.nomorJurnal}</strong>
+                                  <strong className="text-slate-800 dark:text-slate-200 font-bold">{entry.nomorJurnal}</strong>
                                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                     entry.sumberTransaksi === 'Mutasi Bank'
-                                      ? 'bg-teal-100 text-teal-800 border border-teal-200'
+                                      ? 'bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60'
                                       : entry.sumberTransaksi === 'Transaksi Salur'
-                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                                       : entry.sumberTransaksi === 'Transaksi Donasi'
-                                      ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60'
                                       : entry.sumberTransaksi === 'Transaksi Ajar'
-                                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                                      : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                      ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60'
+                                      : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
                                   }`}>
                                     {entry.sumberTransaksi}
                                   </span>
                                   <span>• Rek: {entry.rekeningBank}</span>
                                   <span>• Ref: {entry.nomorReferensiBank}</span>
                                   <span>• Program: {entry.programKegiatan}</span>
-                                  <span className="px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 font-sans">{entry.kategoriDana}</span>
+                                  <span className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-sans">{entry.kategoriDana}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                                     ✓ Seimbang: Rp {(entry.totalDebet ?? entry.lines.reduce((s, l) => s + l.nominalDebet, 0)).toLocaleString('id-ID')}
                                   </span>
                                   {isReversed && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700/60">
                                       Dibalikkan oleh {entry.reversedByNomorJurnal}
                                     </span>
                                   )}
                                   {isReversalEntry && (
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60">
                                       Jurnal Pembalik dari {entry.reversalOfNomorJurnal}
                                     </span>
                                   )}
@@ -1933,39 +1933,39 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                               return (
                                 <tr
                                   key={line.id}
-                                  className="hover:bg-slate-50/80 transition-colors border-b border-slate-200 text-slate-800"
+                                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
                                 >
                                   {/* Date: only on first line */}
-                                  <td className="py-1.5 px-3 border-r border-slate-200 align-top font-mono text-[11px]">
+                                  <td className="py-1.5 px-3 border-r border-slate-200 dark:border-slate-800 align-top font-mono text-[11px]">
                                     {isFirstLine ? entry.tanggalJurnal : ''}
                                   </td>
 
                                   {/* Keterangan Transaksi: indent if it's credit line, matching screenshot */}
-                                  <td className="py-1.5 px-4 border-r border-slate-200 align-top">
-                                    <div className={`${line.kodeAkunKr ? 'pl-6 text-slate-700 font-medium' : 'text-slate-900 font-normal'}`}>
+                                  <td className="py-1.5 px-4 border-r border-slate-200 dark:border-slate-800 align-top">
+                                    <div className={`${line.kodeAkunKr ? 'pl-6 text-slate-700 dark:text-slate-300 font-medium' : 'text-slate-900 dark:text-slate-100 font-normal'}`}>
                                       {line.keterangan || line.namaAkun}
                                     </div>
                                   </td>
 
                                   {/* Akun DB */}
-                                  <td className="py-1.5 px-2.5 border-r border-slate-200 text-center font-mono align-top text-slate-700">
+                                  <td className="py-1.5 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono align-top text-slate-700 dark:text-slate-300">
                                     {line.kodeAkunDb || ''}
                                   </td>
 
                                   {/* Akun KR */}
-                                  <td className="py-1.5 px-2.5 border-r border-slate-200 text-center font-mono align-top text-slate-700">
+                                  <td className="py-1.5 px-2.5 border-r border-slate-200 dark:border-slate-800 text-center font-mono align-top text-slate-700 dark:text-slate-300">
                                     {line.kodeAkunKr || ''}
                                   </td>
 
                                   {/* Debet */}
-                                  <td className="py-1.5 px-4 border-r border-slate-200 text-right font-mono align-top">
+                                  <td className="py-1.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono align-top">
                                     {line.nominalDebet > 0 ? (
                                       isPrivacyMasked ? '••••' : `Rp ${line.nominalDebet.toLocaleString('id-ID')}`
                                     ) : ''}
                                   </td>
 
                                   {/* Kredit */}
-                                  <td className="py-1.5 px-4 border-r border-slate-200 text-right font-mono align-top">
+                                  <td className="py-1.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono align-top">
                                     {line.nominalKredit > 0 ? (
                                       isPrivacyMasked ? '••••' : `Rp ${line.nominalKredit.toLocaleString('id-ID')}`
                                     ) : ''}
@@ -1979,7 +1979,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                                           type="button"
                                           onClick={() => setSelectedJournalForDetail(entry)}
                                           title="Lihat Rincian Lengkap"
-                                          className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+                                          className="p-1 rounded text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                                         >
                                           <FileText className="w-3.5 h-3.5" />
                                         </button>
@@ -1992,7 +1992,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                                               setReversalReasonInput('');
                                             }}
                                             title="Buat Jurnal Pembalik (Reverse Journal)"
-                                            className="p-1 rounded text-rose-600 hover:text-rose-800 hover:bg-rose-50 cursor-pointer"
+                                            className="p-1 rounded text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                                           >
                                             <RotateCcw className="w-3.5 h-3.5" />
                                           </button>
@@ -2056,68 +2056,68 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Summary Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total Mutasi Masuk (CR)
               </span>
-              <div className="text-lg font-bold text-emerald-600 font-mono tabular-nums mt-1">
+              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums mt-1">
                 {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.totalCR)}
               </div>
-              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block tabular-nums">
                 {mutasiSummaryStats.countCR} transaksi kredit
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total Mutasi Keluar (DB)
               </span>
-              <div className="text-lg font-bold text-rose-600 font-mono tabular-nums mt-1">
+              <div className="text-lg font-bold text-rose-600 dark:text-rose-400 font-mono tabular-nums mt-1">
                 {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.totalDB)}
               </div>
-              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block tabular-nums">
                 {mutasiSummaryStats.countDB} transaksi debet
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Arus Kas Mutasi Bersih
               </span>
               <div
                 className={`text-lg font-bold font-mono tabular-nums mt-1 ${
-                  mutasiSummaryStats.net >= 0 ? 'text-[#05828e]' : 'text-rose-600'
+                  mutasiSummaryStats.net >= 0 ? 'text-[#05828e] dark:text-teal-400' : 'text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {isPrivacyMasked ? '••••' : formatRupiah(mutasiSummaryStats.net)}
               </div>
-              <span className="text-[11px] text-slate-500 mt-0.5 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
                 Selisih CR dikurangi DB
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Periode & Jumlah Data
               </span>
-              <div className="text-base font-bold text-slate-800 tabular-nums mt-1 truncate">
+              <div className="text-base font-bold text-slate-800 dark:text-slate-100 tabular-nums mt-1 truncate">
                 {activeDateRangeLabel}
               </div>
-              <span className="text-[11px] text-slate-500 mt-0.5 block tabular-nums">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block tabular-nums">
                 {mutasiSummaryStats.totalCount} baris mutasi tampil
               </span>
             </div>
           </div>
 
           {/* Sub-filter Toolbar inside Tabel Mutasi */}
-          <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-slate-600">Rekening Bank:</span>
+                <span className="font-semibold text-slate-600 dark:text-slate-400">Rekening Bank:</span>
                 <select
                   value={mutasiBankFilter}
                   onChange={(e) => setMutasiBankFilter(e.target.value)}
-                  className="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                  className="border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
                 >
                   <option value="ALL">Semua Rekening ({dateFilteredMutasiItems.length})</option>
                   {mutasiBankOptions.map((bank) => (
@@ -2128,7 +2128,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 </select>
               </div>
 
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
                 {[
                   { key: 'ALL', label: 'Semua Tipe' },
                   { key: 'CR', label: 'Pemasukan (CR)' },
@@ -2140,8 +2140,8 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     onClick={() => setMutasiTypeFilter(opt.key as 'ALL' | 'CR' | 'DB')}
                     className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                       mutasiTypeFilter === opt.key
-                        ? 'bg-white text-slate-900 shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-bold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                     }`}
                   >
                     {opt.label}
@@ -2160,7 +2160,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     setStartDate('');
                     setEndDate('');
                   }}
-                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Tampilkan Semua Mutasi
                 </button>
@@ -2168,7 +2168,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportMutasiCsv}
-                className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
                 <span>Ekspor CSV</span>
@@ -2177,20 +2177,20 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           </div>
 
           {/* Tabel Mutasi */}
-          <div className="bg-white border border-slate-300 rounded-lg shadow-xs overflow-hidden">
-            <div className="py-2.5 px-4 bg-slate-100/90 border-b border-slate-300 flex items-center justify-between">
-              <span className="font-bold text-xs sm:text-sm tracking-wide text-slate-900 uppercase">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden">
+            <div className="py-2.5 px-4 bg-slate-100/90 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700 flex items-center justify-between">
+              <span className="font-bold text-xs sm:text-sm tracking-wide text-slate-900 dark:text-slate-100 uppercase">
                 TABEL MUTASI BANK · {activeDateRangeLabel}
               </span>
-              <span className="text-xs font-semibold text-slate-600 tabular-nums">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 tabular-nums">
                 {mutasiTableItems.length} Transaksi
               </span>
             </div>
 
             {mutasiTableItems.length === 0 ? (
-              <div className="p-10 text-center text-slate-500 text-xs space-y-2">
-                <Landmark className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="font-semibold text-slate-700 text-sm">
+              <div className="p-10 text-center text-slate-500 dark:text-slate-400 text-xs space-y-2">
+                <Landmark className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
                   Tidak ada data mutasi yang sesuai dengan rentang tanggal atau filter
                 </p>
                 <p>Periode aktif: {activeDateRangeLabel}</p>
@@ -2214,64 +2214,64 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                      <th className="py-2.5 px-3 border-r border-slate-200 w-28">Tanggal</th>
-                      <th className="py-2.5 px-3 border-r border-slate-200 w-28">Rekening</th>
-                      <th className="py-2.5 px-4 border-r border-slate-200 min-w-[260px]">Keterangan Mutasi Bank</th>
-                      <th className="py-2.5 px-3 border-r border-slate-200 text-center w-16">Tipe</th>
-                      <th className="py-2.5 px-4 border-r border-slate-200 text-right min-w-[135px]">Nominal</th>
-                      <th className="py-2.5 px-4 border-r border-slate-200 text-right min-w-[135px]">Saldo Rekening</th>
+                    <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                      <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 w-28">Tanggal</th>
+                      <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 w-28">Rekening</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700 min-w-[260px]">Keterangan Mutasi Bank</th>
+                      <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 text-center w-16">Tipe</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700 text-right min-w-[135px]">Nominal</th>
+                      <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700 text-right min-w-[135px]">Saldo Rekening</th>
                       <th className="py-2.5 px-3 min-w-[170px]">Tautan Modul</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {mutasiTableItems.map((item) => {
                       const isoDate = parseFinancialDateToIso(item.date);
                       const isCredit = item.type === 'CR';
                       return (
-                        <tr key={item.id} className="hover:bg-teal-50/30 transition-colors">
-                          <td className="py-2 px-3 border-r border-slate-200 whitespace-nowrap">
-                            <div className="font-semibold text-slate-800 tabular-nums">
+                        <tr key={item.id} className="hover:bg-teal-50/30 dark:hover:bg-teal-950/20 transition-colors">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
                               {isoDate ? formatIsoDateIndo(isoDate) : item.date}
                             </div>
                             {isoDate && item.date !== formatIsoDateIndo(isoDate) && (
                               <div className="text-[10px] text-slate-400">{item.date}</div>
                             )}
                           </td>
-                          <td className="py-2 px-3 border-r border-slate-200 font-semibold text-slate-700 whitespace-nowrap">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {item.bankAccount}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-200 text-slate-700 leading-snug">
+                          <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 leading-snug">
                             {item.keteranganBank}
                           </td>
-                          <td className="py-2 px-3 border-r border-slate-200 text-center">
+                          <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 text-center">
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                                 isCredit
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                                  : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
                               }`}
                             >
                               {item.type}
                             </span>
                           </td>
                           <td
-                            className={`py-2 px-4 border-r border-slate-200 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
-                              isCredit ? 'text-emerald-700' : 'text-rose-600'
+                            className={`py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
+                              isCredit ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                             }`}
                           >
                             {isPrivacyMasked
                               ? '••••'
                               : `${isCredit ? '+' : '-'} ${formatRupiah(item.amount)}`}
                           </td>
-                          <td className="py-2 px-4 border-r border-slate-200 text-right font-mono text-slate-600 tabular-nums whitespace-nowrap">
+                          <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">
                             {isPrivacyMasked ? '••••' : formatRupiah(item.balance)}
                           </td>
-                          <td className="py-2 px-3 text-[11px] text-slate-600">
+                          <td className="py-2 px-3 text-[11px] text-slate-600 dark:text-slate-400">
                             {item.linkedTransactions && item.linkedTransactions.length > 0 ? (
                               <div className="space-y-0.5">
                                 {item.linkedTransactions.slice(0, 2).map((lt) => (
-                                  <div key={lt.id} className="truncate font-medium text-slate-700">
+                                  <div key={lt.id} className="truncate font-medium text-slate-700 dark:text-slate-200">
                                     {lt.sourceType.toUpperCase()} · {lt.kode}
                                   </div>
                                 ))}
@@ -2303,11 +2303,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
         <div className="space-y-5 animate-in fade-in duration-200">
           {/* Executive KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total Pendapatan Berjalan
               </span>
-              <div className="text-xl font-bold text-emerald-600 mt-1">
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                 {isPrivacyMasked ? '••••' : formatRupiah(coaTotals.totalPendapatan)}
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
@@ -2315,11 +2315,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total Biaya Program
               </span>
-              <div className="text-xl font-bold text-blue-600 mt-1">
+              <div className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                 {isPrivacyMasked ? '••••' : formatRupiah(coaTotals.totalBiayaProgram)}
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
@@ -2327,11 +2327,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total Biaya Operasional
               </span>
-              <div className="text-xl font-bold text-amber-600 mt-1">
+              <div className="text-xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                 {isPrivacyMasked ? '••••' : formatRupiah(coaTotals.totalBiayaOperasional)}
               </div>
               <span className="text-[11px] text-slate-400 mt-0.5 block">
@@ -2339,13 +2339,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </span>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Surplus / (Defisit) Bersih
               </span>
               <div
                 className={`text-xl font-bold mt-1 ${
-                  coaTotals.surplusDefisit >= 0 ? 'text-emerald-700' : 'text-rose-600'
+                  coaTotals.surplusDefisit >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {isPrivacyMasked ? '••••' : formatRupiah(coaTotals.surplusDefisit)}
@@ -2376,9 +2376,9 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           {/* Performance & Program Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left: Program Realization */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">
-              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-[#05828e]" />
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-[#05828e] dark:text-teal-400" />
                 Kinerja Realisasi Program & Kegiatan Yayasan
               </h3>
               <div className="space-y-3.5 text-xs">
@@ -2389,11 +2389,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   { name: 'Edukasi & Pelatihan Ajar', cost: 4800000, color: 'bg-amber-500', pct: '11%' },
                 ].map((p) => (
                   <div key={p.name}>
-                    <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-200 mb-1">
                       <span>{p.name}</span>
                       <span>{isPrivacyMasked ? '••••' : formatRupiah(p.cost)} ({p.pct})</span>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div className={`h-full ${p.color} rounded-full`} style={{ width: p.pct }}></div>
                     </div>
                   </div>
@@ -2402,32 +2402,32 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
 
             {/* Right: Operational Expense Ratio */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">
-              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <PieChart className="w-4 h-4 text-[#05828e]" />
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-2xs">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-[#05828e] dark:text-teal-400" />
                 Rasio Efisiensi Pengeluaran Yayasan
               </h3>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-4">
+              <div className="bg-slate-50 dark:bg-slate-800/70 rounded-xl p-4 border border-slate-200 dark:border-slate-700 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-600">Alokasi Biaya Program thd Total Beban</span>
-                  <span className="text-sm font-bold text-emerald-700">76.4%</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Alokasi Biaya Program thd Total Beban</span>
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">76.4%</span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-600 rounded-full" style={{ width: '76.4%' }}></div>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-2">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
                   Sangat Efisien: Standar tata kelola yayasan mensyaratkan biaya program minimal &gt; 70% dari total pengeluaran yayasan.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <div className="p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
                   <span className="text-slate-400 block text-[10px] font-bold uppercase">Biaya SDM & Honor</span>
-                  <span className="font-bold text-slate-800 text-sm mt-0.5 block">Rp 24.500.000</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5 block">Rp 24.500.000</span>
                 </div>
-                <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                <div className="p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg">
                   <span className="text-slate-400 block text-[10px] font-bold uppercase">Logistik & Distribusi</span>
-                  <span className="font-bold text-slate-800 text-sm mt-0.5 block">Rp 12.850.000</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm mt-0.5 block">Rp 12.850.000</span>
                 </div>
               </div>
             </div>
@@ -2483,18 +2483,18 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           </div>
 
           {/* Ringkasan Jurnal Konsolidasian: Mutasi, S-SALUR, D-DONASI, A-AJAR */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-            <div className="py-3 px-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
+            <div className="py-3 px-4 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Scale className="w-4 h-4 text-[#05828e]" />
-                <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wide">
+                <Scale className="w-4 h-4 text-[#05828e] dark:text-teal-400" />
+                <h3 className="font-bold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                   Ringkasan Konsolidasi Jurnal Umum (Format Tabel Debit - Kredit)
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveTab('ringkasanJurnal')}
-                className="text-xs font-semibold text-[#05828e] hover:text-[#046e78] flex items-center gap-1 cursor-pointer bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200"
+                className="text-xs font-semibold text-[#05828e] dark:text-teal-300 hover:text-[#046e78] flex items-center gap-1 cursor-pointer bg-teal-50 dark:bg-teal-950/50 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800/60"
               >
                 <span>Buka Matriks Lengkap</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -2503,106 +2503,106 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-bold text-[10.5px] uppercase">
-                    <th className="py-2.5 px-4 border-r border-slate-200">SUMBER TRANSAKSI</th>
-                    <th className="py-2.5 px-3 border-r border-slate-200 text-center">JML ENTRI</th>
-                    <th className="py-2.5 px-4 border-r border-slate-200 text-right">TOTAL DEBET</th>
-                    <th className="py-2.5 px-4 border-r border-slate-200 text-right">TOTAL KREDIT</th>
+                  <tr className="bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10.5px] uppercase">
+                    <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700">SUMBER TRANSAKSI</th>
+                    <th className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 text-center">JML ENTRI</th>
+                    <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700 text-right">TOTAL DEBET</th>
+                    <th className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-700 text-right">TOTAL KREDIT</th>
                     <th className="py-2.5 px-3 text-center">STATUS KESEIMBANGAN</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 border-r border-slate-200 font-semibold text-slate-800">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                       Mutasi Bank (Rekening Koran)
                     </td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-slate-600 font-semibold">
+                    <td className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 font-semibold">
                       {journalSourceStats.mutasiBank.count} Jurnal
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.mutasiBank.total)}
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.mutasiBank.total)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
                         <Check className="w-3 h-3" /> Seimbang
                       </span>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 border-r border-slate-200 font-semibold text-slate-800">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                       Transaksi S-SALUR (Penerbitan & Distribusi)
                     </td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-slate-600 font-semibold">
+                    <td className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 font-semibold">
                       {journalSourceStats.salur.count} Jurnal
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.salur.total)}
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.salur.total)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
                         <Check className="w-3 h-3" /> Seimbang
                       </span>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 border-r border-slate-200 font-semibold text-slate-800">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                       Transaksi Donasi (D-DONASI)
                     </td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-slate-600 font-semibold">
+                    <td className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 font-semibold">
                       {journalSourceStats.donasi.count} Jurnal
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.donasi.total)}
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.donasi.total)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
                         <Check className="w-3 h-3" /> Seimbang
                       </span>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 border-r border-slate-200 font-semibold text-slate-800">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                       Transaksi A-AJAR (Kelas & Retret)
                     </td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-slate-600 font-semibold">
+                    <td className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 font-semibold">
                       {journalSourceStats.ajar.count} Jurnal
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.ajar.total)}
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.ajar.total)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
                         <Check className="w-3 h-3" /> Seimbang
                       </span>
                     </td>
                   </tr>
-                  <tr className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 border-r border-slate-200 font-semibold text-slate-800">
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 font-semibold text-slate-800 dark:text-slate-200">
                       Pengeluaran Proyek & Operasional
                     </td>
-                    <td className="py-2.5 px-3 border-r border-slate-200 text-center text-slate-600 font-semibold">
+                    <td className="py-2.5 px-3 border-r border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 font-semibold">
                       {journalSourceStats.pengeluaran.count} Jurnal
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.pengeluaran.total)}
                     </td>
-                    <td className="py-2.5 px-4 border-r border-slate-200 text-right font-mono font-bold text-slate-900">
+                    <td className="py-2.5 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       {formatRupiah(journalSourceStats.pengeluaran.total)}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
                         <Check className="w-3 h-3" /> Seimbang
                       </span>
                     </td>
@@ -2615,67 +2615,67 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
           {/* Detailed Summary Table */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Aktiva Breakdown */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-              <div className="py-2.5 px-4 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800 uppercase tracking-wide">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
+              <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                 Rincian Posisi Aktiva (Aset)
               </div>
               <div className="p-4 space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Kas & Setara Kas (Bank BCA & Mandiri)</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 957.043.198</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Kas & Setara Kas (Bank BCA & Mandiri)</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 957.043.198</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Deposito Berjangka</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 375.056.599</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Deposito Berjangka</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 375.056.599</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Piutang Donatur / Salur</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 70.253.164</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Piutang Donatur / Salur</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 70.253.164</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Persediaan Buku & Kaos</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 321.717.363</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Persediaan Buku & Kaos</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 321.717.363</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Aset Tetap & Perlengkapan (Net Akumulasi)</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 34.637.254</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Aset Tetap & Perlengkapan (Net Akumulasi)</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 34.637.254</span>
                 </div>
-                <div className="flex justify-between pt-2 font-bold text-slate-900">
+                <div className="flex justify-between pt-2 font-bold text-slate-900 dark:text-slate-100">
                   <span>Total Aktiva</span>
-                  <span className="font-mono text-emerald-700">{formatRupiah(coaTotals.totalAktiva)}</span>
+                  <span className="font-mono text-emerald-700 dark:text-emerald-400">{formatRupiah(coaTotals.totalAktiva)}</span>
                 </div>
               </div>
             </div>
 
             {/* Kewajiban & Ekuitas Breakdown */}
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-              <div className="py-2.5 px-4 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800 uppercase tracking-wide">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-2xs">
+              <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-700 font-bold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                 Rincian Kewajiban & Saldo Dana (Ekuitas)
               </div>
               <div className="p-4 space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Hutang Dagang Percetakan</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 83.153.500</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Hutang Dagang Percetakan</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 83.153.500</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Hutang Lain-lain</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 284.928.170</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Hutang Lain-lain</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 284.928.170</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Pendapatan Diterima Dimuka</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 61.167.318</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Pendapatan Diterima Dimuka</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 61.167.318</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Saldo Dana Terikat Program</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 1.850.000.000</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Saldo Dana Terikat Program</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 1.850.000.000</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">Saldo Dana Tidak Terikat & Modal</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 1.183.495.236</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-400">Saldo Dana Tidak Terikat & Modal</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 1.183.495.236</span>
                 </div>
-                <div className="flex justify-between pt-2 font-bold text-slate-900">
+                <div className="flex justify-between pt-2 font-bold text-slate-900 dark:text-slate-100">
                   <span>Total Kewajiban + Ekuitas</span>
-                  <span className="font-mono text-teal-700">
+                  <span className="font-mono text-teal-700 dark:text-teal-400">
                     {formatRupiah(coaTotals.totalKewajiban + coaTotals.totalEkuitas)}
                   </span>
                 </div>
@@ -2690,39 +2690,39 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* ============================================================== */}
       {activeTab === 'saldoAkhir' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs">
-            <h3 className="text-sm font-bold text-slate-800 mb-1">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">
               Rekapitulasi Saldo Akhir Berdasarkan Kategori Rekening & Dana
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Klasifikasi saldo berdasarkan restriksi amanah donatur (Dana Terikat vs Dana Bebas / Operasional)
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Dana Terikat */}
-            <div className="bg-white border border-blue-200 rounded-xl p-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-blue-100">
-                <span className="text-xs font-bold text-blue-900 uppercase">Dana Terikat (Restricted)</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Amanah</span>
+            <div className="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/60 rounded-xl p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-blue-100 dark:border-blue-800/50">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase">Dana Terikat (Restricted)</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">Amanah</span>
               </div>
-              <p className="text-xs text-slate-600 mb-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
                 Dana yang diperuntukkan khusus untuk program tertentu sesuai niat donatur.
               </p>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Kas BCA Penerbitan</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 641.221.612</span>
+                  <span className="text-slate-600 dark:text-slate-400">Kas BCA Penerbitan</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 641.221.612</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Kas BCA Kegiatan Dharma</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 2.104.168.288</span>
+                  <span className="text-slate-600 dark:text-slate-400">Kas BCA Kegiatan Dharma</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 2.104.168.288</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Kas Tunai Penerbitan</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 2.000.000</span>
+                  <span className="text-slate-600 dark:text-slate-400">Kas Tunai Penerbitan</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 2.000.000</span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-slate-100 font-bold text-blue-900">
+                <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-slate-800 font-bold text-blue-900 dark:text-blue-300">
                   <span>Total Dana Terikat</span>
                   <span className="font-mono">Rp 2.747.389.900</span>
                 </div>
@@ -2730,24 +2730,24 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
 
             {/* Dana Tidak Terikat */}
-            <div className="bg-white border border-teal-200 rounded-xl p-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-teal-100">
-                <span className="text-xs font-bold text-teal-900 uppercase">Dana Tidak Terikat</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800">Fleksibel</span>
+            <div className="bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-800/60 rounded-xl p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-teal-100 dark:border-teal-800/50">
+                <span className="text-xs font-bold text-teal-900 dark:text-teal-200 uppercase">Dana Tidak Terikat</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300">Fleksibel</span>
               </div>
-              <p className="text-xs text-slate-600 mb-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
                 Dana operasional bebas yang dapat digunakan untuk operasional yayasan secara fleksibel.
               </p>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Kas BCA Operasional (Non-Dharma)</span>
-                  <span className="font-mono font-bold text-slate-800">(Rp 1.739.794.709)</span>
+                  <span className="text-slate-600 dark:text-slate-400">Kas BCA Operasional (Non-Dharma)</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">(Rp 1.739.794.709)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Kas Operasional Tunai</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 10.000.000</span>
+                  <span className="text-slate-600 dark:text-slate-400">Kas Operasional Tunai</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 10.000.000</span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-slate-100 font-bold text-teal-900">
+                <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-slate-800 font-bold text-teal-900 dark:text-teal-300">
                   <span>Total Dana Bebas</span>
                   <span className="font-mono">(Rp 1.729.794.709)</span>
                 </div>
@@ -2755,24 +2755,24 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             </div>
 
             {/* Dana Abadi & Deposito */}
-            <div className="bg-white border border-purple-200 rounded-xl p-4 shadow-2xs">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-purple-100">
-                <span className="text-xs font-bold text-purple-900 uppercase">Cadangan & Deposito</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Cadangan</span>
+            <div className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/60 rounded-xl p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-purple-100 dark:border-purple-800/50">
+                <span className="text-xs font-bold text-purple-900 dark:text-purple-200 uppercase">Cadangan & Deposito</span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300">Cadangan</span>
               </div>
-              <p className="text-xs text-slate-600 mb-3">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mb-3">
                 Simpanan berjangka untuk ketahanan kas jangka menengah dan dana abadi program.
               </p>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Deposito Teks Dharma</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 340.000.000</span>
+                  <span className="text-slate-600 dark:text-slate-400">Deposito Teks Dharma</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 340.000.000</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Deposito Operasional</span>
-                  <span className="font-mono font-bold text-slate-800">Rp 35.056.599</span>
+                  <span className="text-slate-600 dark:text-slate-400">Deposito Operasional</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">Rp 35.056.599</span>
                 </div>
-                <div className="flex justify-between pt-2 border-t border-slate-100 font-bold text-purple-900">
+                <div className="flex justify-between pt-2 border-t border-slate-100 dark:border-slate-800 font-bold text-purple-900 dark:text-purple-300">
                   <span>Total Deposito</span>
                   <span className="font-mono">Rp 375.056.599</span>
                 </div>
@@ -2787,12 +2787,12 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* ============================================================== */}
       {activeTab === 'saldoPerRekening' && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-800">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
                 Saldo Setiap Rekening Bank & Kas Tunai
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Daftar posisi saldo terkini setiap akun kas, rekening bank, dan deposito
               </p>
             </div>
@@ -2800,7 +2800,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigateToMutasi('BCA 888')}
-                className="bg-teal-50 hover:bg-teal-100 text-[#05828e] border border-teal-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-950/70 text-[#05828e] dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>Buka Mutasi Rekening BCA 888</span>
@@ -2808,44 +2808,44 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
             )}
           </div>
 
-          <div className="bg-white border border-slate-300 rounded-lg shadow-xs overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-300 text-slate-800 font-bold uppercase text-[11px]">
-                    <th className="py-2.5 px-3 border-r border-slate-300 w-20">KODE</th>
-                    <th className="py-2.5 px-4 border-r border-slate-300 min-w-[200px]">NAMA REKENING / KAS</th>
-                    <th className="py-2.5 px-3 border-r border-slate-300 min-w-[140px]">KATEGORI DANA</th>
-                    <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[130px]">SALDO AWAL</th>
-                    <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[110px]">DEBET</th>
-                    <th className="py-2.5 px-4 border-r border-slate-300 text-right min-w-[110px]">KREDIT</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold uppercase text-[11px]">
+                    <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 w-20">KODE</th>
+                    <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 min-w-[200px]">NAMA REKENING / KAS</th>
+                    <th className="py-2.5 px-3 border-r border-slate-300 dark:border-slate-700 min-w-[140px]">KATEGORI DANA</th>
+                    <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[130px]">SALDO AWAL</th>
+                    <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[110px]">DEBET</th>
+                    <th className="py-2.5 px-4 border-r border-slate-300 dark:border-slate-700 text-right min-w-[110px]">KREDIT</th>
                     <th className="py-2.5 px-4 text-right min-w-[130px]">SALDO AKHIR</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {bankBalances.map((acc) => (
-                    <tr key={acc.code} className="hover:bg-teal-50/30 transition-colors">
-                      <td className="py-2 px-3 border-r border-slate-200 font-mono font-bold text-slate-700">
+                    <tr key={acc.code} className="hover:bg-teal-50/30 dark:hover:bg-teal-950/20 transition-colors">
+                      <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 font-mono font-bold text-slate-700 dark:text-slate-300">
                         {acc.code}
                       </td>
-                      <td className="py-2 px-4 border-r border-slate-200 font-medium text-slate-800">
+                      <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 font-medium text-slate-800 dark:text-slate-200">
                         {acc.name}
                       </td>
-                      <td className="py-2 px-3 border-r border-slate-200 text-slate-600">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                      <td className="py-2 px-3 border-r border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {acc.category}
                         </span>
                       </td>
-                      <td className="py-2 px-4 border-r border-slate-200 text-right font-mono text-slate-700">
+                      <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-slate-700 dark:text-slate-300">
                         {isPrivacyMasked ? '••••' : formatRupiah(acc.initial)}
                       </td>
-                      <td className="py-2 px-4 border-r border-slate-200 text-right font-mono text-emerald-600 font-semibold">
+                      <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                         {isPrivacyMasked ? '••••' : acc.totalDebet > 0 ? formatRupiah(acc.totalDebet) : '-'}
                       </td>
-                      <td className="py-2 px-4 border-r border-slate-200 text-right font-mono text-rose-600 font-semibold">
+                      <td className="py-2 px-4 border-r border-slate-200 dark:border-slate-800 text-right font-mono text-rose-600 dark:text-rose-400 font-semibold">
                         {isPrivacyMasked ? '••••' : acc.totalKredit > 0 ? formatRupiah(acc.totalKredit) : '-'}
                       </td>
-                      <td className="py-2 px-4 text-right font-mono font-bold text-slate-900">
+                      <td className="py-2 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                         {isPrivacyMasked ? '••••' : formatRupiah(acc.endingBalance)}
                       </td>
                     </tr>
@@ -2900,14 +2900,14 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* MODAL: Tambah Akun COA Baru */}
       {/* ============================================================== */}
       {isAddCoaModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <h3 className="text-base font-bold text-slate-800">Tambah Akun COA Baru</h3>
+        <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/70">
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Tambah Akun COA Baru</h3>
               <button
                 type="button"
                 onClick={() => setIsAddCoaModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2915,34 +2915,34 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
 
             <div className="p-4 space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Nomor Akun (Kode)</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nomor Akun (Kode)</label>
                 <input
                   type="text"
                   value={newCoaForm.noAkun}
                   onChange={(e) => setNewCoaForm({ ...newCoaForm, noAkun: e.target.value })}
                   placeholder="Contoh: 10207 / 60800"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 font-mono outline-none"
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-1.5 font-mono outline-none focus:border-[#05828e]"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Nama Akun</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nama Akun</label>
                 <input
                   type="text"
                   value={newCoaForm.namaAkun}
                   onChange={(e) => setNewCoaForm({ ...newCoaForm, namaAkun: e.target.value })}
                   placeholder="Contoh: Kas BCA Rekening Baru"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 outline-none"
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-1.5 outline-none focus:border-[#05828e]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Kelompok Akun</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Kelompok Akun</label>
                   <select
                     value={newCoaForm.kelompok}
                     onChange={(e) => setNewCoaForm({ ...newCoaForm, kelompok: e.target.value as any })}
-                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 outline-none"
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                   >
                     <option value="AKTIVA">AKTIVA</option>
                     <option value="KEWAJIBAN">KEWAJIBAN</option>
@@ -2953,11 +2953,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Pos Saldo Normal</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Pos Saldo Normal</label>
                   <select
                     value={newCoaForm.pos}
                     onChange={(e) => setNewCoaForm({ ...newCoaForm, pos: e.target.value as 'D' | 'K' })}
-                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 outline-none font-bold"
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none font-bold"
                   >
                     <option value="D">D (Debet)</option>
                     <option value="K">K (Kredit)</option>
@@ -2966,7 +2966,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Saldo Awal</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Saldo Awal</label>
                 <input
                   type="number"
                   value={newCoaForm.pos === 'D' ? newCoaForm.saldoAwalDebet || '' : newCoaForm.saldoAwalKredit || ''}
@@ -2979,16 +2979,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                     }
                   }}
                   placeholder="0"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-1.5 font-mono outline-none"
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg px-3 py-1.5 font-mono outline-none focus:border-[#05828e]"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/70 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setIsAddCoaModalOpen(false)}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
               >
                 Batal
               </button>
@@ -3008,31 +3008,31 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* MODAL: Buat Jurnal Pembalik (Reverse Journal) */}
       {/* ============================================================== */}
       {selectedJournalForReversal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-rose-50/70">
-              <div className="flex items-center gap-2 text-rose-800">
-                <RotateCcw className="w-5 h-5 text-rose-600" />
+        <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-rose-50/70 dark:bg-rose-950/40">
+              <div className="flex items-center gap-2 text-rose-800 dark:text-rose-200">
+                <RotateCcw className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                 <h3 className="text-sm font-bold">Buat Jurnal Pembalik (Audit Correction)</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedJournalForReversal(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-4 space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <span className="font-bold text-slate-800 block">Jurnal Yang Dikoreksi:</span>
-                <p className="font-mono text-slate-700 mt-0.5">{selectedJournalForReversal.nomorJurnal}</p>
-                <p className="text-slate-600 mt-1">{selectedJournalForReversal.keteranganTransaksi}</p>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-lg border border-slate-200 dark:border-slate-700">
+                <span className="font-bold text-slate-800 dark:text-slate-100 block">Jurnal Yang Dikoreksi:</span>
+                <p className="font-mono text-slate-700 dark:text-slate-300 mt-0.5">{selectedJournalForReversal.nomorJurnal}</p>
+                <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedJournalForReversal.keteranganTransaksi}</p>
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                   Alasan Koreksi / Pembalikan <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -3040,19 +3040,19 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   value={reversalReasonInput}
                   onChange={(e) => setReversalReasonInput(e.target.value)}
                   placeholder="Contoh: Koreksi salah nomor akun atau salah penginputan nominal..."
-                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-rose-400"
+                  className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-lg p-2.5 outline-none focus:border-rose-400"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                   Sesuai kebijakan audit, jurnal asli tetap tersimpan dengan status 'Dibalikkan', dan entri pembalik otomatis diposting dengan posisi Debet & Kredit ditukar.
                 </p>
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/70 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedJournalForReversal(null)}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
               >
                 Batal
               </button>
@@ -3073,73 +3073,73 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
       {/* MODAL: Detail Metadata Lengkap Jurnal (15 Field Minimal) */}
       {/* ============================================================== */}
       {selectedJournalForDetail && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/70">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#05828e]" />
-                <h3 className="text-sm font-bold text-slate-800">
+                <FileText className="w-4 h-4 text-[#05828e] dark:text-teal-400" />
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
                   Rincian Metadata Jurnal Umum ({selectedJournalForDetail.nomorJurnal})
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedJournalForDetail(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-5 max-h-[75vh] overflow-y-auto space-y-3.5 text-xs">
-              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">1. Nomor Jurnal</span>
-                  <span className="font-mono font-bold text-slate-800">{selectedJournalForDetail.nomorJurnal}</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.nomorJurnal}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">2. Tanggal Jurnal</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.tanggalJurnal}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.tanggalJurnal}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">3. Referensi Bank</span>
-                  <span className="font-mono font-semibold text-slate-700">{selectedJournalForDetail.nomorReferensiBank}</span>
+                  <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{selectedJournalForDetail.nomorReferensiBank}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">4. Rekening Bank</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.rekeningBank}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.rekeningBank}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">5. Program / Kegiatan</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.programKegiatan}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.programKegiatan}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">6. Kategori Dana</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.kategoriDana}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.kategoriDana}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">7. Sumber Transaksi</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.sumberTransaksi}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.sumberTransaksi}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">8. Status Persetujuan</span>
                   <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                     selectedJournalForDetail.statusPersetujuan === 'Disetujui'
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                       : selectedJournalForDetail.statusPersetujuan === 'Dibalikkan'
-                      ? 'bg-rose-100 text-rose-800'
-                      : 'bg-amber-100 text-amber-800'
+                      ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
+                      : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
                   }`}>
                     {selectedJournalForDetail.statusPersetujuan}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">9. Pengguna Menyetujui</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.penggunaMenyetujui}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.penggunaMenyetujui}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">10. Waktu Posting</span>
-                  <span className="font-semibold text-slate-800">{selectedJournalForDetail.waktuPosting}</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedJournalForDetail.waktuPosting}</span>
                 </div>
               </div>
 
@@ -3147,11 +3147,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                 <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1.5">
                   11. Keterangan & Rincian Baris Debet / Kredit
                 </span>
-                <p className="font-semibold text-slate-800 mb-2">{selectedJournalForDetail.keteranganTransaksi}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 mb-2">{selectedJournalForDetail.keteranganTransaksi}</p>
 
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                    <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold">
                       <tr>
                         <th className="py-1.5 px-3">Kode</th>
                         <th className="py-1.5 px-3">Akun</th>
@@ -3159,13 +3159,13 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                         <th className="py-1.5 px-3 text-right">Kredit</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {selectedJournalForDetail.lines.map((l) => (
                         <tr key={l.id}>
-                          <td className="py-1 px-3 font-mono text-slate-600">{l.kodeAkunDb || l.kodeAkunKr}</td>
-                          <td className="py-1 px-3 text-slate-800">{l.namaAkun || l.keterangan}</td>
-                          <td className="py-1 px-3 text-right font-mono">{l.nominalDebet > 0 ? formatRupiah(l.nominalDebet) : '-'}</td>
-                          <td className="py-1 px-3 text-right font-mono">{l.nominalKredit > 0 ? formatRupiah(l.nominalKredit) : '-'}</td>
+                          <td className="py-1 px-3 font-mono text-slate-600 dark:text-slate-400">{l.kodeAkunDb || l.kodeAkunKr}</td>
+                          <td className="py-1 px-3 text-slate-800 dark:text-slate-200">{l.namaAkun || l.keterangan}</td>
+                          <td className="py-1 px-3 text-right font-mono text-slate-800 dark:text-slate-200">{l.nominalDebet > 0 ? formatRupiah(l.nominalDebet) : '-'}</td>
+                          <td className="py-1 px-3 text-right font-mono text-slate-800 dark:text-slate-200">{l.nominalKredit > 0 ? formatRupiah(l.nominalKredit) : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -3174,11 +3174,11 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
               </div>
             </div>
 
-            <div className="p-3.5 border-t border-slate-200 bg-slate-50 flex justify-end">
+            <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/70 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedJournalForDetail(null)}
-                className="px-4 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold cursor-pointer"
+                className="px-4 py-1.5 rounded-lg bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-semibold cursor-pointer"
               >
                 Tutup
               </button>
