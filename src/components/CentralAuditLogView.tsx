@@ -45,7 +45,13 @@ import {
   saveAnomalyStatusOverride,
   simulateSuspiciousIdentitasUpdates,
 } from '../utils/auditAnomalyDetector';
-import { MonthlyAuditTrendChart, extractLogDate } from './MonthlyAuditTrendChart';
+import { MonthlyAuditTrendChart } from './MonthlyAuditTrendChart';
+import {
+  AuditActivityStatsChart,
+  parseAuditLogDate,
+  toLocalDateKey,
+} from './AuditActivityStatsChart';
+import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
 
 interface CentralAuditLogViewProps {
   logs: CentralAuditLogEntry[];
@@ -90,6 +96,9 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
 
   // Filter Bulan: 'YYYY-MM' or null
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string | null>(null);
+
+  // Filter Tanggal: 'YYYY-MM-DD' or null
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
 
   // Sort chronological order: 'desc' vs 'asc'
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -197,11 +206,17 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           return false;
         }
         if (selectedMonthFilter) {
-          const d = extractLogDate(log);
+          const d = parseAuditLogDate(log);
           if (d) {
             const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (mKey !== selectedMonthFilter) return false;
           } else {
+            return false;
+          }
+        }
+        if (selectedDateFilter) {
+          const d = parseAuditLogDate(log);
+          if (!d || toLocalDateKey(d) !== selectedDateFilter) {
             return false;
           }
         }
@@ -225,7 +240,16 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         }
         return sortOrder === 'desc' ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
       });
-  }, [logs, selectedModule, selectedAction, selectedMonthFilter, searchQuery, sortOrder, flaggedLogIdMap]);
+  }, [
+    logs,
+    selectedModule,
+    selectedAction,
+    selectedMonthFilter,
+    selectedDateFilter,
+    searchQuery,
+    sortOrder,
+    flaggedLogIdMap,
+  ]);
 
   // Counts by module for tabs
   const moduleCounts = useMemo(() => {
@@ -253,16 +277,18 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
     onShowToast('Detail log berhasil disalin');
   };
 
-  // Export filtered logs to CSV
+  // Export currently filtered logs to CSV (with UTF-8 BOM for offline Excel reporting)
   const handleExportCsv = () => {
     if (filteredLogs.length === 0) {
-      onShowToast('Tidak ada data audit log untuk diekspor');
+      onShowToast('Tidak ada data audit log saat ini untuk diekspor');
       return;
     }
 
     const headers = [
+      'No',
       'ID Log',
       'Waktu Perubahan',
+      'ISO Timestamp',
       'Modul',
       'ID Record',
       'Subjek Record',
@@ -271,34 +297,39 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
       'Nilai Sebelumnya',
       'Nilai Baru',
       'Alasan',
-      'Operator',
+      'Operator / Admin',
+      'Status Anomali',
     ];
 
-    const rows = filteredLogs.map((l) => [
-      `"${l.id}"`,
-      `"${l.timestamp}"`,
-      `"${l.module}"`,
-      `"${l.recordId}"`,
-      `"${(l.recordTitle || '').replace(/"/g, '""')}"`,
-      `"${l.actionType}"`,
-      `"${l.field}"`,
-      `"${(l.oldValue || '').replace(/"/g, '""')}"`,
-      `"${(l.newValue || '').replace(/"/g, '""')}"`,
-      `"${(l.alasan || '').replace(/"/g, '""')}"`,
-      `"${l.author || 'Sistem'}"`,
+    const rows = filteredLogs.map((l, idx) => [
+      idx + 1,
+      l.id,
+      l.timestamp,
+      l.isoTimestamp || '',
+      l.module,
+      l.recordId,
+      l.recordTitle || '',
+      l.actionType,
+      l.field,
+      l.oldValue || '-',
+      l.newValue || '-',
+      l.alasan || '-',
+      l.author || 'Sistem',
+      flaggedLogIdMap.has(l.id) ? 'Terindikasi Anomali' : 'Normal',
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Audit_Log_Pusat_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    onShowToast('Audit Log CSV berhasil diunduh');
+    const modSlug = selectedModule === 'ALL' ? 'Semua' : selectedModule.replace(/[^a-zA-Z0-9_-]/g, '');
+    const periodSlug = selectedDateFilter
+      ? `_${selectedDateFilter}`
+      : selectedMonthFilter
+      ? `_${selectedMonthFilter}`
+      : '';
+    downloadAuditCsv({
+      filename: `Audit_Log_Pusat_${modSlug}${periodSlug}_${formatCsvDateTag()}.csv`,
+      headers,
+      rows,
+    });
+    onShowToast(`${filteredLogs.length} log audit saat ini berhasil diunduh ke CSV`);
   };
 
   // Submit test manual event
@@ -343,31 +374,31 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
   return (
     <div className="w-full space-y-5 animate-in fade-in duration-200">
       {/* 1. Header Area: Clean, Spacious, Uncluttered */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer shrink-0 mt-0.5 sm:mt-0"
+              className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer shrink-0 mt-0.5 sm:mt-0"
               title="Kembali"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Sistem Pengawasan Terintegrasi
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
               <span>Audit Log Pusat</span>
               {anomalyReport.activeFlagsCount > 0 && (
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                   {anomalyReport.activeFlagsCount} Anomali
                 </span>
               )}
             </h1>
-            <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
               Pencatatan kronologis seluruh perubahan data krusial di tabel S-SALUR, D-DONASI, A-AJAR, dan IDENTITAS.
             </p>
           </div>
@@ -376,14 +407,14 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         {/* Header Actions */}
         <div className="flex flex-wrap items-center gap-2 self-start lg:self-center">
           {/* Segmented View Switch */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-medium">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
             <button
               type="button"
               onClick={() => setViewMode('timeline')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 viewMode === 'timeline'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <GitCommit className="w-3.5 h-3.5" />
@@ -392,10 +423,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
                 viewMode === 'table'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs font-semibold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -406,7 +437,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             title="Ubah urutan waktu"
           >
             <ArrowDownUp className="w-3.5 h-3.5 text-slate-400" />
@@ -416,16 +447,20 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={handleExportCsv}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Unduh log audit yang sedang tampil ke format CSV untuk dokumentasi offline"
+            className="px-3.5 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-slate-400" />
-            <span>CSV</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Unduh CSV</span>
+            <span className="font-mono tabular-nums px-1.5 py-0.5 rounded bg-white/80 dark:bg-slate-900/70 text-[11px]">
+              {filteredLogs.length}
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsTestModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            className="px-3.5 py-1.5 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Uji Coba</span>
@@ -434,13 +469,13 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
       </div>
 
       {/* 2. Executive Metric Bar: Quiet & Refined (Replaces Heavy Cluttered Boxes) */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800">
         <div className="pt-2 md:pt-0 md:px-3 first:px-0">
-          <div className="text-[11px] font-medium text-slate-400">Total Riwayat</div>
-          <div className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 tabular-nums font-mono">
-            {logs.length} <span className="text-xs font-normal text-slate-400">entri</span>
+          <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Total Riwayat</div>
+          <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-0.5 tabular-nums font-mono">
+            {logs.length} <span className="text-xs font-normal text-slate-400 dark:text-slate-500">entri</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Seluruh mutasi tercatat</div>
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Seluruh mutasi tercatat</div>
         </div>
 
         <div className="pt-2 md:pt-0 md:px-3">
@@ -652,7 +687,23 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         </div>
       )}
 
-      {/* 4. Visualisasi Grafik Tren Perubahan Data Bulanan (Area & Batang dengan Deteksi Lonjakan Aktivitas) */}
+      {/* 4. Statistik Harian & Kategori Modul (Recharts) */}
+      <AuditActivityStatsChart
+        logs={logs}
+        selectedDate={selectedDateFilter}
+        onSelectDate={(d) => {
+          setSelectedDateFilter(d);
+          if (d) {
+            onShowToast(`Filter aktif: Log tanggal ${d}`);
+          } else {
+            onShowToast('Filter tanggal direset');
+          }
+        }}
+        selectedModule={selectedModule}
+        onSelectModule={(mod) => setSelectedModule(mod)}
+      />
+
+      {/* 4b. Visualisasi Grafik Tren Perubahan Data Bulanan (Area & Batang dengan Deteksi Lonjakan Aktivitas) */}
       <MonthlyAuditTrendChart
         logs={logs}
         selectedMonth={selectedMonthFilter}
@@ -670,21 +721,41 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
       />
 
       {/* 5. Filter Bar: Clean Segmented Controls & Search */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-3">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
+        {/* Active Date Filter Chip Banner */}
+        {selectedDateFilter && (
+          <div className="flex items-center justify-between px-3.5 py-2 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/70 rounded-xl text-xs text-slate-800 dark:text-slate-200 animate-in fade-in duration-150">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf] shrink-0" />
+              <span>
+                Menampilkan log khusus tanggal <strong className="font-mono font-semibold text-slate-900 dark:text-white">{selectedDateFilter}</strong>{' '}
+                <span className="font-mono text-slate-500 dark:text-slate-400">({filteredLogs.length} dari {logs.length} riwayat)</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedDateFilter(null)}
+              className="text-[#05828e] dark:text-[#2dd4bf] hover:text-[#046c76] font-semibold text-xs hover:underline cursor-pointer"
+            >
+              Hapus Filter Tanggal
+            </button>
+          </div>
+        )}
+
         {/* Active Month Filter Chip Banner */}
         {selectedMonthFilter && (
-          <div className="flex items-center justify-between px-3.5 py-2 bg-teal-50/70 border border-teal-200/80 rounded-xl text-xs text-slate-800 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between px-3.5 py-2 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/70 rounded-xl text-xs text-slate-800 dark:text-slate-200 animate-in fade-in duration-150">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#05828e] shrink-0" />
+              <Calendar className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf] shrink-0" />
               <span>
-                Menampilkan log khusus periode <strong className="font-semibold text-slate-900">{selectedMonthFilter}</strong>{' '}
-                <span className="font-mono text-slate-500">({filteredLogs.length} dari {logs.length} riwayat)</span>
+                Menampilkan log khusus periode <strong className="font-semibold text-slate-900 dark:text-white">{selectedMonthFilter}</strong>{' '}
+                <span className="font-mono text-slate-500 dark:text-slate-400">({filteredLogs.length} dari {logs.length} riwayat)</span>
               </span>
             </div>
             <button
               type="button"
               onClick={() => setSelectedMonthFilter(null)}
-              className="text-[#05828e] hover:text-[#046c76] font-semibold text-xs hover:underline cursor-pointer"
+              className="text-[#05828e] dark:text-[#2dd4bf] hover:text-[#046c76] font-semibold text-xs hover:underline cursor-pointer"
             >
               Hapus Filter Bulan
             </button>
@@ -696,10 +767,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedModule('ALL')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
               selectedModule === 'ALL'
-                ? 'bg-slate-900 text-white font-semibold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             Semua Modul <span className="text-[11px] opacity-70 ml-1">({moduleCounts.ALL})</span>
@@ -708,10 +779,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedModule('S-SALUR')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
               selectedModule === 'S-SALUR'
                 ? 'bg-emerald-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             S-SALUR <span className="text-[11px] opacity-70 ml-1">({moduleCounts['S-SALUR']})</span>
@@ -720,10 +791,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedModule('DONASI')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
               selectedModule === 'DONASI'
                 ? 'bg-amber-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             D-DONASI <span className="text-[11px] opacity-70 ml-1">({moduleCounts['DONASI']})</span>
@@ -732,10 +803,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedModule('AJAR')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
               selectedModule === 'AJAR'
                 ? 'bg-indigo-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             A-AJAR <span className="text-[11px] opacity-70 ml-1">({moduleCounts['AJAR']})</span>
@@ -744,10 +815,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           <button
             type="button"
             onClick={() => setSelectedModule('IDENTITAS')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
               selectedModule === 'IDENTITAS'
                 ? 'bg-[#05828e] text-white font-semibold shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             IDENTITAS <span className="text-[11px] opacity-70 ml-1">({moduleCounts['IDENTITAS']})</span>
@@ -757,10 +828,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
             <button
               type="button"
               onClick={() => setSelectedModule('ANOMALI')}
-              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
                 selectedModule === 'ANOMALI'
                   ? 'bg-rose-700 text-white font-semibold shadow-xs'
-                  : 'text-rose-700 bg-rose-50 hover:bg-rose-100'
+                  : 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
               }`}
             >
               Anomali ({anomalyReport.activeFlagsCount})
@@ -769,7 +840,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         </div>
 
         {/* Search & Action Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="relative flex-1 sm:max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -777,25 +848,25 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               placeholder="Cari ID, nama donatur, field, nilai, atau alasan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:bg-white focus:border-[#05828e] transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#05828e] transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Tipe Aksi:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-400 dark:text-slate-500">Tipe Aksi:</span>
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-medium focus:outline-none focus:border-[#05828e]"
+              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-[#05828e]"
             >
               <option value="ALL">Semua Aksi</option>
               <option value="Tambah">Tambah</option>
@@ -805,6 +876,16 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               <option value="Hapus">Hapus</option>
             </select>
 
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              title="Ekspor dan unduh daftar log audit yang sedang tampil ke file CSV"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+              <span>Ekspor CSV ({filteredLogs.length})</span>
+            </button>
+
             {onClearLogs && (
               <button
                 type="button"
@@ -813,7 +894,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                     onClearLogs();
                   }
                 }}
-                className="text-xs text-slate-400 hover:text-rose-600 px-2 py-1 transition-colors cursor-pointer"
+                className="text-xs text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 px-2 py-1 transition-colors cursor-pointer"
               >
                 Bersihkan
               </button>
@@ -824,17 +905,17 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
 
       {/* 5. VIEW 1: Visual Timeline Mode (Restyled, Zero-Pill Sandwich, Crisp & Calm) */}
       {viewMode === 'timeline' && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs">
           {filteredLogs.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-xs">
-              <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <div className="font-semibold text-slate-600">Tidak ada riwayat yang sesuai filter</div>
-              <p className="text-slate-400 mt-0.5">
+              <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <div className="font-semibold text-slate-600 dark:text-slate-300">Tidak ada riwayat yang sesuai filter</div>
+              <p className="text-slate-400 dark:text-slate-500 mt-0.5">
                 Silakan ganti kata kunci pencarian atau pilih tab modul lain.
               </p>
             </div>
           ) : (
-            <div className="relative pl-6 sm:pl-7 space-y-5 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
+            <div className="relative pl-6 sm:pl-7 space-y-5 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
               {filteredLogs.map((log) => {
                 const theme = getModuleTheme(log.module);
                 const isSuspicious = flaggedLogIdMap.has(log.id);
@@ -844,9 +925,9 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                   <div key={log.id} className="relative group transition-all">
                     {/* Node Dot: Minimal, Uncluttered */}
                     <div
-                      className={`absolute -left-6 sm:-left-7 top-1.5 w-3 h-3 rounded-full ring-4 ring-white transition-transform group-hover:scale-125 ${
+                      className={`absolute -left-6 sm:-left-7 top-1.5 w-3 h-3 rounded-full ring-4 ring-white dark:ring-slate-900 transition-transform group-hover:scale-125 ${
                         isSuspicious
-                          ? 'bg-rose-600 ring-rose-50'
+                          ? 'bg-rose-600 ring-rose-50 dark:ring-rose-950'
                           : log.module === 'S-SALUR'
                           ? 'bg-emerald-600'
                           : log.module === 'DONASI'
@@ -861,8 +942,8 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                     <div
                       className={`border rounded-2xl p-4 sm:p-5 transition-all ${
                         isSuspicious
-                          ? 'bg-rose-50/20 hover:bg-rose-50/40 border-rose-200'
-                          : 'bg-white hover:bg-slate-50/60 border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                          ? 'bg-rose-50/20 dark:bg-rose-950/20 hover:bg-rose-50/40 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-800/70'
+                          : 'bg-white dark:bg-slate-900/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
                       }`}
                     >
                       {/* Top Meta Line: Clean Unboxed Text with Separators */}

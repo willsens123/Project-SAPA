@@ -587,11 +587,14 @@ export interface IdentitasChangeLog {
   codeId: string;
   namaLengkap: string;
   timestamp: string;
+  isoTimestamp?: string;
   field: string;
   oldValue: string;
   newValue: string;
   alasan: string;
-  actionType: 'Ubah' | 'Hapus' | 'Merge';
+  author?: string;
+  actionType: 'Ubah' | 'Hapus' | 'Merge' | 'Tambah' | string;
+  metadata?: Record<string, any>;
 }
 
 export type AuditModule =

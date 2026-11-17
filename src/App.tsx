@@ -3406,14 +3406,22 @@ export default function App() {
 
   // Edit Identitas change log handler
   const handleSaveEditIdentitas = (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => {
+    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+    const nowIso = new Date().toISOString();
+    const enrichedLogs = newLogs.map((log) => ({
+      ...log,
+      author: log.author || actorName,
+      isoTimestamp: log.isoTimestamp || nowIso,
+    }));
+
     setIdentitasList((prev) =>
       prev.map((it) => (it.id === updatedItem.id ? updatedItem : it))
     );
-    setChangeLogs((prev) => [...newLogs, ...prev]);
+    setChangeLogs((prev) => [...enrichedLogs, ...prev]);
 
     // Dispatch central audit log event for each identitas change via event listener
-    if (newLogs && newLogs.length > 0) {
-      newLogs.forEach((log) => {
+    if (enrichedLogs && enrichedLogs.length > 0) {
+      enrichedLogs.forEach((log) => {
         dispatchAuditEvent({
           module: 'IDENTITAS',
           actionType: (log.actionType as any) || 'Ubah',
@@ -3423,7 +3431,7 @@ export default function App() {
           oldValue: log.oldValue,
           newValue: log.newValue,
           alasan: log.alasan || 'Pembaruan data profil identitas',
-          author: 'Admin Identitas',
+          author: log.author || actorName,
           metadata: {
             codeId: log.codeId || updatedItem.id,
             details: `Perubahan field "${log.field}" pada profil ${updatedItem.namaLengkap} (${log.codeId || updatedItem.id})`,
@@ -6951,6 +6959,9 @@ export default function App() {
             <div className="mt-2 sm:mt-4">
               <IdentitasDashboard
                 items={identitasList}
+                changeLogs={changeLogs}
+                centralAuditLogs={centralAuditLogs}
+                suspiciousFlags={anomalyReport?.flags || []}
                 duplicateCount={totalDuplicateRecordsCount}
                 onOpenMergeDuplicates={() => setCurrentView('mergeDuplicates')}
                 onAddNew={() => {
@@ -6982,6 +6993,9 @@ export default function App() {
                 initialData={editingIdentitas}
                 identitasList={identitasList}
                 karyawanList={karyawanList}
+                changeLogs={changeLogs}
+                centralAuditLogs={centralAuditLogs}
+                suspiciousFlags={anomalyReport?.flags || []}
                 onCancel={() => {
                   if (returnViewAfterAdd) {
                     setCurrentView(returnViewAfterAdd);
@@ -6992,13 +7006,106 @@ export default function App() {
                   setEditingIdentitas(null);
                 }}
                 onSave={(savedItem) => {
+                  const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+                  const nowIso = new Date().toISOString();
+                  const nowFormatted = new Date().toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+
                   if (editingIdentitas) {
+                    const trackedFields: { key: keyof IdentitasItem; label: string }[] = [
+                      { key: 'namaLengkap', label: 'Nama Lengkap' },
+                      { key: 'namaPanggilan', label: 'Nama Panggilan' },
+                      { key: 'jenisPanggilan', label: 'Jenis Panggilan' },
+                      { key: 'nomorHandPhone', label: 'Nomor HandPhone' },
+                      { key: 'email', label: 'Email' },
+                      { key: 'kota', label: 'Tempat Tinggal / Kota' },
+                      { key: 'pekerjaan', label: 'Pekerjaan' },
+                      { key: 'triyana', label: 'Triyana' },
+                      { key: 'agama', label: 'Agama' },
+                      { key: 'pic', label: 'PIC' },
+                      { key: 'bhanteLay', label: 'Bhante / Lay?' },
+                    ];
+
+                    const formDiffLogs: IdentitasChangeLog[] = [];
+                    trackedFields.forEach((f, idx) => {
+                      const prevVal = String(editingIdentitas[f.key] ?? '-').trim() || '-';
+                      const nextVal = String(savedItem[f.key] ?? '-').trim() || '-';
+                      if (prevVal !== nextVal) {
+                        formDiffLogs.push({
+                          id: `log-form-${Date.now()}-${idx}`,
+                          identitasId: savedItem.id,
+                          codeId: savedItem.codeId || editingIdentitas.codeId || savedItem.id,
+                          namaLengkap: savedItem.namaLengkap,
+                          timestamp: nowFormatted,
+                          isoTimestamp: nowIso,
+                          author: actorName,
+                          field: f.label,
+                          oldValue: prevVal,
+                          newValue: nextVal,
+                          alasan: 'Pembaruan melalui Form Identitas Lengkap',
+                          actionType: 'Ubah',
+                        });
+                      }
+                    });
+
                     setIdentitasList((prev) =>
                       prev.map((it) => (it.id === savedItem.id ? savedItem : it))
                     );
+
+                    if (formDiffLogs.length > 0) {
+                      setChangeLogs((prev) => [...formDiffLogs, ...prev]);
+                      formDiffLogs.forEach((log) => {
+                        dispatchAuditEvent({
+                          module: 'IDENTITAS',
+                          actionType: 'Ubah',
+                          recordId: log.codeId,
+                          recordTitle: savedItem.namaLengkap,
+                          field: log.field,
+                          oldValue: log.oldValue,
+                          newValue: log.newValue,
+                          alasan: log.alasan,
+                          author: actorName,
+                          metadata: {
+                            codeId: log.codeId,
+                            source: 'FormIdentitas',
+                          },
+                        });
+                      });
+                    }
                     showToast('Data identitas berhasil diperbarui');
                   } else {
                     setIdentitasList((prev) => [savedItem, ...prev]);
+                    const createLog: IdentitasChangeLog = {
+                      id: `log-create-${Date.now()}`,
+                      identitasId: savedItem.id,
+                      codeId: savedItem.codeId || savedItem.id,
+                      namaLengkap: savedItem.namaLengkap,
+                      timestamp: nowFormatted,
+                      isoTimestamp: nowIso,
+                      author: actorName,
+                      field: 'Profil Baru',
+                      oldValue: '-',
+                      newValue: savedItem.namaLengkap,
+                      alasan: 'Pembuatan entri identitas baru',
+                      actionType: 'Tambah',
+                    };
+                    setChangeLogs((prev) => [createLog, ...prev]);
+                    dispatchAuditEvent({
+                      module: 'IDENTITAS',
+                      actionType: 'Tambah',
+                      recordId: savedItem.codeId || savedItem.id,
+                      recordTitle: savedItem.namaLengkap,
+                      field: 'Profil Baru',
+                      oldValue: '-',
+                      newValue: savedItem.namaLengkap,
+                      alasan: 'Pembuatan entri identitas baru',
+                      author: actorName,
+                    });
                     showToast('Identitas baru berhasil ditambahkan');
                   }
                   if (returnViewAfterAdd) {
@@ -7029,6 +7136,8 @@ export default function App() {
                 item={editingIdentitas || identitasList[0]}
                 allIdentitasList={identitasList}
                 changeLogs={changeLogs}
+                centralAuditLogs={centralAuditLogs}
+                currentUser={authenticatedUser}
                 suspiciousFlags={anomalyReport?.flags || []}
                 onBack={() => {
                   setCurrentView('identitas');

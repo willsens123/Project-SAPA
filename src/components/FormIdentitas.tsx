@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Calendar,
   Check,
+  History,
 } from 'lucide-react';
 import { IdentitasItem, AlamatIdentitas } from '../identitasData';
 import {
@@ -16,16 +17,23 @@ import {
   PekerjaanItem,
   MengenalYpplnItem,
   KaryawanItem,
+  IdentitasChangeLog,
+  CentralAuditLogEntry,
+  SuspiciousAuditFlag,
 } from '../types';
 import { loadKaryawan } from '../karyawanData';
 import { AddJenisPanggilanModal } from './AddJenisPanggilanModal';
 import { AddMasterItemModal } from './AddMasterItemModal';
+import { IdentitasAuditDetailModal } from './IdentitasAuditDetailModal';
 import { formatDatePickerValue } from '../utils/datePickerHelper';
 
 interface FormIdentitasProps {
   initialData?: IdentitasItem | null;
   identitasList?: IdentitasItem[];
   karyawanList?: KaryawanItem[];
+  changeLogs?: IdentitasChangeLog[];
+  centralAuditLogs?: CentralAuditLogEntry[];
+  suspiciousFlags?: SuspiciousAuditFlag[];
   onSave: (data: IdentitasItem) => void;
   onCancel: () => void;
   onShowToast?: (msg: string) => void;
@@ -207,9 +215,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 };
 
 export const FormIdentitas: React.FC<FormIdentitasProps> = ({
-  initialData,
+  initialData = null,
   identitasList = [],
   karyawanList = [],
+  changeLogs = [],
+  centralAuditLogs = [],
+  suspiciousFlags = [],
   onSave,
   onCancel,
   onShowToast = (_msg: string) => {},
@@ -380,11 +391,71 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
     return opts;
   }, [activeKaryawan, picUmumUser]);
 
-  // Modals for adding master records
+  // Modals for adding master records & audit detail modal
   const [isAddJenisPanggilanOpen, setIsAddJenisPanggilanOpen] = useState(false);
   const [isAddTriyanaOpen, setIsAddTriyanaOpen] = useState(false);
   const [isAddPekerjaanOpen, setIsAddPekerjaanOpen] = useState(false);
   const [isAddMengenalYpplnOpen, setIsAddMengenalYpplnOpen] = useState(false);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+
+  const entryAuditCount = useMemo(() => {
+    if (!initialData) return 0;
+    const localCount = changeLogs.filter(
+      (l) => l.identitasId === initialData.id || l.codeId === initialData.codeId
+    ).length;
+    const centralCount = centralAuditLogs.filter(
+      (l) =>
+        l.module === 'IDENTITAS' &&
+        (l.recordId === initialData.id || l.recordId === initialData.codeId)
+    ).length;
+    return Math.max(localCount, centralCount);
+  }, [initialData, changeLogs, centralAuditLogs]);
+
+  const handleRestoreFieldToForm = (
+    fieldLabel: string,
+    fieldKey: string | null,
+    restoreValue: string
+  ) => {
+    const cleanVal = restoreValue === '-' ? '' : restoreValue;
+    switch (fieldKey) {
+      case 'namaLengkap':
+        setNamaLengkap(cleanVal);
+        break;
+      case 'namaPanggilan':
+        setNamaPanggilan(cleanVal);
+        break;
+      case 'jenisPanggilan':
+        setJenisPanggilan(cleanVal);
+        break;
+      case 'nomorHandPhone':
+        setPhoneList([cleanVal]);
+        break;
+      case 'email':
+        setEmailList([cleanVal]);
+        break;
+      case 'kota':
+        setKotaKabupaten(cleanVal);
+        break;
+      case 'pekerjaan':
+        setPekerjaan(cleanVal);
+        break;
+      case 'triyana':
+        setTriyana(cleanVal);
+        break;
+      case 'agama':
+        setAgama(cleanVal);
+        break;
+      case 'pic':
+        setPicYppln(cleanVal);
+        break;
+      case 'bhanteLay':
+        setJenis(cleanVal.toLowerCase().includes('bhante') ? 'Sangha' : 'Umat');
+        break;
+      default:
+        break;
+    }
+    onShowToast(`Nilai "${fieldLabel}" dipulihkan ke form (${restoreValue}). Klik Save untuk menyimpan.`);
+  };
 
   // When Nama Lengkap changes, if namaPenerima is empty, set it
   const handleNamaLengkapChange = (val: string) => {
@@ -497,43 +568,61 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
 
   return (
     <div className="w-full pb-20 font-sans">
-      {/* Top Toolbar matching Image: EyeOff, Search, Sliders, + Add */}
-      <div className="flex items-center justify-end gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => onShowToast('Fitur visibilitas kolom')}
-          title="Sembunyikan / Tampilkan"
-          className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
-        >
-          <EyeOff className="w-5 h-5 stroke-[1.8]" />
-        </button>
+      {/* Top Toolbar matching Image: EyeOff, Search, Sliders, Riwayat Audit (when editing), + Add */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+          {initialData && (
+            <button
+              type="button"
+              onClick={() => setIsAuditModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-lg border border-teal-200 dark:border-teal-700/60 bg-teal-50/70 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-[#05828e] dark:text-teal-300 text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <History className="w-4 h-4" />
+              <span>Riwayat Audit Detail</span>
+              <span className="font-mono tabular-nums px-1.5 py-0.5 rounded bg-white/80 dark:bg-slate-800/80 text-[11px]">
+                {entryAuditCount}
+              </span>
+            </button>
+          )}
+        </div>
 
-        <button
-          type="button"
-          onClick={() => onShowToast('Pencarian cepat aktif')}
-          title="Cari"
-          className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
-        >
-          <Search className="w-5 h-5 stroke-[1.8]" />
-        </button>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => onShowToast('Fitur visibilitas kolom')}
+            title="Sembunyikan / Tampilkan"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
+          >
+            <EyeOff className="w-5 h-5 stroke-[1.8]" />
+          </button>
 
-        <button
-          type="button"
-          onClick={() => onShowToast('Filter form')}
-          title="Filter Data"
-          className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
-        >
-          <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
-        </button>
+          <button
+            type="button"
+            onClick={() => onShowToast('Pencarian cepat aktif')}
+            title="Cari"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
+          >
+            <Search className="w-5 h-5 stroke-[1.8]" />
+          </button>
 
-        <button
-          type="button"
-          onClick={() => onShowToast('Formulir siap diisi')}
-          className="bg-[#05828e] hover:bg-[#046c76] text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer ml-1"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Add</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => onShowToast('Filter form')}
+            title="Filter Data"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
+          >
+            <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onShowToast('Formulir siap diisi')}
+            className="bg-[#05828e] hover:bg-[#046c76] text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer ml-1 whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Add</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Form Fields Container matching screenshot layout */}
@@ -1403,6 +1492,20 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
           onShowToast(`Mengenal YPPLN "${name}" berhasil ditambahkan`);
         }}
       />
+
+      {/* Slide-Over Panel Detail Riwayat Audit Log */}
+      {initialData && (
+        <IdentitasAuditDetailModal
+          isOpen={isAuditModalOpen}
+          onClose={() => setIsAuditModalOpen(false)}
+          identity={initialData}
+          changeLogs={changeLogs}
+          centralAuditLogs={centralAuditLogs}
+          suspiciousFlags={suspiciousFlags}
+          onShowToast={onShowToast}
+          onRestoreFieldValue={handleRestoreFieldToForm}
+        />
+      )}
     </div>
   );
 };

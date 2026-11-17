@@ -27,9 +27,18 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   ShieldAlert,
+  Eye,
+  PanelRightOpen,
 } from 'lucide-react';
 import { IdentitasItem } from '../identitasData';
-import { IdentitasChangeLog, SuspiciousAuditFlag } from '../types';
+import {
+  IdentitasChangeLog,
+  SuspiciousAuditFlag,
+  CentralAuditLogEntry,
+  KaryawanItem,
+} from '../types';
+import { IdentitasAuditDetailModal, UnifiedAuditLogItem } from './IdentitasAuditDetailModal';
+import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
 
 interface EditFieldRow {
   id: string;
@@ -42,6 +51,8 @@ interface EditIdentitasViewProps {
   item: IdentitasItem;
   allIdentitasList: IdentitasItem[];
   changeLogs: IdentitasChangeLog[];
+  centralAuditLogs?: CentralAuditLogEntry[];
+  currentUser?: KaryawanItem | null;
   suspiciousFlags?: SuspiciousAuditFlag[];
   onBack: () => void;
   onSave: (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => void;
@@ -113,6 +124,8 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   item,
   allIdentitasList,
   changeLogs,
+  centralAuditLogs = [],
+  currentUser = null,
   onBack,
   onSave,
   onShowToast,
@@ -122,6 +135,20 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 }) => {
   // Current selected identity (can switch between identities if needed)
   const [selectedIdentity, setSelectedIdentity] = useState<IdentitasItem>(item);
+
+  // Sync if item prop updates externally
+  React.useEffect(() => {
+    setSelectedIdentity(item);
+  }, [item]);
+
+  // Detailed Audit Panel / Modal state
+  const [auditModalState, setAuditModalState] = useState<{
+    isOpen: boolean;
+    selectedLogId: string | null;
+  }>({
+    isOpen: false,
+    selectedLogId: null,
+  });
 
   // Filter suspicious flags for this identity
   const relevantSuspiciousFlags = useMemo(() => {
@@ -234,13 +261,16 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
       minute: '2-digit',
     });
 
+    const actorName =
+      currentUser?.namaLengkap || currentUser?.namaPanggilan || 'Admin Identitas';
+
     fieldRows.forEach((row) => {
-      const oldVal = String((selectedIdentity as Record<string, unknown>)[row.fieldKey] || '-');
+      const oldVal = String((selectedIdentity as unknown as Record<string, unknown>)[row.fieldKey] || '-');
       const newVal = row.newValue.trim();
 
       if (oldVal !== newVal) {
         // Update item property
-        (updatedItem as Record<string, unknown>)[row.fieldKey] = newVal;
+        (updatedItem as unknown as Record<string, unknown>)[row.fieldKey] = newVal;
 
         // Create audit log
         newLogs.push({
@@ -249,10 +279,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           codeId: selectedIdentity.codeId || '',
           namaLengkap: selectedIdentity.namaLengkap,
           timestamp: timestampFormatted,
+          isoTimestamp: now.toISOString(),
           field: row.fieldLabel,
           oldValue: oldVal,
           newValue: newVal || '(Dikosongkan)',
           alasan: alasan.trim(),
+          author: actorName,
           actionType: 'Ubah',
         });
       }
@@ -267,6 +299,50 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
     setSelectedIdentity(updatedItem);
     setAlasan('');
     onShowToast(`${newLogs.length} perubahan data berhasil disimpan dan dicatat ke riwayat audit`);
+  };
+
+  // Restore old value from Audit Detail Modal directly into the edit form
+  const handleRestoreFieldValue = (
+    fieldLabel: string,
+    fieldKey: string | null,
+    restoreValue: string,
+    sourceLog: UnifiedAuditLogItem
+  ) => {
+    const matchedField =
+      (fieldKey && AVAILABLE_FIELDS.find((f) => f.key === fieldKey)) ||
+      AVAILABLE_FIELDS.find((f) => f.label.toLowerCase() === fieldLabel.toLowerCase());
+
+    if (!matchedField) {
+      onShowToast(`Field "${fieldLabel}" tidak tersedia di form cepat ini`);
+      return;
+    }
+
+    setFieldRows((prev) => {
+      const existing = prev.find((r) => r.fieldKey === matchedField.key);
+      if (existing) {
+        return prev.map((r) =>
+          r.fieldKey === matchedField.key ? { ...r, newValue: restoreValue } : r
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: `row-restore-${Date.now()}`,
+          fieldKey: matchedField.key,
+          fieldLabel: matchedField.label,
+          newValue: restoreValue,
+        },
+      ];
+    });
+
+    setAlasan(
+      `Pemulihan nilai "${matchedField.label}" dari riwayat audit (${sourceLog.timestamp})`
+    );
+    setAuditModalState({ isOpen: false, selectedLogId: null });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    onShowToast(
+      `Nilai lama "${restoreValue}" untuk ${matchedField.label} dimasukkan ke form. Klik Simpan Perubahan untuk menerapkan.`
+    );
   };
 
   // Filter and sort change logs chronologically
@@ -360,7 +436,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
     onShowToast('Detail log berhasil disalin ke clipboard');
   };
 
-  // Export audit logs of current view as CSV
+  // Export audit logs of current view as CSV (with UTF-8 BOM & full metadata for offline Excel reporting)
   const handleExportCsv = () => {
     if (relevantLogs.length === 0) {
       onShowToast('Tidak ada data log untuk diekspor');
@@ -368,43 +444,42 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
     }
 
     const headers = [
+      'No',
       'ID Log',
-      'Timestamp',
+      'Waktu Perubahan',
+      'ISO Timestamp',
       'Kode Identitas',
       'Nama Lengkap',
       'Aksi',
       'Field Diubah',
       'Nilai Sebelumnya',
       'Nilai Baru',
+      'Diubah Oleh',
       'Alasan Perubahan',
     ];
 
-    const rows = relevantLogs.map((l) => [
-      `"${l.id}"`,
-      `"${l.timestamp}"`,
-      `"${l.codeId || ''}"`,
-      `"${(l.namaLengkap || '').replace(/"/g, '""')}"`,
-      `"${l.actionType}"`,
-      `"${l.field}"`,
-      `"${(l.oldValue || '').replace(/"/g, '""')}"`,
-      `"${(l.newValue || '').replace(/"/g, '""')}"`,
-      `"${(l.alasan || '').replace(/"/g, '""')}"`,
+    const rows = relevantLogs.map((l, idx) => [
+      idx + 1,
+      l.id,
+      l.timestamp,
+      l.isoTimestamp || '',
+      l.codeId || '',
+      l.namaLengkap || '',
+      l.actionType,
+      l.field,
+      l.oldValue || '-',
+      l.newValue || '-',
+      l.author || 'Admin Identitas',
+      l.alasan || '-',
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute(
-      'download',
-      `Audit_Log_${selectedIdentity.codeId || 'Profile'}_${Date.now()}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    onShowToast('Audit Log CSV berhasil diunduh');
+    const scopeSlug = historyFilter === 'all' ? 'Semua_Profil' : (selectedIdentity.codeId || 'Profil');
+    downloadAuditCsv({
+      filename: `Audit_Log_${scopeSlug}_${formatCsvDateTag()}.csv`,
+      headers,
+      rows,
+    });
+    onShowToast(`${relevantLogs.length} catatan audit log berhasil diunduh (CSV)`);
   };
 
   return (
@@ -415,28 +490,28 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
             title="Kembali ke Tabel Identitas"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Profil Identitas & Audit Trail
             </div>
-            <div className="text-lg font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
               <span>{selectedIdentity.namaLengkap}</span>
-              <span className="font-mono text-xs font-semibold text-slate-400">
+              <span className="font-mono tabular-nums text-xs font-semibold text-slate-400 dark:text-slate-500">
                 #{selectedIdentity.codeId || 'ID'}
               </span>
-              <span className="text-slate-300">·</span>
-              <span className="text-xs font-normal text-slate-500">
+              <span className="text-slate-300 dark:text-slate-700">·</span>
+              <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
                 {selectedIdentity.bhanteLay || 'Lay'}
               </span>
               {selectedIdentity.status && selectedIdentity.status !== '-' && (
                 <>
-                  <span className="text-slate-300">·</span>
-                  <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded">
+                  <span className="text-slate-300 dark:text-slate-700">·</span>
+                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded">
                     {selectedIdentity.status}
                   </span>
                 </>
@@ -446,14 +521,25 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
         </div>
 
         {/* Right Tools Group */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
-            onClick={() => onShowToast('Audit trail aktif')}
-            title="Audit trail aktif"
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer"
+            onClick={() => setAuditModalState({ isOpen: true, selectedLogId: null })}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/50 hover:bg-teal-100/70 dark:hover:bg-teal-900/60 text-[#05828e] dark:text-[#2dd4bf] text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            title="Buka Panel Inspeksi Riwayat Perubahan Detail"
           >
-            <EyeOff className="w-5 h-5 stroke-[1.8]" />
+            <PanelRightOpen className="w-3.5 h-3.5" />
+            <span>Panel Detail Audit ({auditStats.totalChanges})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            title="Unduh log audit saat ini ke file CSV untuk dokumentasi offline"
+          >
+            <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+            <span>Unduh CSV ({relevantLogs.length})</span>
           </button>
 
           <button
@@ -463,7 +549,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               if (el) el.focus();
             }}
             title="Cari Riwayat"
-            className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 cursor-pointer"
+            className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1.5 cursor-pointer"
           >
             <Search className="w-5 h-5 stroke-[1.8]" />
           </button>
@@ -480,8 +566,8 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             }
             className={`p-1.5 transition-colors cursor-pointer ${
               historyFilter === 'all'
-                ? 'text-[#05828e]'
-                : 'text-slate-400 hover:text-slate-600'
+                ? 'text-[#05828e] dark:text-[#2dd4bf]'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
             }`}
           >
             <SlidersHorizontal className="w-5 h-5 stroke-[1.8]" />
@@ -491,10 +577,10 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <button
               type="button"
               onClick={onNavigateToCentralAudit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               title="Buka Audit Log Pusat (S-SALUR, Donasi, Ajar, Identitas)"
             >
-              <History className="w-3.5 h-3.5 text-[#05828e]" />
+              <History className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
               <span className="hidden sm:inline">Audit Log Pusat</span>
             </button>
           )}
@@ -513,26 +599,29 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 
       {/* Suspicious Anomaly Alert Banner (Flags > 3 changes to same field in a month) */}
       {relevantSuspiciousFlags.length > 0 && (
-        <div className="bg-amber-50/50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-150">
+        <div className="bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200/90 dark:border-amber-800/80 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-150">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="font-bold text-slate-900 text-sm">
+                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                   Peringatan Deteksi Anomali
                 </span>
-                <span className="text-slate-300">·</span>
-                <span className="font-semibold text-rose-700">
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span className="font-semibold text-rose-700 dark:text-rose-400">
                   {relevantSuspiciousFlags[0].changeCount}x Perubahan dalam sebulan
                 </span>
-                <span className="text-slate-300">·</span>
-                <span className="text-slate-500">
-                  Field: <strong className="font-semibold text-slate-800">{relevantSuspiciousFlags[0].field}</strong>
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Field:{' '}
+                  <strong className="font-semibold text-slate-800 dark:text-slate-200">
+                    {relevantSuspiciousFlags[0].field}
+                  </strong>
                 </span>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
                 {relevantSuspiciousFlags[0].reason}
               </p>
             </div>
@@ -541,7 +630,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <button
               type="button"
               onClick={onNavigateToCentralAudit}
-              className="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-semibold shadow-2xs transition-colors shrink-0 cursor-pointer flex items-center gap-1.5 self-start md:self-center"
+              className="px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-2xs transition-colors shrink-0 cursor-pointer flex items-center gap-1.5 self-start md:self-center"
             >
               <span>Buka di Audit Log Pusat</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
@@ -551,11 +640,11 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
       )}
 
       {/* Main Edit Form Container */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 sm:p-8">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs p-6 sm:p-8">
         <div className="space-y-6 max-w-4xl">
           {/* Row 1: Field yang ingin diubah */}
           <div className="space-y-3">
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Field yang ingin diubah
             </label>
 
@@ -574,9 +663,9 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                       onClick={() =>
                         setOpenDropdownRowId(isDropdownOpen ? null : row.id)
                       }
-                      className="w-full flex items-center justify-between px-3.5 py-2.5 bg-white rounded-xl border border-slate-200 text-sm text-slate-700 hover:border-[#05828e] focus:outline-none focus:ring-2 focus:ring-[#05828e]/20 transition-all text-left"
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-200 hover:border-[#05828e] focus:outline-none focus:ring-2 focus:ring-[#05828e]/20 transition-all text-left cursor-pointer"
                     >
-                      <span className="truncate font-medium text-slate-700">
+                      <span className="truncate font-medium text-slate-700 dark:text-slate-200">
                         {row.fieldLabel || 'Search...'}
                       </span>
                       <div className="w-6 h-6 rounded-full bg-[#05828e] text-white flex items-center justify-center shrink-0 ml-2 shadow-xs">
@@ -586,18 +675,18 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 
                     {/* Dropdown Menu */}
                     {isDropdownOpen && (
-                      <div className="absolute left-0 top-full mt-1.5 w-full bg-white rounded-xl shadow-xl border border-slate-100 p-2 z-50 animate-in fade-in duration-100">
-                        <div className="px-2 py-1 mb-1 border-b border-slate-100">
+                      <div className="absolute left-0 top-full mt-1.5 w-full bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 p-2 z-50 animate-in fade-in duration-100">
+                        <div className="px-2 py-1 mb-1 border-b border-slate-100 dark:border-slate-700">
                           <input
                             type="text"
                             placeholder="Cari field..."
                             value={fieldSearchQuery}
                             onChange={(e) => setFieldSearchQuery(e.target.value)}
-                            className="w-full text-xs px-2 py-1 bg-slate-50 rounded border border-slate-200 focus:outline-none focus:border-[#05828e]"
+                            className="w-full text-xs px-2 py-1 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#05828e]"
                             autoFocus
                           />
                         </div>
-                        <div className="max-h-48 overflow-y-auto divide-y divide-slate-50">
+                        <div className="max-h-48 overflow-y-auto divide-y divide-slate-50 dark:divide-slate-700/60">
                           {AVAILABLE_FIELDS.filter((f) =>
                             f.label.toLowerCase().includes(fieldSearchQuery.toLowerCase())
                           ).map((field) => (
@@ -605,15 +694,15 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                               key={field.key}
                               type="button"
                               onClick={() => handleSelectField(row.id, field)}
-                              className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center justify-between ${
+                              className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
                                 row.fieldKey === field.key
-                                  ? 'bg-[#05828e]/10 text-[#05828e] font-semibold'
-                                  : 'text-slate-700 hover:bg-slate-50'
+                                  ? 'bg-[#05828e]/10 dark:bg-teal-950/60 text-[#05828e] dark:text-[#2dd4bf] font-semibold'
+                                  : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                               }`}
                             >
                               <span>{field.label}</span>
                               {row.fieldKey === field.key && (
-                                <Check className="w-3.5 h-3.5 text-[#05828e]" />
+                                <Check className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
                               )}
                             </button>
                           ))}
@@ -639,7 +728,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                         );
                       }}
                       placeholder="Input Text..."
-                      className="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#05828e] focus:ring-2 focus:ring-[#05828e]/20 transition-all"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] focus:ring-2 focus:ring-[#05828e]/20 transition-all"
                     />
                   </div>
 
@@ -648,7 +737,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     type="button"
                     onClick={() => handleRemoveFieldRow(row.id)}
                     title="Hapus baris ini"
-                    className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                    className="w-7 h-7 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -671,7 +760,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 
           {/* Row 2: Alasan Hapus/Ubah */}
           <div className="space-y-2 pt-2">
-            <label className="block text-sm font-semibold text-slate-700">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
               Alasan Hapus/Ubah
             </label>
             <input
@@ -679,7 +768,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               value={alasan}
               onChange={(e) => setAlasan(e.target.value)}
               placeholder="Contoh: Perubahan nomor WhatsApp aktif donatur / update alamat domisili..."
-              className="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#05828e] focus:ring-2 focus:ring-[#05828e]/20 transition-all"
+              className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] focus:ring-2 focus:ring-[#05828e]/20 transition-all"
             />
           </div>
 
@@ -688,7 +777,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <button
               type="button"
               onClick={onBack}
-              className="px-6 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="px-6 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -705,39 +794,54 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
       </div>
 
       {/* SECTION: Visualisasi Riwayat Perubahan (Audit Log) */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-xs p-6 space-y-5">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs p-6 space-y-5">
         {/* Header Audit Log */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#05828e] to-teal-700 text-white flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#05828e] to-teal-700 text-white flex items-center justify-center shadow-xs shrink-0">
               <History className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-slate-800">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                   Visualisasi Riwayat Perubahan (Audit Log)
                 </h2>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 text-[#05828e] border border-teal-200">
-                  {relevantLogs.length} Entri
+                <span className="text-xs font-mono tabular-nums text-[#05828e] dark:text-[#2dd4bf] font-semibold">
+                  · {relevantLogs.length} Entri
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Audit trail kronologis mencatat riwayat perubahan data profil, nilai sebelum & sesudah, serta alasan perubahan admin.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Klik entri mana saja untuk membuka panel inspeksi detail nilai sebelum & sesudah, aktor perubahan, hingga pemulihan nilai.
               </p>
             </div>
           </div>
 
           {/* View Mode & Export Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Open Detailed Inspector Modal */}
+            <button
+              type="button"
+              onClick={() =>
+                setAuditModalState({
+                  isOpen: true,
+                  selectedLogId: relevantLogs[0]?.id || null,
+                })
+              }
+              className="px-3 py-1.5 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            >
+              <PanelRightOpen className="w-3.5 h-3.5" />
+              <span>Buka Panel Detail</span>
+            </button>
+
             {/* View Mode Switcher */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl text-xs font-medium">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setAuditViewMode('timeline')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
                   auditViewMode === 'timeline'
-                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-[#2dd4bf] shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <GitCommit className="w-3.5 h-3.5" />
@@ -748,8 +852,8 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                 onClick={() => setAuditViewMode('table')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer ${
                   auditViewMode === 'table'
-                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-[#2dd4bf] shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -762,7 +866,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               type="button"
               onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
               title={`Urutan: ${sortOrder === 'desc' ? 'Terbaru ke Terlama' : 'Terlama ke Terbaru'}`}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <ArrowDownUp className="w-3.5 h-3.5 text-slate-400" />
               <span>{sortOrder === 'desc' ? 'Terbaru Dulu' : 'Terlama Dulu'}</span>
@@ -772,55 +876,55 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <button
               type="button"
               onClick={handleExportCsv}
-              title="Unduh Audit Log dalam format CSV"
-              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:text-[#05828e] text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Unduh log audit yang sedang tampil dalam format CSV"
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
-              <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#05828e]" />
-              <span>Unduh CSV</span>
+              <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+              <span>Unduh CSV ({relevantLogs.length})</span>
             </button>
           </div>
         </div>
 
         {/* Audit Metrics / KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3.5 flex items-center justify-between">
             <div>
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Total Perubahan Profil Ini
               </div>
-              <div className="text-xl font-bold text-slate-800 mt-0.5">
+              <div className="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 mt-0.5">
                 {auditStats.totalChanges} kali
               </div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#05828e] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center">
               <History className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3.5 flex items-center justify-between">
             <div>
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Field Paling Sering Diubah
               </div>
-              <div className="text-sm font-bold text-slate-800 mt-0.5 truncate max-w-[180px]">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 truncate max-w-[180px]">
                 {auditStats.topField}
               </div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Tag className="w-4 h-4" />
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex items-center justify-between">
+          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3.5 flex items-center justify-between">
             <div>
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Terakhir Dimodifikasi
               </div>
-              <div className="text-xs font-semibold text-slate-700 mt-0.5 truncate max-w-[190px]">
+              <div className="text-xs font-semibold font-mono tabular-nums text-slate-700 dark:text-slate-300 mt-0.5 truncate max-w-[190px]">
                 {auditStats.lastChange}
               </div>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -830,20 +934,20 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
           {/* Search Box */}
           <div className="relative flex-1 sm:max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
             <input
               id="search-history-input"
               type="text"
               placeholder="Cari field, nilai lama/baru, alasan perubahan..."
               value={tableSearchQuery}
               onChange={(e) => setTableSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:bg-white focus:border-[#05828e] transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#05828e] transition-all"
             />
             {tableSearchQuery && (
               <button
                 type="button"
                 onClick={() => setTableSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -853,14 +957,14 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           {/* Scope & Action Filters */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Scope Filter */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl text-xs font-medium">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setHistoryFilter('current')}
                 className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
                   historyFilter === 'current'
-                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-[#2dd4bf] shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Profil Ini ({changeLogs.filter((l) => l.identitasId === selectedIdentity.id).length})
@@ -870,8 +974,8 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                 onClick={() => setHistoryFilter('all')}
                 className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
                   historyFilter === 'all'
-                    ? 'bg-white text-[#05828e] shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-[#05828e] dark:text-[#2dd4bf] shadow-xs font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Semua Profil ({changeLogs.length})
@@ -882,7 +986,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
             <select
               value={selectedActionFilter}
               onChange={(e) => setSelectedActionFilter(e.target.value)}
-              className="text-xs border border-slate-200 rounded-xl px-2.5 py-1.5 bg-slate-50 text-slate-700 outline-none focus:border-[#05828e] cursor-pointer"
+              className="text-xs border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 outline-none focus:border-[#05828e] cursor-pointer"
             >
               <option value="ALL">Semua Aksi</option>
               <option value="Ubah">Aksi: Ubah</option>
@@ -892,10 +996,10 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Field Filter Pills */}
+        {/* Quick Field Filter Buttons */}
         {availableLogFields.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase mr-1 whitespace-nowrap">
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase mr-1 whitespace-nowrap">
               Filter Field:
             </span>
             <button
@@ -904,7 +1008,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                 selectedFieldFilter === 'ALL'
                   ? 'bg-[#05828e] text-white font-medium'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               Semua Field
@@ -917,7 +1021,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                 className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                   selectedFieldFilter === f
                     ? 'bg-[#05828e] text-white font-medium'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {f}
@@ -930,16 +1034,18 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
         {auditViewMode === 'timeline' && (
           <div className="pt-2">
             {relevantLogs.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 text-xs sm:text-sm bg-slate-50/60 rounded-xl border border-dashed border-slate-200 p-8">
-                <History className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <div className="font-semibold text-slate-600">Belum ada riwayat perubahan yang sesuai</div>
-                <p className="text-slate-400 mt-1 max-w-sm mx-auto">
+              <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs sm:text-sm bg-slate-50/60 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-8">
+                <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                <div className="font-semibold text-slate-600 dark:text-slate-300">
+                  Belum ada riwayat perubahan yang sesuai
+                </div>
+                <p className="text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
                   Setiap kali admin mengubah data profil donatur atau relawan melalui formulir di atas dan menekan tombol Simpan, detail perubahan akan tampil di sini secara kronologis.
                 </p>
               </div>
             ) : (
-              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-linear-to-b before:from-teal-300 before:via-slate-200 before:to-slate-100">
-                {relevantLogs.map((log, idx) => {
+              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-linear-to-b before:from-teal-300 dark:before:from-teal-700 before:via-slate-200 dark:before:via-slate-700 before:to-slate-100 dark:before:to-slate-800">
+                {relevantLogs.map((log) => {
                   const isMerge = log.actionType === 'Merge';
                   const isHapus = log.actionType === 'Hapus';
 
@@ -950,7 +1056,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     >
                       {/* Timeline Node Icon */}
                       <div
-                        className={`absolute -left-6 sm:-left-8 top-1 w-6 sm:w-8 h-6 sm:h-8 rounded-full flex items-center justify-center ring-4 ring-white shadow-xs transition-transform group-hover:scale-110 ${
+                        className={`absolute -left-6 sm:-left-8 top-1 w-6 sm:w-8 h-6 sm:h-8 rounded-full flex items-center justify-center ring-4 ring-white dark:ring-slate-900 shadow-xs transition-transform group-hover:scale-110 ${
                           isMerge
                             ? 'bg-amber-500 text-white'
                             : isHapus
@@ -968,48 +1074,65 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                       </div>
 
                       {/* Timeline Card */}
-                      <div className="bg-slate-50/70 hover:bg-slate-50 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:border-teal-300">
+                      <div className="bg-slate-50/70 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:border-teal-300 dark:hover:border-teal-700">
                         {/* Top Bar of the Entry */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200/60">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {/* Action badge */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200/60 dark:border-slate-700/70">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                              className={`font-bold uppercase tracking-wider ${
                                 isMerge
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  ? 'text-amber-700 dark:text-amber-400'
                                   : isHapus
-                                  ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                  : 'bg-teal-50 text-[#05828e] border border-teal-200'
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : 'text-[#05828e] dark:text-[#2dd4bf]'
                               }`}
                             >
                               {log.actionType} Data
                             </span>
-
-                            {/* Field Name badge */}
-                            <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            <span className="text-slate-300 dark:text-slate-600">·</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-100 text-xs sm:text-sm">
                               {log.field}
                             </span>
-
-                            {/* Profil tag (if viewing all) */}
+                            {log.author && (
+                              <>
+                                <span className="text-slate-300 dark:text-slate-600">·</span>
+                                <span className="text-slate-500 dark:text-slate-400">
+                                  Oleh: {log.author}
+                                </span>
+                              </>
+                            )}
                             {historyFilter === 'all' && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-mono bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600">
-                                <User className="w-3 h-3 text-slate-400" />
-                                {log.codeId} • {log.namaLengkap}
-                              </span>
+                              <>
+                                <span className="text-slate-300 dark:text-slate-600">·</span>
+                                <span className="font-mono tabular-nums text-slate-600 dark:text-slate-300">
+                                  {log.codeId} · {log.namaLengkap}
+                                </span>
+                              </>
                             )}
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-xs text-slate-400 font-medium">
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="flex items-center gap-1 text-xs font-mono tabular-nums text-slate-400 dark:text-slate-500 font-medium">
+                              <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                               <span>{log.timestamp}</span>
                             </span>
 
                             <button
                               type="button"
+                              onClick={() =>
+                                setAuditModalState({ isOpen: true, selectedLogId: log.id })
+                              }
+                              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Lihat Detail</span>
+                            </button>
+
+                            <button
+                              type="button"
                               onClick={() => handleCopyLog(log)}
                               title="Salin detail log"
-                              className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-white transition-colors cursor-pointer"
+                              className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer"
                             >
                               <Copy className="w-3.5 h-3.5" />
                             </button>
@@ -1019,23 +1142,27 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                         {/* Diff Box: Nilai Lama vs Nilai Baru */}
                         <div className="mt-3.5 grid grid-cols-1 md:grid-cols-2 gap-2.5">
                           {/* Old Value */}
-                          <div className="bg-rose-50/60 border border-rose-200/80 rounded-xl p-3">
-                            <div className="flex items-center justify-between text-[11px] font-semibold text-rose-700 uppercase tracking-wider mb-1">
+                          <div className="bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/60 rounded-xl p-3">
+                            <div className="flex items-center justify-between text-[11px] font-semibold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-1">
                               <span>Sebelumnya</span>
-                              <span className="text-[10px] text-rose-500 font-normal">Nilai Lama</span>
+                              <span className="text-[10px] text-rose-500 dark:text-rose-400/80 font-normal">
+                                Nilai Lama
+                              </span>
                             </div>
-                            <div className="text-xs sm:text-sm text-rose-900 font-mono break-all line-through decoration-rose-400/80">
+                            <div className="text-xs sm:text-sm text-rose-900 dark:text-rose-200 font-mono tabular-nums break-all line-through decoration-rose-400/80">
                               {log.oldValue || '-'}
                             </div>
                           </div>
 
                           {/* New Value */}
-                          <div className="bg-teal-50/70 border border-teal-200/90 rounded-xl p-3">
-                            <div className="flex items-center justify-between text-[11px] font-semibold text-[#05828e] uppercase tracking-wider mb-1">
+                          <div className="bg-teal-50/70 dark:bg-teal-950/35 border border-teal-200/90 dark:border-teal-800/70 rounded-xl p-3">
+                            <div className="flex items-center justify-between text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] uppercase tracking-wider mb-1">
                               <span>Menjadi</span>
-                              <span className="text-[10px] text-teal-600 font-normal">Nilai Baru</span>
+                              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-normal">
+                                Nilai Baru
+                              </span>
                             </div>
-                            <div className="text-xs sm:text-sm text-teal-950 font-mono font-semibold break-all">
+                            <div className="text-xs sm:text-sm text-teal-950 dark:text-teal-100 font-mono tabular-nums font-semibold break-all">
                               {log.newValue}
                             </div>
                           </div>
@@ -1043,12 +1170,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 
                         {/* Alasan Perubahan Callout */}
                         {log.alasan && (
-                          <div className="mt-3 flex items-start gap-2 bg-white border border-slate-200/80 rounded-xl p-3 text-xs">
-                            <span className="font-semibold text-slate-600 shrink-0">
+                          <div className="mt-3 flex items-start gap-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3 text-xs">
+                            <span className="font-semibold text-slate-600 dark:text-slate-300 shrink-0">
                               Alasan Admin:
                             </span>
-                            <span className="text-slate-700 italic">
-                              "{log.alasan}"
+                            <span className="text-slate-700 dark:text-slate-300 italic">
+                              &quot;{log.alasan}&quot;
                             </span>
                           </div>
                         )}
@@ -1066,7 +1193,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           <div className="overflow-x-auto pt-1">
             <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
-                <tr className="border-b border-slate-200 text-[12px] font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/50">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[12px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-800/60">
                   <th className="py-3 px-4 w-[190px]">Waktu Perubahan</th>
                   <th className="py-3 px-4">Identitas</th>
                   <th className="py-3 px-4">Aksi</th>
@@ -1074,21 +1201,27 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                   <th className="py-3 px-4">Nilai Sebelumnya</th>
                   <th className="py-3 px-4">Nilai Baru</th>
                   <th className="py-3 px-4">Alasan Modifikasi</th>
-                  <th className="py-3 px-2 w-10 text-center"></th>
+                  <th className="py-3 px-2 w-24 text-center">Detail</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-[13px] text-slate-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-[13px] text-slate-700 dark:text-slate-300">
                 {relevantLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">
+                  <tr
+                    key={log.id}
+                    onClick={() =>
+                      setAuditModalState({ isOpen: true, selectedLogId: log.id })
+                    }
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                  >
+                    <td className="py-3 px-4 font-mono tabular-nums text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
                         <span>{log.timestamp}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">
+                    <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-[#05828e] font-mono bg-teal-50 px-1.5 py-0.5 rounded">
+                        <span className="text-xs text-[#05828e] dark:text-[#2dd4bf] font-mono tabular-nums">
                           {log.codeId || '-'}
                         </span>
                         <span>{log.namaLengkap}</span>
@@ -1096,54 +1229,66 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`text-xs font-semibold ${
                           log.actionType === 'Merge'
-                            ? 'bg-amber-100 text-amber-800'
+                            ? 'text-amber-700 dark:text-amber-400'
                             : log.actionType === 'Hapus'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-[#05828e]/10 text-[#05828e]'
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-[#05828e] dark:text-[#2dd4bf]'
                         }`}
                       >
                         {log.actionType}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
+                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                       {log.field}
                     </td>
                     <td
-                      className="py-3 px-4 text-rose-600 font-mono text-xs line-through max-w-[180px] truncate"
+                      className="py-3 px-4 text-rose-600 dark:text-rose-400 font-mono tabular-nums text-xs line-through max-w-[180px] truncate"
                       title={log.oldValue}
                     >
                       {log.oldValue || '-'}
                     </td>
                     <td
-                      className="py-3 px-4 text-[#05828e] font-mono text-xs font-semibold max-w-[180px] truncate"
+                      className="py-3 px-4 text-[#05828e] dark:text-[#2dd4bf] font-mono tabular-nums text-xs font-semibold max-w-[180px] truncate"
                       title={log.newValue}
                     >
                       {log.newValue}
                     </td>
                     <td
-                      className="py-3 px-4 text-slate-600 max-w-[220px] truncate"
+                      className="py-3 px-4 text-slate-600 dark:text-slate-300 max-w-[220px] truncate"
                       title={log.alasan}
                     >
                       {log.alasan || '-'}
                     </td>
-                    <td className="py-3 px-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyLog(log)}
-                        title="Salin detail log"
-                        className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
+                    <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAuditModalState({ isOpen: true, selectedLogId: log.id })
+                          }
+                          title="Buka panel detail audit"
+                          className="text-[#05828e] dark:text-[#2dd4bf] hover:bg-teal-50 dark:hover:bg-teal-950/60 p-1.5 rounded transition-colors cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyLog(log)}
+                          title="Salin detail log"
+                          className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
 
                 {relevantLogs.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-slate-400 text-sm">
+                    <td colSpan={8} className="py-10 text-center text-slate-400 dark:text-slate-500 text-sm">
                       Belum ada riwayat perubahan yang sesuai kriteria pencarian.
                     </td>
                   </tr>
@@ -1153,6 +1298,19 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Detailed Audit Log Drawer / Modal */}
+      <IdentitasAuditDetailModal
+        isOpen={auditModalState.isOpen}
+        onClose={() => setAuditModalState({ isOpen: false, selectedLogId: null })}
+        identity={selectedIdentity}
+        changeLogs={changeLogs}
+        centralAuditLogs={centralAuditLogs}
+        suspiciousFlags={suspiciousFlags}
+        initialSelectedLogId={auditModalState.selectedLogId}
+        onShowToast={onShowToast}
+        onRestoreFieldValue={handleRestoreFieldValue}
+      />
     </div>
   );
 };

@@ -18,12 +18,22 @@ import {
   FolderInput,
   MessageSquare,
   Receipt,
+  History,
 } from 'lucide-react';
 import { IdentitasItem } from '../identitasData';
+import {
+  IdentitasChangeLog,
+  CentralAuditLogEntry,
+  SuspiciousAuditFlag,
+} from '../types';
 import { FunnelingActionBar } from './FunnelingActionBar';
+import { IdentitasAuditDetailModal } from './IdentitasAuditDetailModal';
 
 interface IdentitasDashboardProps {
   items: IdentitasItem[];
+  changeLogs?: IdentitasChangeLog[];
+  centralAuditLogs?: CentralAuditLogEntry[];
+  suspiciousFlags?: SuspiciousAuditFlag[];
   onAddNew: () => void;
   onEditItem?: (item: IdentitasItem) => void;
   onDeleteItem?: (id: string) => void;
@@ -43,6 +53,9 @@ interface IdentitasDashboardProps {
 
 export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
   items,
+  changeLogs = [],
+  centralAuditLogs = [],
+  suspiciousFlags = [],
   onAddNew,
   onEditItem,
   onDeleteItem,
@@ -62,6 +75,7 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [auditModalItem, setAuditModalItem] = useState<IdentitasItem | null>(null);
 
   // Starred Identitas state
   const [localStarredIds, setLocalStarredIds] = useState<Record<string, boolean>>(() => {
@@ -674,6 +688,17 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
                             type="button"
                             onClick={() => {
                               setActiveMenuId(null);
+                              setAuditModalItem(item);
+                            }}
+                            className="w-full px-3.5 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-900/30 hover:text-[#008d91] dark:hover:text-teal-300 flex items-center gap-2 cursor-pointer font-medium"
+                          >
+                            <History className="w-3.5 h-3.5 text-[#008d91] dark:text-teal-400" />
+                            <span>Riwayat Audit Detail</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
                               if (onEditItem) onEditItem(item);
                             }}
                             className="w-full px-3.5 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
@@ -723,6 +748,29 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
         onTambahKeGroupExisting={handleBulkTambahKeGroupExisting}
         onKirimPM={onKirimPM ? handleBulkKirimPM : undefined}
       />
+
+      {/* Slide-Over Panel Detail Riwayat Audit Log */}
+      {auditModalItem && (
+        <IdentitasAuditDetailModal
+          isOpen={!!auditModalItem}
+          onClose={() => setAuditModalItem(null)}
+          identity={auditModalItem}
+          changeLogs={changeLogs}
+          centralAuditLogs={centralAuditLogs}
+          suspiciousFlags={suspiciousFlags}
+          onShowToast={onShowToast}
+          onRestoreFieldValue={
+            onEditItem
+              ? (fieldLabel) => {
+                  const target = auditModalItem;
+                  setAuditModalItem(null);
+                  onShowToast(`Membuka editor untuk memulihkan "${fieldLabel}"`);
+                  onEditItem(target);
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 };
