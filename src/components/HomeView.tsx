@@ -56,6 +56,7 @@ import { SSalurIcon } from './SSalurIcon';
 import { ChangeLoginUserModal } from './ChangeLoginUserModal';
 import { AddCalendarEventModal, CalendarEventItem } from './AddCalendarEventModal';
 import { HomeProjectCharts } from './HomeProjectCharts';
+import { ProjectLocationMap } from './ProjectLocationMap';
 import { ReportDivisiKeu } from './ReportDivisiKeu';
 import { ReportDivisiPnb } from './ReportDivisiPnb';
 import { ReportDivisiFun } from './ReportDivisiFun';
@@ -116,6 +117,8 @@ interface HomeViewProps {
   onOpenProjectDetail?: (project: ProjectItem) => void;
   onOpenProjectTodos?: (project: ProjectItem) => void;
   onToggleTodoCompleted?: (projectId: string, taskId: string) => void;
+  onFilterProjectsByLocation?: (locationQuery: string) => void;
+  isDark?: boolean;
   onShowToast: (msg: string) => void;
 }
 
@@ -199,6 +202,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenProjectDetail,
   onOpenProjectTodos,
   onToggleTodoCompleted,
+  onFilterProjectsByLocation,
+  isDark = false,
   onShowToast,
 }) => {
   // Modal states
@@ -1479,6 +1484,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
         activeDivisi={activeDivisi}
         onSelectDivisi={(d) => setActiveDivisi(d)}
         onOpenProjectReport={onOpenProjectReport}
+      />
+
+      {/* ============================================================== */}
+      {/* PEMETAAN INTERAKTIF GOOGLE MAPS: PERSEBARAN LOKASI PROYEK SAPA */}
+      {/* ============================================================== */}
+      <ProjectLocationMap
+        projects={projects}
+        totalProjectsCount={projects.length}
+        isDark={isDark}
+        onSelectLocationFilter={(locationQuery) => {
+          if (onFilterProjectsByLocation) {
+            onFilterProjectsByLocation(locationQuery);
+          } else {
+            onNavigateView('table');
+          }
+        }}
+        onViewDetail={(proj) => onOpenProjectDetail && onOpenProjectDetail(proj)}
+        onViewReport={(proj) => onOpenProjectReport && onOpenProjectReport(proj)}
       />
 
       {/* ============================================================== */}

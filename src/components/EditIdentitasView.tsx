@@ -1261,7 +1261,7 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                     >
                       {log.alasan || '-'}
                     </td>
-                    <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-3 px-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="inline-flex items-center gap-1">
                         <button
                           type="button"
@@ -1269,9 +1269,10 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                             setAuditModalState({ isOpen: true, selectedLogId: log.id })
                           }
                           title="Buka panel detail audit"
-                          className="text-[#05828e] dark:text-[#2dd4bf] hover:bg-teal-50 dark:hover:bg-teal-950/60 p-1.5 rounded transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <Eye className="w-3 h-3" />
+                          <span>Lihat Detail</span>
                         </button>
                         <button
                           type="button"

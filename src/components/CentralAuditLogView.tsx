@@ -31,6 +31,7 @@ import {
   BarChart3,
   TrendingUp,
   Calendar,
+  Eye,
 } from 'lucide-react';
 import {
   CentralAuditLogEntry,
@@ -51,6 +52,7 @@ import {
   parseAuditLogDate,
   toLocalDateKey,
 } from './AuditActivityStatsChart';
+import { CentralAuditDiffModal } from './CentralAuditDiffModal';
 import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
 
 interface CentralAuditLogViewProps {
@@ -103,9 +105,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
   // Sort chronological order: 'desc' vs 'asc'
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-  // Test event modal
+  // Test event modal & visual diff detail modal
   const [isTestModalOpen, setIsTestModalOpen] = useState<boolean>(false);
   const [isScanningLive, setIsScanningLive] = useState<boolean>(false);
+  const [inspectedLog, setInspectedLog] = useState<CentralAuditLogEntry | null>(null);
 
   // Expanded flag cards in Anomaly Panel
   const [expandedFlagIds, setExpandedFlagIds] = useState<Record<string, boolean>>({});
@@ -655,26 +658,36 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                         {flag.matchingLogs.map((mLog, idx) => (
                           <div
                             key={mLog.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 p-2 bg-slate-50 rounded-lg text-xs"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-800/60 rounded-lg text-xs"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className="font-mono text-slate-400 text-[11px] w-4">
                                 #{idx + 1}
                               </span>
-                              <span className="text-slate-500">{mLog.timestamp}</span>
-                              <span className="font-mono text-rose-600 line-through">
+                              <span className="text-slate-500 dark:text-slate-400">{mLog.timestamp}</span>
+                              <span className="font-mono text-rose-600 dark:text-rose-400 line-through">
                                 {mLog.oldValue}
                               </span>
                               <ArrowRight className="w-3 h-3 text-slate-400" />
-                              <span className="font-mono font-semibold text-emerald-700">
+                              <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
                                 {mLog.newValue}
                               </span>
                             </div>
-                            {mLog.alasan && (
-                              <div className="text-[11px] text-slate-500 italic">
-                                "{mLog.alasan}"
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {mLog.alasan && (
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 italic truncate max-w-[200px]">
+                                  "{mLog.alasan}"
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setInspectedLog(mLog)}
+                                className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#05828e] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>Lihat Detail</span>
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -947,36 +960,45 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                       }`}
                     >
                       {/* Top Meta Line: Clean Unboxed Text with Separators */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100 text-xs">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800 text-xs">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`font-semibold ${theme.text}`}>
                             {log.module}
                           </span>
-                          <span className="text-slate-300">·</span>
-                          <span className="font-bold text-slate-900 text-sm">
+                          <span className="text-slate-300 dark:text-slate-600">·</span>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                             {log.recordTitle}
                           </span>
-                          <span className="font-mono text-slate-400">
+                          <span className="font-mono tabular-nums text-slate-400 dark:text-slate-500">
                             #{log.recordId}
                           </span>
-                          <span className="text-slate-300">·</span>
-                          <span className="font-medium text-slate-600">
+                          <span className="text-slate-300 dark:text-slate-600">·</span>
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
                             {log.actionType}
                           </span>
                           {isSuspicious && (
-                            <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/80">
-                              ⚠️ Anomali: {flagItem?.changeCount}x Perubahan/{flagItem?.windowDays}d
+                            <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200/80 dark:border-rose-800/80 inline-flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>Anomali: {flagItem?.changeCount}x Perubahan/{flagItem?.windowDays}d</span>
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-slate-400 text-[11px]">
+                        <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[11px]">
                           <Clock className="w-3 h-3" />
-                          <span>{log.timestamp}</span>
+                          <span className="font-mono tabular-nums">{log.timestamp}</span>
+                          <button
+                            type="button"
+                            onClick={() => setInspectedLog(log)}
+                            className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Lihat Detail</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleCopyLog(log)}
-                            className="p-1 hover:text-slate-700 transition-colors cursor-pointer"
+                            className="p-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                             title="Salin Rincian"
                           >
                             <Copy className="w-3 h-3" />
@@ -986,29 +1008,41 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
 
                       {/* Main Comparison Block: Clean Strikethrough to New Value */}
                       <div className="pt-2.5 space-y-2">
-                        <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                           <span>Field:</span>
-                          <strong className="font-semibold text-slate-900">{log.field}</strong>
+                          <strong className="font-semibold text-slate-900 dark:text-slate-100">{log.field}</strong>
                         </div>
 
                         {/* High-legibility before/after row */}
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs">
+                        <div
+                          onClick={() => setInspectedLog(log)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setInspectedLog(log);
+                            }
+                          }}
+                          title="Klik untuk melihat perbandingan nilai (diff) secara detail"
+                          className="bg-slate-50 dark:bg-slate-800/70 hover:bg-teal-50/40 dark:hover:bg-teal-950/30 rounded-xl p-3 border border-slate-100 dark:border-slate-800 hover:border-teal-200 dark:hover:border-teal-800/70 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs transition-colors cursor-pointer"
+                        >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase w-14 shrink-0">
+                            <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase w-14 shrink-0">
                               Sebelum:
                             </span>
-                            <span className="font-mono text-slate-500 line-through decoration-rose-300 truncate">
+                            <span className="font-mono text-rose-700 dark:text-rose-300 line-through decoration-rose-400/70 truncate">
                               {log.oldValue || '-'}
                             </span>
                           </div>
 
-                          <ArrowRight className="w-3.5 h-3.5 text-slate-300 shrink-0 hidden sm:block" />
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0 hidden sm:block" />
 
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase w-14 shrink-0">
+                            <span className="text-[11px] font-medium text-[#05828e] dark:text-[#2dd4bf] uppercase w-14 shrink-0">
                               Sesudah:
                             </span>
-                            <span className="font-mono font-semibold text-slate-900 truncate">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 truncate">
                               {log.newValue || '-'}
                             </span>
                           </div>
@@ -1017,20 +1051,20 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                         {/* Footer: Reason & Author */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 text-xs">
                           {log.alasan ? (
-                            <div className="text-slate-600 text-xs italic">
-                              "{log.alasan}"
+                            <div className="text-slate-600 dark:text-slate-300 text-xs italic">
+                              &quot;{log.alasan}&quot;
                             </div>
                           ) : (
                             <div />
                           )}
 
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 self-start sm:self-center">
-                            <span>Oleh: <strong className="font-medium text-slate-700">{log.author || 'Sistem'}</strong></span>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-2 self-start sm:self-center">
+                            <span>Oleh: <strong className="font-medium text-slate-700 dark:text-slate-200">{log.author || 'Sistem'}</strong></span>
                             {log.module === 'IDENTITAS' && onNavigateToIdentitas && (
                               <button
                                 type="button"
                                 onClick={() => onNavigateToIdentitas(log.recordId)}
-                                className="text-[#05828e] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                                className="text-[#05828e] dark:text-[#2dd4bf] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
                               >
                                 <span>Profil</span>
                                 <ArrowRight className="w-2.5 h-2.5" />
@@ -1050,10 +1084,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
 
       {/* 6. VIEW 2: Structured Table Mode (Polished, Crisp, Tabular Numerals) */}
       {viewMode === 'table' && (
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-4 w-10 text-center">#</th>
                   <th className="py-3 px-4 w-36">Waktu</th>
@@ -1066,13 +1100,13 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                   <th className="py-3 px-4">Sesudah</th>
                   <th className="py-3 px-4">Alasan</th>
                   <th className="py-3 px-4 w-24">Operator</th>
-                  <th className="py-3 px-3 w-10 text-center"></th>
+                  <th className="py-3 px-3 text-right whitespace-nowrap">Detail &amp; Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="py-10 text-center text-slate-400">
+                    <td colSpan={12} className="py-10 text-center text-slate-400 dark:text-slate-500">
                       Tidak ada data log yang cocok.
                     </td>
                   </tr>
@@ -1084,14 +1118,15 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                     return (
                       <tr
                         key={log.id}
-                        className={`hover:bg-slate-50/70 transition-colors ${
-                          isSuspicious ? 'bg-rose-50/20' : ''
+                        onClick={() => setInspectedLog(log)}
+                        className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition-colors cursor-pointer ${
+                          isSuspicious ? 'bg-rose-50/20 dark:bg-rose-950/20' : ''
                         }`}
                       >
-                        <td className="py-2.5 px-4 text-center font-mono text-slate-400 tabular-nums">
+                        <td className="py-2.5 px-4 text-center font-mono text-slate-400 dark:text-slate-500 tabular-nums">
                           {idx + 1}
                         </td>
-                        <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
+                        <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap font-mono tabular-nums">
                           {log.timestamp}
                         </td>
                         <td className="py-2.5 px-4 whitespace-nowrap">
@@ -1099,46 +1134,60 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                             {log.module}
                           </span>
                         </td>
-                        <td className="py-2.5 px-4 font-mono text-slate-700 whitespace-nowrap">
+                        <td className="py-2.5 px-4 font-mono tabular-nums text-slate-700 dark:text-slate-200 whitespace-nowrap">
                           #{log.recordId}
                         </td>
-                        <td className="py-2.5 px-4 font-medium text-slate-900 max-w-xs truncate">
+                        <td className="py-2.5 px-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate">
                           <div className="flex items-center gap-1.5">
-                            <span>{log.recordTitle}</span>
+                            <span className="truncate">{log.recordTitle}</span>
                             {isSuspicious && (
-                              <span className="text-rose-600 text-[10px] font-bold" title="Kasus Anomali">
-                                ⚠️
+                              <span className="text-rose-600 dark:text-rose-400 shrink-0" title="Kasus Anomali">
+                                <AlertTriangle className="w-3.5 h-3.5" />
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="py-2.5 px-4 text-slate-600">
+                        <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                           {log.actionType}
                         </td>
-                        <td className="py-2.5 px-4 font-medium text-[#05828e] whitespace-nowrap">
+                        <td className="py-2.5 px-4 font-medium text-[#05828e] dark:text-[#2dd4bf] whitespace-nowrap">
                           {log.field}
                         </td>
-                        <td className="py-2.5 px-4 font-mono text-slate-400 max-w-xs truncate">
+                        <td className="py-2.5 px-4 font-mono text-rose-600 dark:text-rose-400 line-through max-w-[160px] truncate">
                           {log.oldValue || '-'}
                         </td>
-                        <td className="py-2.5 px-4 font-mono font-medium text-slate-900 max-w-xs truncate">
+                        <td className="py-2.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100 max-w-[160px] truncate">
                           {log.newValue || '-'}
                         </td>
-                        <td className="py-2.5 px-4 text-slate-500 max-w-xs truncate italic">
+                        <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 max-w-[180px] truncate italic">
                           {log.alasan || '-'}
                         </td>
-                        <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
+                        <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                           {log.author || 'Sistem'}
                         </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLog(log)}
-                            className="p-1 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
-                            title="Salin"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
+                        <td
+                          className="py-2.5 px-3 text-right whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setInspectedLog(log)}
+                              title="Lihat perbedaan nilai (diff) secara detail"
+                              className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Lihat Detail</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLog(log)}
+                              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                              title="Salin"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1358,6 +1407,24 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Visual Diff Modal for Any Audit Log Entry (Identity & Transaction) */}
+      <CentralAuditDiffModal
+        isOpen={!!inspectedLog}
+        onClose={() => setInspectedLog(null)}
+        log={inspectedLog}
+        allLogs={logs}
+        filteredLogs={filteredLogs}
+        onSelectLog={(nextLog) => setInspectedLog(nextLog)}
+        flaggedLogIdMap={flaggedLogIdMap}
+        onShowToast={onShowToast}
+        onNavigateToIdentitas={onNavigateToIdentitas}
+        onNavigateToModule={(mod) => {
+          if (mod === 'S-SALUR' && onNavigateToSalur) onNavigateToSalur();
+          else if (mod === 'DONASI' && onNavigateToDonasi) onNavigateToDonasi();
+          else if (mod === 'AJAR' && onNavigateToAjar) onNavigateToAjar();
+        }}
+      />
     </div>
   );
 };

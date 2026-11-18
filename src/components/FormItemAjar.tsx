@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Link2,
   Check,
+  MapPin,
 } from 'lucide-react';
 import { ItemAjarEvent, ItemAjarChild } from '../itemAjarData';
 import { SubJenisItemAjarItem, getSubJenisAjarFromStorage } from '../subJenisAjarData';
@@ -19,6 +20,11 @@ import { INITIAL_DIVISI } from '../divisiData';
 import { INITIAL_PROJECTS } from '../data';
 import { formatDatePickerValue } from '../utils/datePickerHelper';
 import { DateRangePickerPopover } from './DateRangePickerPopover';
+import { MapLocationPickerModal, MapPickedLocationResult } from './MapLocationPickerModal';
+import {
+  INDONESIA_KOTA_KABUPATEN_LIST,
+  INDONESIA_PROVINSI_LIST,
+} from '../indonesiaRegionData';
 
 interface VariableItemRow {
   id: string;
@@ -235,24 +241,52 @@ export const FormItemAjar: React.FC<FormItemAjarProps> = ({
     'Discord Channel',
   ];
 
-  const sampleKotaOptions = [
-    'Jakarta Pusat',
-    'Jakarta Barat',
-    'Bandung',
-    'Surabaya',
-    'Semarang',
-    'Medan',
-    'Denpasar',
-  ];
+  const sampleKotaOptions = Array.from(
+    new Set([
+      'Jakarta Pusat',
+      'Jakarta Barat',
+      'Bandung',
+      'Surabaya',
+      'Semarang',
+      'Medan',
+      'Denpasar',
+      ...INDONESIA_KOTA_KABUPATEN_LIST,
+    ])
+  );
 
-  const sampleProvinsiOptions = [
-    'DKI Jakarta',
-    'Jawa Barat',
-    'Jawa Timur',
-    'Jawa Tengah',
-    'Sumatera Utara',
-    'Bali',
-  ];
+  const sampleProvinsiOptions = Array.from(
+    new Set([
+      'DKI Jakarta',
+      'Jawa Barat',
+      'Jawa Timur',
+      'Jawa Tengah',
+      'Sumatera Utara',
+      'Bali',
+      ...INDONESIA_PROVINSI_LIST,
+    ])
+  );
+
+  const [mapPickerVarId, setMapPickerVarId] = useState<string | null>(null);
+  const activeMapVarItem = mapPickerVarId
+    ? variableItems.find((v) => v.id === mapPickerVarId) || null
+    : null;
+
+  const handleConfirmVarMapLocation = (result: MapPickedLocationResult) => {
+    if (!mapPickerVarId) return;
+    setVariableItems((prev) =>
+      prev.map((v) =>
+        v.id === mapPickerVarId
+          ? {
+              ...v,
+              lokasiKegiatan: result.lokasiKegiatan || v.lokasiKegiatan,
+              kotaKabupaten: result.kotaKabupaten || v.kotaKabupaten,
+              provinsi: result.provinsi || v.provinsi,
+            }
+          : v
+      )
+    );
+    setMapPickerVarId(null);
+  };
 
   // Handlers for Variable Items
   const addVariableItem = () => {
@@ -973,7 +1007,7 @@ export const FormItemAjar: React.FC<FormItemAjarProps> = ({
                       <label className="md:col-span-3 text-sm text-slate-700 font-normal">
                         Lokasi Kegiatan
                       </label>
-                      <div className="md:col-span-9">
+                      <div className="md:col-span-9 flex flex-wrap items-center gap-2">
                         <input
                           type="text"
                           value={varItem.lokasiKegiatan}
@@ -984,9 +1018,18 @@ export const FormItemAjar: React.FC<FormItemAjarProps> = ({
                               e.target.value
                             )
                           }
-                          placeholder="Input Text..."
-                          className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#008d91] transition-colors"
+                          placeholder="Ketik nama tempat atau pilih di peta..."
+                          className="flex-1 min-w-[200px] bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#008d91] transition-colors"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setMapPickerVarId(varItem.id)}
+                          className="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#008d91] border border-teal-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                          title="Pilih Lokasi Kegiatan di Google Maps"
+                        >
+                          <MapPin className="w-3.5 h-3.5 stroke-[2.2]" />
+                          <span>Pilih di Peta</span>
+                        </button>
                       </div>
                     </div>
 
@@ -1845,6 +1888,16 @@ export const FormItemAjar: React.FC<FormItemAjarProps> = ({
           </button>
         </div>
       </form>
+
+      <MapLocationPickerModal
+        isOpen={Boolean(mapPickerVarId)}
+        onClose={() => setMapPickerVarId(null)}
+        onConfirm={handleConfirmVarMapLocation}
+        initialLokasiKegiatan={activeMapVarItem?.lokasiKegiatan || ''}
+        initialKotaKabupaten={activeMapVarItem?.kotaKabupaten || ''}
+        initialProvinsi={activeMapVarItem?.provinsi || ''}
+        isDark={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+      />
     </div>
   );
 };

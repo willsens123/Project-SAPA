@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, ChevronDown, Link2, X, Plus, Check } from 'lucide-react';
+import { Calendar, ChevronDown, Link2, X, Plus, Check, MapPin, ShieldCheck } from 'lucide-react';
 import { ProjectItem } from '../types';
 import { DateRangePickerPopover } from './DateRangePickerPopover';
+import { MapLocationPickerModal, MapPickedLocationResult } from './MapLocationPickerModal';
 
 interface FormProyekSapaProps {
   initialData?: ProjectItem | null;
@@ -10,6 +11,7 @@ interface FormProyekSapaProps {
   jenisProyekOptions?: string[];
   onAddNewJenisProyek?: (name: string) => void;
   divisiOptions?: string[];
+  isDark?: boolean;
 }
 
 // Preset options for search/select dropdowns
@@ -186,6 +188,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
   jenisProyekOptions = DEFAULT_JENIS_PROYEK_OPTIONS,
   onAddNewJenisProyek,
   divisiOptions = DIVISI_OPTIONS,
+  isDark = false,
 }) => {
   // Dates
   const [tanggalStart, setTanggalStart] = useState('');
@@ -209,6 +212,13 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
   const [lokasiKegiatan, setLokasiKegiatan] = useState('');
   const [kotaKabupaten, setKotaKabupaten] = useState('');
   const [provinsi, setProvinsi] = useState('');
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
+  const [pickedMapMeta, setPickedMapMeta] = useState<{
+    formattedAddress: string;
+    lat: number;
+    lng: number;
+    coverageZoneLabel?: string;
+  } | null>(null);
 
   // Common fields
   const [keterangan, setKeterangan] = useState('');
@@ -263,6 +273,7 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
         (initialData.target && initialData.target[0]) || '',
         (initialData.target && initialData.target[1]) || '',
       ]);
+      setPickedMapMeta(null);
     } else {
       // Reset form
       setTanggalStart('');
@@ -277,12 +288,30 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
       setLokasiKegiatan('');
       setKotaKabupaten('');
       setProvinsi('');
+      setPickedMapMeta(null);
       setKeterangan('');
       setLinkFotoList(['']);
       setLinkLaporan('');
       setTargetList(['', '']);
     }
   }, [initialData]);
+
+  const handleMapLocationConfirm = (result: MapPickedLocationResult) => {
+    setLokasiKegiatan(result.lokasiKegiatan);
+    if (result.kotaKabupaten) {
+      setKotaKabupaten(result.kotaKabupaten);
+    }
+    if (result.provinsi) {
+      setProvinsi(result.provinsi);
+    }
+    setPickedMapMeta({
+      formattedAddress: result.formattedAddress,
+      lat: result.lat,
+      lng: result.lng,
+      coverageZoneLabel: result.coverageZoneLabel,
+    });
+    setIsMapPickerOpen(false);
+  };
 
   const handleAddDivisi = () => {
     setDivisiList([...divisiList, '']);
@@ -609,19 +638,66 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
           /* CONDITIONAL ROWS: When Online is NOT checked */
           <>
             {/* Lokasi Kegiatan */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 animate-in fade-in duration-200">
-              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4 animate-in fade-in duration-200">
+              <label className="w-48 text-[15px] text-[#555e69] dark:text-slate-300 shrink-0 sm:pt-2.5">
                 Lokasi Kegiatan
               </label>
-              <div className="w-[320px] sm:w-[350px]">
-                <input
-                  id="input-lokasi-kegiatan"
-                  type="text"
-                  value={lokasiKegiatan}
-                  onChange={(e) => setLokasiKegiatan(e.target.value)}
-                  placeholder="Input Text..."
-                  className="w-full h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
-                />
+              <div className="flex flex-col gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="w-[320px] sm:w-[350px]">
+                    <input
+                      id="input-lokasi-kegiatan"
+                      type="text"
+                      value={lokasiKegiatan}
+                      onChange={(e) => setLokasiKegiatan(e.target.value)}
+                      placeholder="Ketik nama tempat atau pilih di peta..."
+                      className="w-full h-[42px] px-3.5 bg-white dark:bg-slate-900 border border-[#cbd5e1] dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-100 placeholder-[#94a3b8] dark:placeholder-slate-500 focus:outline-none focus:border-[#05828e] dark:focus:border-teal-500 shadow-2xs transition-colors"
+                    />
+                  </div>
+                  <button
+                    id="btn-open-map-picker"
+                    type="button"
+                    onClick={() => setIsMapPickerOpen(true)}
+                    className="h-[42px] px-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 hover:bg-teal-100 dark:hover:bg-teal-900/70 text-[#05828e] dark:text-teal-300 border border-teal-200 dark:border-teal-800 font-semibold text-xs sm:text-sm inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                    title="Pilih Lokasi Kegiatan Langsung di Google Maps"
+                  >
+                    <MapPin className="w-4 h-4 stroke-[2.2]" />
+                    <span>Pilih di Peta</span>
+                  </button>
+                </div>
+
+                {pickedMapMeta && (
+                  <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-300 bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/70 rounded-lg px-3 py-2 max-w-[490px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          Koordinat Tervalidasi
+                          {pickedMapMeta.coverageZoneLabel
+                            ? ` • Cakupan ${pickedMapMeta.coverageZoneLabel}`
+                            : ' • Wilayah Operasional SAPA'}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPickedMapMeta(null)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        title="Hapus info pin"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
+                      <MapPin className="w-3 h-3 text-[#05828e] dark:text-teal-400 shrink-0" />
+                      <span className="truncate flex-1 min-w-[160px]" title={pickedMapMeta.formattedAddress}>
+                        {pickedMapMeta.formattedAddress}
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 shrink-0 tabular-nums">
+                        ({pickedMapMeta.lat.toFixed(4)}, {pickedMapMeta.lng.toFixed(4)})
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -811,6 +887,16 @@ export const FormProyekSapa: React.FC<FormProyekSapaProps> = ({
         </div>
 
       </form>
+
+      <MapLocationPickerModal
+        isOpen={isMapPickerOpen}
+        onClose={() => setIsMapPickerOpen(false)}
+        onConfirm={handleMapLocationConfirm}
+        initialLokasiKegiatan={lokasiKegiatan}
+        initialKotaKabupaten={kotaKabupaten}
+        initialProvinsi={provinsi}
+        isDark={isDark}
+      />
     </div>
   );
 };
