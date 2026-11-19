@@ -1493,6 +1493,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         projects={projects}
         totalProjectsCount={projects.length}
         isDark={isDark}
+        currentUser={currentUser}
         onSelectLocationFilter={(locationQuery) => {
           if (onFilterProjectsByLocation) {
             onFilterProjectsByLocation(locationQuery);

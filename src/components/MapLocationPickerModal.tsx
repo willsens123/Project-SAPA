@@ -26,6 +26,7 @@ import {
   DEFAULT_INDONESIA_CENTER,
   GMP_ATTRIBUTION_IDS,
   SAPA_COVERAGE_ZONES,
+  SAPA_COVERAGE_ZONES_UPDATED_EVENT,
   SapaCoverageZoneId,
   extractRegionFromAddressComponents,
   fromGeocoderComponents,
@@ -145,9 +146,19 @@ const InnerPickerContent: React.FC<InnerPickerContentProps> = ({
     return null;
   });
 
+  const [coverageZoneVersion, setCoverageZoneVersion] = useState(0);
+
+  useEffect(() => {
+    const handleZoneUpdate = () => setCoverageZoneVersion((v) => v + 1);
+    window.addEventListener(SAPA_COVERAGE_ZONES_UPDATED_EVENT, handleZoneUpdate);
+    return () => {
+      window.removeEventListener(SAPA_COVERAGE_ZONES_UPDATED_EVENT, handleZoneUpdate);
+    };
+  }, []);
+
   const activeZone = useMemo(
     () => getCoverageZoneById(coverageZoneId),
-    [coverageZoneId]
+    [coverageZoneId, coverageZoneVersion]
   );
 
   const validation = useMemo(() => {

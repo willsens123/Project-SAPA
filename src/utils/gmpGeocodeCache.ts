@@ -320,6 +320,18 @@ export interface SapaCoverageZone {
   allowedProvinces: string[] | null; // null means all 38 provinces in Indonesia
 }
 
+export interface SapaCoverageZoneOverride {
+  id: SapaCoverageZoneId;
+  polygonPaths: google.maps.LatLngLiteral[];
+  bounds: google.maps.LatLngBoundsLiteral;
+  center: google.maps.LatLngLiteral;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export const SAPA_COVERAGE_ZONES_STORAGE_KEY = 'sapa_coverage_zone_overrides_v1';
+export const SAPA_COVERAGE_ZONES_UPDATED_EVENT = 'sapa:coverage-zones-updated';
+
 export const SAPA_OPERATIONAL_INDONESIA_POLYGON: google.maps.LatLngLiteral[] = [
   { lat: 5.95, lng: 94.95 },
   { lat: 5.55, lng: 97.8 },
@@ -566,8 +578,137 @@ export function checkPointInCoveragePolygon(
   return isPointInPolygon(lat, lng, zone.polygonPaths);
 }
 
-export function getCoverageZoneById(zoneId: SapaCoverageZoneId): SapaCoverageZone {
+export function computeZoneBoundsAndCenter(
+  polygonPaths: google.maps.LatLngLiteral[]
+): { bounds: google.maps.LatLngBoundsLiteral; center: google.maps.LatLngLiteral } {
+  if (!polygonPaths || polygonPaths.length === 0) {
+    return {
+      bounds: { south: -11.2, north: 6.2, west: 94.8, east: 141.1 },
+      center: DEFAULT_INDONESIA_CENTER,
+    };
+  }
+  let south = Infinity;
+  let north = -Infinity;
+  let west = Infinity;
+  let east = -Infinity;
+
+  polygonPaths.forEach((p) => {
+    if (p.lat < south) south = p.lat;
+    if (p.lat > north) north = p.lat;
+    if (p.lng < west) west = p.lng;
+    if (p.lng > east) east = p.lng;
+  });
+
+  return {
+    bounds: {
+      south: Number(south.toFixed(5)),
+      north: Number(north.toFixed(5)),
+      west: Number(west.toFixed(5)),
+      east: Number(east.toFixed(5)),
+    },
+    center: {
+      lat: Number(((south + north) / 2).toFixed(5)),
+      lng: Number(((west + east) / 2).toFixed(5)),
+    },
+  };
+}
+
+export function sanitizePolygonPaths(
+  rawPaths: unknown
+): google.maps.LatLngLiteral[] {
+  if (!Array.isArray(rawPaths)) return [];
+  const valid: google.maps.LatLngLiteral[] = [];
+  rawPaths.forEach((item) => {
+    if (
+      item &&
+      typeof item === 'object' &&
+      typeof (item as google.maps.LatLngLiteral).lat === 'number' &&
+      typeof (item as google.maps.LatLngLiteral).lng === 'number' &&
+      Number.isFinite((item as google.maps.LatLngLiteral).lat) &&
+      Number.isFinite((item as google.maps.LatLngLiteral).lng)
+    ) {
+      valid.push({
+        lat: Number((item as google.maps.LatLngLiteral).lat.toFixed(5)),
+        lng: Number((item as google.maps.LatLngLiteral).lng.toFixed(5)),
+      });
+    }
+  });
+  return valid.length >= 3 ? valid : [];
+}
+
+export function readCoverageZoneOverrides(): Partial<
+  Record<SapaCoverageZoneId, SapaCoverageZoneOverride>
+> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(SAPA_COVERAGE_ZONES_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, SapaCoverageZoneOverride>;
+    const clean: Partial<Record<SapaCoverageZoneId, SapaCoverageZoneOverride>> = {};
+    Object.entries(parsed || {}).forEach(([id, entry]) => {
+      if (!entry) return;
+      const zoneExists = SAPA_COVERAGE_ZONES.some((z) => z.id === id);
+      if (!zoneExists) return;
+      const cleanPaths = sanitizePolygonPaths(entry.polygonPaths);
+      if (cleanPaths.length < 3) return;
+      const computed = computeZoneBoundsAndCenter(cleanPaths);
+      clean[id as SapaCoverageZoneId] = {
+        id: id as SapaCoverageZoneId,
+        polygonPaths: cleanPaths,
+        bounds: computed.bounds,
+        center: computed.center,
+        updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : new Date().toISOString(),
+        ...(typeof entry.updatedBy === 'string' && entry.updatedBy.trim()
+          ? { updatedBy: entry.updatedBy.trim() }
+          : {}),
+      };
+    });
+    return clean;
+  } catch {
+    return {};
+  }
+}
+
+export function writeCoverageZoneOverrides(
+  overrides: Partial<Record<SapaCoverageZoneId, SapaCoverageZoneOverride>>
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SAPA_COVERAGE_ZONES_STORAGE_KEY, JSON.stringify(overrides));
+    window.dispatchEvent(
+      new CustomEvent(SAPA_COVERAGE_ZONES_UPDATED_EVENT, { detail: overrides })
+    );
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+export function getMergedCoverageZones(
+  overrides?: Partial<Record<SapaCoverageZoneId, SapaCoverageZoneOverride>>
+): SapaCoverageZone[] {
+  const activeOverrides = overrides ?? readCoverageZoneOverrides();
+  return SAPA_COVERAGE_ZONES.map((zone) => {
+    const override = activeOverrides[zone.id];
+    if (!override || override.polygonPaths.length < 3) return zone;
+    return {
+      ...zone,
+      polygonPaths: override.polygonPaths,
+      bounds: override.bounds,
+      center: override.center,
+    };
+  });
+}
+
+export function getDefaultCoverageZone(zoneId: SapaCoverageZoneId): SapaCoverageZone {
   return SAPA_COVERAGE_ZONES.find((z) => z.id === zoneId) || SAPA_COVERAGE_ZONES[0];
+}
+
+export function getCoverageZoneById(
+  zoneId: SapaCoverageZoneId,
+  overrides?: Partial<Record<SapaCoverageZoneId, SapaCoverageZoneOverride>>
+): SapaCoverageZone {
+  const merged = getMergedCoverageZones(overrides);
+  return merged.find((z) => z.id === zoneId) || merged[0];
 }
 
 export function validateSapaOperationalCoordinate(params: {
@@ -594,7 +735,7 @@ export function validateSapaOperationalCoordinate(params: {
   } = params;
 
   const activeZone = getCoverageZoneById(zoneId);
-  const nationalZone = SAPA_COVERAGE_ZONES[0];
+  const nationalZone = getCoverageZoneById('nasional');
 
   if (
     !Number.isFinite(lat) ||

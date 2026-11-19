@@ -4706,6 +4706,7 @@ export default function App() {
                   totalProjectsCount={projects.length}
                   isDark={theme === 'dark'}
                   activeSearchQuery={searchQuery}
+                  currentUser={authenticatedUser}
                   onSelectLocationFilter={(locationQuery) => {
                     if (!locationQuery) {
                       setSearchQuery('');
