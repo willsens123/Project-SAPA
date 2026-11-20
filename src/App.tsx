@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Header } from './components/Header';
 import { useCloudSyncManager } from './firebase/useCloudSyncManager';
 import { testFirestoreConnection } from './firebase/config';
@@ -402,7 +402,13 @@ import {
   getAllProjectTodos,
   getTodosForProject,
   saveTodosForProject,
+  PROJECT_TODOS_UPDATED_EVENT,
 } from './todoListData';
+import {
+  areAllProjectSubTasksCompleted,
+  getProjectSubTaskProgress,
+  isNonProjectTodoId,
+} from './utils/projectCompletionHelper';
 import {
   getPapanTrelloCardsFromStorage,
   savePapanTrelloCardsToStorage,
@@ -2627,6 +2633,137 @@ export default function App() {
     }
     return evaluated;
   });
+
+  const projectsRef = useRef<ProjectItem[]>(projects);
+  projectsRef.current = projects;
+
+  const prevTodosCompletionRef = useRef<Record<string, boolean> | null>(null);
+
+  // Synchronize projectTodos state when sub-views write directly via saveTodosForProject
+  useEffect(() => {
+    const handleExternalTodoSave = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        projectId?: string;
+        tasks?: TodoTaskItem[];
+      }>;
+      const detail = customEvent?.detail;
+      if (!detail?.projectId || !Array.isArray(detail.tasks)) return;
+
+      const { projectId, tasks } = detail;
+      setProjectTodos((prev) => {
+        const currentForProj = prev[projectId];
+        if (currentForProj === tasks) return prev;
+        try {
+          if (currentForProj && JSON.stringify(currentForProj) === JSON.stringify(tasks)) {
+            return prev;
+          }
+        } catch {
+          // Proceed with update if serialization comparison fails
+        }
+        return { ...prev, [projectId]: tasks };
+      });
+    };
+
+    window.addEventListener(PROJECT_TODOS_UPDATED_EVENT, handleExternalTodoSave);
+    return () => {
+      window.removeEventListener(PROJECT_TODOS_UPDATED_EVENT, handleExternalTodoSave);
+    };
+  }, []);
+
+  // Auto-update Project status to 'Completed' when all sub-tasks in its To-Do List are completed
+  useEffect(() => {
+    if (prevTodosCompletionRef.current === null) {
+      const baseline: Record<string, boolean> = {};
+      for (const [pId, tasks] of Object.entries(projectTodos) as [string, TodoTaskItem[]][]) {
+        if (!isNonProjectTodoId(pId)) {
+          baseline[pId] = areAllProjectSubTasksCompleted(tasks);
+        }
+      }
+      prevTodosCompletionRef.current = baseline;
+      return;
+    }
+
+    const prevMap = prevTodosCompletionRef.current;
+    const completedUpdates = new Map<string, { project: ProjectItem; oldStatus: string }>();
+    const reopenedUpdates = new Map<string, { project: ProjectItem; oldStatus: string; progress: number }>();
+
+    for (const [pId, tasks] of Object.entries(projectTodos) as [string, TodoTaskItem[]][]) {
+      if (isNonProjectTodoId(pId)) continue;
+
+      const isNowAllDone = areAllProjectSubTasksCompleted(tasks);
+      const wasAllDone = prevMap[pId] ?? false;
+      prevMap[pId] = isNowAllDone;
+
+      if (isNowAllDone && !wasAllDone) {
+        const targetProject = projectsRef.current.find((p) => p.id === pId);
+        if (targetProject && targetProject.status !== 'Completed') {
+          completedUpdates.set(pId, {
+            project: targetProject,
+            oldStatus: targetProject.status,
+          });
+        }
+      } else if (!isNowAllDone && wasAllDone) {
+        const targetProject = projectsRef.current.find((p) => p.id === pId);
+        if (targetProject && targetProject.status === 'Completed') {
+          const { percentage } = getProjectSubTaskProgress(tasks);
+          reopenedUpdates.set(pId, {
+            project: targetProject,
+            oldStatus: targetProject.status,
+            progress: percentage,
+          });
+        }
+      }
+    }
+
+    if (completedUpdates.size === 0 && reopenedUpdates.size === 0) return;
+
+    setProjects((prev) =>
+      prev.map((proj) => {
+        if (completedUpdates.has(proj.id)) {
+          return { ...proj, status: 'Completed', progress: 100 };
+        }
+        const reopenInfo = reopenedUpdates.get(proj.id);
+        if (reopenInfo && proj.status === 'Completed') {
+          return { ...proj, status: 'Ongoing', progress: reopenInfo.progress };
+        }
+        return proj;
+      })
+    );
+
+    completedUpdates.forEach(({ project, oldStatus }) => {
+      showToast(
+        `Semua sub-tugas selesai! Status proyek "${project.namaKegiatan}" otomatis diperbarui menjadi Completed`
+      );
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: project.id,
+        recordTitle: project.namaKegiatan,
+        actionType: 'Ubah',
+        field: 'Status Proyek',
+        oldValue: oldStatus,
+        newValue: 'Completed',
+        alasan: 'Otomatis diperbarui karena semua sub-tugas dalam To-Do List telah berstatus Completed',
+        author: 'Sistem Otomatis SAPA',
+      });
+    });
+
+    reopenedUpdates.forEach(({ project, oldStatus }) => {
+      showToast(
+        `Ada sub-tugas belum selesai. Status proyek "${project.namaKegiatan}" dikembalikan menjadi Ongoing`
+      );
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: project.id,
+        recordTitle: project.namaKegiatan,
+        actionType: 'Ubah',
+        field: 'Status Proyek',
+        oldValue: oldStatus,
+        newValue: 'Ongoing',
+        alasan: 'Status dikembalikan ke Ongoing karena terdapat sub-tugas dalam To-Do List yang belum selesai',
+        author: 'Sistem Otomatis SAPA',
+      });
+    });
+  }, [projectTodos]);
   const [isAddJenisProyekOpen, setIsAddJenisProyekOpen] = useState(false);
   const [editingJenisProyek, setEditingJenisProyek] = useState<JenisProyekItem | null>(null);
   const [isAddMutasiOpen, setIsAddMutasiOpen] = useState(false);

@@ -27,6 +27,7 @@ import { generateInitialRutinSequence } from '../utils/todoRutinGenerator';
 import { PicAssigneeSelector } from './PicAssigneeSelector';
 import { IdentitasItem } from '../identitasData';
 import { OrganisasiItem } from '../types';
+import { AvatarMascot } from './AvatarMascot';
 
 interface FormTodoListProps {
   project: ProjectItem | null;
@@ -452,6 +453,8 @@ export const FormTodoList: React.FC<FormTodoListProps> = ({
       deadline: '',
       deskripsi: '',
       completed: false,
+      status: 'not_started',
+      statusPengerjaan: 'belum_mulai',
       dependsOnSubTask: false,
       prerequisites: isSecondOrMore
         ? [
@@ -659,14 +662,45 @@ export const FormTodoList: React.FC<FormTodoListProps> = ({
       }
     } else {
       const projDivisi = activeProject?.divisi || 'Umum';
-      tasksToSave = tasks.map((t) => ({
-        ...t,
-        divisi: t.divisi || projDivisi,
-        subTasks: (t.subTasks || []).map((st) => ({
-          ...st,
-          divisi: st.divisi || t.divisi || projDivisi,
-        })),
-      }));
+      tasksToSave = tasks.map((t) => {
+        const normalizedSubs = (t.subTasks || []).map((st) => {
+          const subDone =
+            st.completed === true ||
+            st.status === 'completed' ||
+            st.statusPengerjaan === 'selesai';
+          return {
+            ...st,
+            divisi: st.divisi || t.divisi || projDivisi,
+            completed: subDone,
+            status: subDone
+              ? ('completed' as const)
+              : st.status === 'ongoing' || st.statusPengerjaan === 'ongoing'
+              ? ('ongoing' as const)
+              : ('not_started' as const),
+            statusPengerjaan: subDone
+              ? ('selesai' as const)
+              : st.status === 'ongoing' || st.statusPengerjaan === 'ongoing'
+              ? ('ongoing' as const)
+              : ('belum_mulai' as const),
+          };
+        });
+        const allSubDone =
+          normalizedSubs.length > 0 && normalizedSubs.every((st) => st.completed);
+        return {
+          ...t,
+          divisi: t.divisi || projDivisi,
+          subTasks: normalizedSubs,
+          completed: normalizedSubs.length > 0 ? allSubDone : !!t.completed,
+          status:
+            normalizedSubs.length > 0
+              ? allSubDone
+                ? ('completed' as const)
+                : normalizedSubs.some((st) => st.status === 'ongoing')
+                ? ('ongoing' as const)
+                : ('not_started' as const)
+              : t.status || (t.completed ? ('completed' as const) : ('not_started' as const)),
+        };
+      });
     }
 
     onSave(targetProjectId, tasksToSave);
@@ -700,10 +734,8 @@ export const FormTodoList: React.FC<FormTodoListProps> = ({
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            {/* Boy avatar icon */}
-            <div className="w-8 h-8 rounded-full bg-[#fbc02d] border-2 border-white shadow-xs flex items-center justify-center overflow-hidden shrink-0 select-none">
-              <span className="text-base select-none">👦</span>
-            </div>
+            {/* Mascot avatar */}
+            <AvatarMascot className="w-9 h-9" />
 
             {/* Teal speech bubble / capsule bar */}
             <div className="relative bg-[#008d91] text-white text-xs font-semibold px-4 py-1.5 rounded-2xl flex items-center min-w-[200px] sm:min-w-[280px] h-8 shadow-xs select-none">
@@ -2168,6 +2200,81 @@ export const FormTodoList: React.FC<FormTodoListProps> = ({
                           >
                             <Calendar className="w-5 h-5 text-[#008d91]" />
                           </button>
+                        </div>
+                      </div>
+
+                      {/* Row: Status Sub-Task */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                        <label className="w-full sm:w-64 lg:w-72 text-slate-700 font-normal text-sm sm:text-base shrink-0">
+                          Status Sub-Task
+                        </label>
+                        <div className="w-full max-w-xl flex flex-wrap items-center gap-2">
+                          {(
+                            [
+                              { id: 'not_started', label: 'Belum Mulai', pengerjaan: 'belum_mulai' },
+                              { id: 'ongoing', label: 'Ongoing', pengerjaan: 'ongoing' },
+                              { id: 'completed', label: 'Completed', pengerjaan: 'selesai' },
+                            ] as const
+                          ).map((opt) => {
+                            const currentSubStatus: 'not_started' | 'ongoing' | 'completed' =
+                              subItem.completed ||
+                              subItem.status === 'completed' ||
+                              subItem.statusPengerjaan === 'selesai'
+                                ? 'completed'
+                                : subItem.status === 'ongoing' || subItem.statusPengerjaan === 'ongoing'
+                                ? 'ongoing'
+                                : 'not_started';
+                            const isSelected = currentSubStatus === opt.id;
+                            const activeStyle =
+                              opt.id === 'completed'
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                : opt.id === 'ongoing'
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                                : 'bg-slate-700 text-white border-slate-700 shadow-xs';
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                  setTasks((prev) =>
+                                    prev.map((t, tIdx) => {
+                                      if (tIdx !== taskIndex) return t;
+                                      const updatedSubs = (t.subTasks || []).map((st, sIdx) =>
+                                        sIdx === subIndex
+                                          ? {
+                                              ...st,
+                                              completed: opt.id === 'completed',
+                                              status: opt.id,
+                                              statusPengerjaan: opt.pengerjaan,
+                                            }
+                                          : st
+                                      );
+                                      const allSubDone =
+                                        updatedSubs.length > 0 &&
+                                        updatedSubs.every((st) => st.completed);
+                                      return {
+                                        ...t,
+                                        subTasks: updatedSubs,
+                                        completed: allSubDone,
+                                        status: allSubDone
+                                          ? 'completed'
+                                          : updatedSubs.some((st) => st.status === 'ongoing')
+                                          ? 'ongoing'
+                                          : 'not_started',
+                                      };
+                                    })
+                                  );
+                                }}
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                                  isSelected
+                                    ? activeStyle
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 

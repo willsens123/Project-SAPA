@@ -344,6 +344,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                     className="w-full text-xs text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 outline-none focus:border-[#05828e]"
                   >
                     <option value="ALL">Semua Status</option>
+                    <option value="Completed">Completed</option>
                     <option value="Done">Done</option>
                     <option value="Waiting Acc">Waiting Acc</option>
                     <option value="Ongoing">Ongoing</option>

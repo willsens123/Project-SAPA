@@ -75,6 +75,16 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
   const renderStatusBadge = (status: string) => {
     switch (status) {
+      case 'Completed':
+        return (
+          <span
+            id="badge-status-completed"
+            className="inline-flex items-center justify-center gap-1.5 bg-emerald-600 text-white text-sm font-medium px-5 py-1.5 rounded-full shadow-xs tracking-wide min-w-[90px]"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            Completed
+          </span>
+        );
       case 'Done':
         return (
           <span
@@ -522,6 +532,17 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
                             <div className="px-3 py-1 font-semibold text-[10px] text-slate-400 uppercase">
                               Ubah Status
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onUpdateStatus(project.id, 'Completed');
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              Completed
+                            </button>
                             <button
                               type="button"
                               onClick={() => {

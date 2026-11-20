@@ -457,11 +457,22 @@ export function getTodosForProject(projectId: string): TodoTaskItem[] {
   ];
 }
 
+export const PROJECT_TODOS_UPDATED_EVENT = 'sapa:project-todos-updated';
+
 export function saveTodosForProject(projectId: string, tasks: TodoTaskItem[]): void {
   try {
     const allTodos = getAllProjectTodos();
     allTodos[projectId] = tasks;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allTodos));
+    if (typeof window !== 'undefined') {
+      Promise.resolve().then(() => {
+        window.dispatchEvent(
+          new CustomEvent(PROJECT_TODOS_UPDATED_EVENT, {
+            detail: { projectId, tasks },
+          })
+        );
+      });
+    }
   } catch (e) {
     console.error('Failed to save project todos to localStorage', e);
   }

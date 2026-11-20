@@ -2220,25 +2220,73 @@ export const CalendarTodoList: React.FC<CalendarTodoListProps> = ({
           const subIdx = t.subTasks.findIndex((st) => st.id === item.id);
           if (subIdx !== -1) {
             hasChanges = true;
+            const nextCompleted = manualStatusInput === 'completed';
+            const nextStatus: 'not_started' | 'ongoing' | 'completed' =
+              nextCompleted
+                ? 'completed'
+                : manualStatusInput === 'ongoing'
+                ? 'ongoing'
+                : 'not_started';
+            const nextPengerjaan: 'belum_mulai' | 'ongoing' | 'selesai' | 'pending' =
+              nextCompleted
+                ? 'selesai'
+                : manualStatusInput === 'ongoing'
+                ? 'ongoing'
+                : manualStatusInput === 'pending'
+                ? 'pending'
+                : 'belum_mulai';
             const updatedSubTasks = [...t.subTasks];
             updatedSubTasks[subIdx] = {
               ...updatedSubTasks[subIdx],
               ...(activeTab === 'kegiatan' ? { idKaryawanAssignJob: manualAssigneeInput } : {}),
               deadline: finalEndDate,
-              completed: manualStatusInput === 'completed',
+              completed: nextCompleted,
+              status: nextStatus,
+              statusPengerjaan: nextPengerjaan,
             };
+            const allSubDone =
+              updatedSubTasks.length > 0 &&
+              updatedSubTasks.every(
+                (st) =>
+                  st.completed ||
+                  st.status === 'completed' ||
+                  st.statusPengerjaan === 'selesai'
+              );
             return {
               ...t,
               subTasks: updatedSubTasks,
+              completed: allSubDone,
+              status: allSubDone
+                ? ('completed' as const)
+                : updatedSubTasks.some((st) => st.status === 'ongoing')
+                ? ('ongoing' as const)
+                : ('not_started' as const),
             };
           }
         } else if (t.id === item.id) {
           hasChanges = true;
+          const nextCompleted = manualStatusInput === 'completed';
+          const nextStatus: 'not_started' | 'ongoing' | 'completed' =
+            nextCompleted
+              ? 'completed'
+              : manualStatusInput === 'ongoing'
+              ? 'ongoing'
+              : 'not_started';
+          const nextPengerjaan: 'belum_mulai' | 'ongoing' | 'selesai' | 'pending' =
+            nextCompleted
+              ? 'selesai'
+              : manualStatusInput === 'ongoing'
+              ? 'ongoing'
+              : manualStatusInput === 'pending'
+              ? 'pending'
+              : 'belum_mulai';
           return {
             ...t,
             scheduledDate: manualStatusInput === 'pending' ? undefined : finalStartDate,
             deadline: finalEndDate,
-            completed: manualStatusInput === 'completed',
+            completed: nextCompleted,
+            status: nextStatus,
+            statusPengerjaan: nextPengerjaan,
             ...(activeTab === 'kegiatan' ? { idKaryawanAssignJob: manualAssigneeInput } : {}),
           };
         }

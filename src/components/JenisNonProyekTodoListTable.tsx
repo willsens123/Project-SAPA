@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { JenisNonProyekItem } from '../types';
 import { AddEditJenisNonProyekModal } from './AddEditJenisNonProyekModal';
+import { AvatarMascot } from './AvatarMascot';
 
 interface JenisNonProyekTodoListTableProps {
   items: JenisNonProyekItem[];
@@ -127,30 +128,8 @@ export const JenisNonProyekTodoListTable: React.FC<JenisNonProyekTodoListTablePr
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            {/* Boy cartoon character avatar */}
-            <div className="w-9 h-9 rounded-full bg-[#fbc02d] border border-amber-300 shadow-xs flex items-center justify-center overflow-hidden shrink-0 select-none">
-              <svg viewBox="0 0 36 36" className="w-full h-full p-0.5" fill="none">
-                <circle cx="18" cy="18" r="17" fill="#fbc02d" />
-                <path
-                  d="M7 16C6 11 11 6 18 6C24 6 29 10 29 16C30 18 30 20 28 21C26 22 24 22 23 20C21 16 19 14 16 14C13 14 11 16 10 19C9 21 8 20 7 16Z"
-                  fill="#5c3818"
-                />
-                <path
-                  d="M10 18C10 23.5 13.5 27 18 27C22.5 27 26 23.5 26 18C26 17 25 15 24 15C20 15 16 15 12 15C11 15 10 17 10 18Z"
-                  fill="#fed7aa"
-                />
-                <path d="M9 16C12 14 24 14 27 16" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="14" cy="19" r="1.5" fill="#1e293b" />
-                <circle cx="22" cy="19" r="1.5" fill="#1e293b" />
-                <path
-                  d="M14 23C16 25 20 25 22 23"
-                  stroke="#1e293b"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                  fill="white"
-                />
-              </svg>
-            </div>
+            {/* Mascot character avatar */}
+            <AvatarMascot className="w-9 h-9" />
 
             {/* Teal speech bubble / capsule bar */}
             <div className="relative bg-[#008d91] text-white text-xs font-semibold px-4 py-1.5 rounded-2xl flex items-center min-w-[200px] sm:min-w-[280px] h-8 shadow-xs select-none">

@@ -48,7 +48,12 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
           {/* Status badge */}
           <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 p-3 rounded-xl">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Status Kegiatan</span>
-            {project.status === 'Done' ? (
+            {project.status === 'Completed' ? (
+              <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-medium px-4 py-1.5 rounded-full shadow-xs">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Completed
+              </span>
+            ) : project.status === 'Done' ? (
               <span className="inline-flex items-center gap-1.5 bg-[#05828e] text-white text-xs font-medium px-4 py-1.5 rounded-full shadow-xs">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Done

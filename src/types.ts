@@ -9,7 +9,7 @@ export interface ProjectItem {
   jenisProyek: string;
   divisi: string;
   lokasi: string;
-  status: 'Done' | 'Waiting Acc' | 'Ongoing' | string;
+  status: 'Done' | 'Completed' | 'Waiting Acc' | 'Ongoing' | string;
   catatan?: string;
   // Detailed form fields
   isOnline?: boolean;
@@ -34,7 +34,7 @@ export interface ProjectItem {
 
 export type Project = ProjectItem;
 
-export type StatusType = 'Done' | 'Waiting Acc' | 'Ongoing';
+export type StatusType = 'Done' | 'Completed' | 'Waiting Acc' | 'Ongoing';
 
 export type AppView =
   | 'home'

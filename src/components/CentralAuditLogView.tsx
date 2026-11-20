@@ -32,6 +32,13 @@ import {
   TrendingUp,
   Calendar,
   Eye,
+  Pencil,
+  Trash2,
+  GitMerge,
+  Truck,
+  CreditCard,
+  FileText,
+  Filter,
 } from 'lucide-react';
 import {
   CentralAuditLogEntry,
@@ -53,7 +60,11 @@ import {
   toLocalDateKey,
 } from './AuditActivityStatsChart';
 import { CentralAuditDiffModal } from './CentralAuditDiffModal';
-import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
+import {
+  downloadAuditCsv,
+  formatCsvDateTag,
+  sanitizeCsvFilenameSlug,
+} from '../utils/auditCsvExport';
 
 interface CentralAuditLogViewProps {
   logs: CentralAuditLogEntry[];
@@ -68,6 +79,148 @@ interface CentralAuditLogViewProps {
   onNavigateToSalur?: () => void;
   onNavigateToDonasi?: () => void;
   onNavigateToAjar?: () => void;
+}
+
+type DatePresetKey = 'all' | 'today' | '7d' | '30d' | 'month' | 'custom';
+
+const CORE_ACTION_CATEGORIES = [
+  'Tambah',
+  'Ubah',
+  'Merge',
+  'Hapus',
+  'Status Bayar',
+  'Pengiriman',
+  'Resi',
+] as const;
+
+function extractLogTimeString(log: CentralAuditLogEntry, parsedDate: Date | null): string {
+  if (log.timestamp) {
+    const timeMatch = log.timestamp.match(/\b(\d{1,2})[:.](\d{2})\b/);
+    if (timeMatch) {
+      return `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
+    }
+  }
+  if (log.isoTimestamp && parsedDate && !isNaN(parsedDate.getTime())) {
+    const hh = String(parsedDate.getHours()).padStart(2, '0');
+    const mm = String(parsedDate.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+  return '--:--';
+}
+
+function getLogSortTimestamp(log: CentralAuditLogEntry): number {
+  if (log.isoTimestamp) {
+    const ms = new Date(log.isoTimestamp).getTime();
+    if (!isNaN(ms)) return ms;
+  }
+  const parsed = parseAuditLogDate(log);
+  if (parsed) {
+    const timeMatch = log.timestamp?.match(/\b(\d{1,2})[:.](\d{2})\b/);
+    if (timeMatch) {
+      parsed.setHours(parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), 0, 0);
+    }
+    return parsed.getTime();
+  }
+  return 0;
+}
+
+function formatDayGroupLabel(dateKey: string, sampleTimestamp?: string): string {
+  if (dateKey === 'unknown') {
+    return sampleTimestamp || 'Tanggal Tidak Diketahui';
+  }
+  const [yStr, mStr, dStr] = dateKey.split('-');
+  const y = parseInt(yStr, 10);
+  const m = parseInt(mStr, 10) - 1;
+  const d = parseInt(dStr, 10);
+  const dateObj = new Date(y, m, d);
+  if (isNaN(dateObj.getTime())) return dateKey;
+
+  const formatted = dateObj.toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const now = new Date();
+  const todayKey = toLocalDateKey(now);
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterdayKey = toLocalDateKey(yesterday);
+
+  if (dateKey === todayKey) return `Hari Ini · ${formatted}`;
+  if (dateKey === yesterdayKey) return `Kemarin · ${formatted}`;
+  return formatted;
+}
+
+function getActionVisualMeta(actionType: string, isSuspicious: boolean) {
+  if (isSuspicious) {
+    return {
+      icon: AlertTriangle,
+      nodeClass:
+        'bg-rose-600 text-white ring-4 ring-rose-100 dark:ring-rose-950/80',
+      labelClass: 'text-rose-700 dark:text-rose-300',
+    };
+  }
+  switch (actionType) {
+    case 'Tambah':
+      return {
+        icon: Plus,
+        nodeClass:
+          'bg-emerald-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-emerald-700 dark:text-emerald-300',
+      };
+    case 'Ubah':
+      return {
+        icon: Pencil,
+        nodeClass:
+          'bg-[#05828e] text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-[#05828e] dark:text-[#2dd4bf]',
+      };
+    case 'Merge':
+      return {
+        icon: GitMerge,
+        nodeClass:
+          'bg-violet-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-violet-700 dark:text-violet-300',
+      };
+    case 'Hapus':
+      return {
+        icon: Trash2,
+        nodeClass:
+          'bg-rose-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-rose-700 dark:text-rose-300',
+      };
+    case 'Status Bayar':
+      return {
+        icon: CreditCard,
+        nodeClass:
+          'bg-amber-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-amber-700 dark:text-amber-300',
+      };
+    case 'Pengiriman':
+    case 'Resi':
+      return {
+        icon: Truck,
+        nodeClass:
+          'bg-indigo-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-indigo-700 dark:text-indigo-300',
+      };
+    case 'E-Kwitansi':
+    case 'E-Sertifikat':
+      return {
+        icon: FileText,
+        nodeClass:
+          'bg-sky-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-sky-700 dark:text-sky-300',
+      };
+    default:
+      return {
+        icon: GitCommit,
+        nodeClass:
+          'bg-slate-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-slate-700 dark:text-slate-300',
+      };
+  }
 }
 
 export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
@@ -99,14 +252,23 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
   // Filter Bulan: 'YYYY-MM' or null
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string | null>(null);
 
-  // Filter Tanggal: 'YYYY-MM-DD' or null
+  // Filter Tanggal tunggal (dari klik grafik): 'YYYY-MM-DD' or null
   const [selectedDateFilter, setSelectedDateFilter] = useState<string | null>(null);
+
+  // Filter Rentang Tanggal (Date Range): 'YYYY-MM-DD' or ''
+  const [dateRangeStart, setDateRangeStart] = useState<string>('');
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
+  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey>('all');
 
   // Sort chronological order: 'desc' vs 'asc'
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-  // Test event modal & visual diff detail modal
+  // Test event modal, CSV archive modal & visual diff detail modal
   const [isTestModalOpen, setIsTestModalOpen] = useState<boolean>(false);
+  const [isExportCsvModalOpen, setIsExportCsvModalOpen] = useState<boolean>(false);
+  const [csvExportScope, setCsvExportScope] = useState<'current' | 'identitas'>('current');
+  const [csvDelimiter, setCsvDelimiter] = useState<',' | ';'>(',');
+  const [csvIncludeFilterMeta, setCsvIncludeFilterMeta] = useState<boolean>(true);
   const [isScanningLive, setIsScanningLive] = useState<boolean>(false);
   const [inspectedLog, setInspectedLog] = useState<CentralAuditLogEntry | null>(null);
 
@@ -195,34 +357,216 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
     setSelectedModule('ANOMALI');
   };
 
-  // Filter and sort logs
-  const filteredLogs = useMemo(() => {
-    return logs
-      .filter((log) => {
-        if (selectedModule === 'ANOMALI') {
-          return flaggedLogIdMap.has(log.id) || log.module === 'IDENTITAS';
-        }
-        if (selectedModule !== 'ALL' && log.module !== selectedModule) {
+  // Helper to apply quick date range presets
+  const applyDatePreset = (preset: Exclude<DatePresetKey, 'custom'>) => {
+    setActiveDatePreset(preset);
+    setSelectedDateFilter(null);
+    setSelectedMonthFilter(null);
+
+    if (preset === 'all') {
+      setDateRangeStart('');
+      setDateRangeEnd('');
+      return;
+    }
+
+    const now = new Date();
+    const todayKey = toLocalDateKey(now);
+
+    if (preset === 'today') {
+      setDateRangeStart(todayKey);
+      setDateRangeEnd(todayKey);
+      return;
+    }
+
+    if (preset === '7d') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+      setDateRangeStart(toLocalDateKey(start));
+      setDateRangeEnd(todayKey);
+      return;
+    }
+
+    if (preset === '30d') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+      setDateRangeStart(toLocalDateKey(start));
+      setDateRangeEnd(todayKey);
+      return;
+    }
+
+    if (preset === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      setDateRangeStart(toLocalDateKey(start));
+      setDateRangeEnd(todayKey);
+    }
+  };
+
+  const handleChangeRangeStart = (value: string) => {
+    setSelectedDateFilter(null);
+    setSelectedMonthFilter(null);
+    setDateRangeStart(value);
+    if (value && dateRangeEnd && value > dateRangeEnd) {
+      setDateRangeEnd(value);
+    }
+    setActiveDatePreset(value || dateRangeEnd ? 'custom' : 'all');
+  };
+
+  const handleChangeRangeEnd = (value: string) => {
+    setSelectedDateFilter(null);
+    setSelectedMonthFilter(null);
+    setDateRangeEnd(value);
+    if (value && dateRangeStart && value < dateRangeStart) {
+      setDateRangeStart(value);
+    }
+    setActiveDatePreset(dateRangeStart || value ? 'custom' : 'all');
+  };
+
+  const handleResetAllFilters = () => {
+    setSelectedModule('ALL');
+    setSelectedAction('ALL');
+    setSearchQuery('');
+    setSelectedMonthFilter(null);
+    setSelectedDateFilter(null);
+    setDateRangeStart('');
+    setDateRangeEnd('');
+    setActiveDatePreset('all');
+  };
+
+  // Base logs filtered by everything EXCEPT actionType (used for dynamic action counts + filteredLogs)
+  const logsBeforeActionFilter = useMemo(() => {
+    return logs.filter((log) => {
+      if (selectedModule === 'ANOMALI') {
+        if (!(flaggedLogIdMap.has(log.id) || log.module === 'IDENTITAS')) {
           return false;
         }
+      } else if (selectedModule !== 'ALL' && log.module !== selectedModule) {
+        return false;
+      }
+
+      const parsedDate = parseAuditLogDate(log);
+      const dateKey = parsedDate ? toLocalDateKey(parsedDate) : null;
+
+      if (selectedMonthFilter) {
+        if (parsedDate) {
+          const mKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`;
+          if (mKey !== selectedMonthFilter) return false;
+        } else {
+          return false;
+        }
+      }
+
+      if (selectedDateFilter) {
+        if (!dateKey || dateKey !== selectedDateFilter) {
+          return false;
+        }
+      }
+
+      if (dateRangeStart) {
+        if (!dateKey || dateKey < dateRangeStart) {
+          return false;
+        }
+      }
+
+      if (dateRangeEnd) {
+        if (!dateKey || dateKey > dateRangeEnd) {
+          return false;
+        }
+      }
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        log.recordId.toLowerCase().includes(q) ||
+        log.recordTitle.toLowerCase().includes(q) ||
+        log.field.toLowerCase().includes(q) ||
+        log.oldValue.toLowerCase().includes(q) ||
+        log.newValue.toLowerCase().includes(q) ||
+        log.actionType.toLowerCase().includes(q) ||
+        (log.alasan || '').toLowerCase().includes(q) ||
+        (log.author || '').toLowerCase().includes(q)
+      );
+    });
+  }, [
+    logs,
+    selectedModule,
+    selectedMonthFilter,
+    selectedDateFilter,
+    dateRangeStart,
+    dateRangeEnd,
+    searchQuery,
+    flaggedLogIdMap,
+  ]);
+
+  // Dynamic action categories + counts within the current module/date/search scope
+  const { actionCategories, actionCounts } = useMemo(() => {
+    const counts: Record<string, number> = { ALL: logsBeforeActionFilter.length };
+    const discovered = new Set<string>(CORE_ACTION_CATEGORIES);
+
+    logs.forEach((l) => {
+      if (l.actionType) discovered.add(l.actionType);
+    });
+
+    logsBeforeActionFilter.forEach((l) => {
+      const act = l.actionType || 'Ubah';
+      counts[act] = (counts[act] || 0) + 1;
+      discovered.add(act);
+    });
+
+    const ordered = Array.from(discovered).filter((act) => {
+      const isCoreIdentitas =
+        act === 'Tambah' || act === 'Ubah' || act === 'Merge' || act === 'Hapus';
+      return isCoreIdentitas || (counts[act] || 0) > 0 || selectedAction === act;
+    });
+
+    return { actionCategories: ordered, actionCounts: counts };
+  }, [logs, logsBeforeActionFilter, selectedAction]);
+
+  // Final filtered & sorted logs
+  const filteredLogs = useMemo(() => {
+    return logsBeforeActionFilter
+      .filter((log) => {
         if (selectedAction !== 'ALL' && log.actionType !== selectedAction) {
           return false;
         }
+        return true;
+      })
+      .sort((a, b) => {
+        const timeA = getLogSortTimestamp(a);
+        const timeB = getLogSortTimestamp(b);
+        if (timeA !== timeB) {
+          return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+        }
+        return sortOrder === 'desc' ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
+      });
+  }, [logsBeforeActionFilter, selectedAction, sortOrder]);
+
+  // Filtered identity-only logs respecting active date/action/search filters (for dedicated offline identity archiving)
+  const filteredIdentitasLogs = useMemo(() => {
+    return logs
+      .filter((log) => {
+        if (log.module !== 'IDENTITAS') return false;
+        if (selectedAction !== 'ALL' && log.actionType !== selectedAction) return false;
+
+        const parsedDate = parseAuditLogDate(log);
+        const dateKey = parsedDate ? toLocalDateKey(parsedDate) : null;
+
         if (selectedMonthFilter) {
-          const d = parseAuditLogDate(log);
-          if (d) {
-            const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (parsedDate) {
+            const mKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`;
             if (mKey !== selectedMonthFilter) return false;
           } else {
             return false;
           }
         }
-        if (selectedDateFilter) {
-          const d = parseAuditLogDate(log);
-          if (!d || toLocalDateKey(d) !== selectedDateFilter) {
-            return false;
-          }
+
+        if (selectedDateFilter && (!dateKey || dateKey !== selectedDateFilter)) {
+          return false;
         }
+        if (dateRangeStart && (!dateKey || dateKey < dateRangeStart)) {
+          return false;
+        }
+        if (dateRangeEnd && (!dateKey || dateKey > dateRangeEnd)) {
+          return false;
+        }
+
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase();
         return (
@@ -231,28 +575,121 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           log.field.toLowerCase().includes(q) ||
           log.oldValue.toLowerCase().includes(q) ||
           log.newValue.toLowerCase().includes(q) ||
+          log.actionType.toLowerCase().includes(q) ||
           (log.alasan || '').toLowerCase().includes(q) ||
           (log.author || '').toLowerCase().includes(q)
         );
       })
       .sort((a, b) => {
-        const timeA = a.isoTimestamp ? new Date(a.isoTimestamp).getTime() : 0;
-        const timeB = b.isoTimestamp ? new Date(b.isoTimestamp).getTime() : 0;
-        if (timeA && timeB) {
+        const timeA = getLogSortTimestamp(a);
+        const timeB = getLogSortTimestamp(b);
+        if (timeA !== timeB) {
           return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
         }
         return sortOrder === 'desc' ? b.id.localeCompare(a.id) : a.id.localeCompare(b.id);
       });
   }, [
     logs,
-    selectedModule,
     selectedAction,
     selectedMonthFilter,
     selectedDateFilter,
+    dateRangeStart,
+    dateRangeEnd,
     searchQuery,
     sortOrder,
-    flaggedLogIdMap,
   ]);
+
+  // Chronological day-grouped timeline buckets
+  const timelineGroups = useMemo(() => {
+    const groups: {
+      dateKey: string;
+      label: string;
+      items: { log: CentralAuditLogEntry; timeLabel: string }[];
+    }[] = [];
+    const groupMap = new Map<string, (typeof groups)[number]>();
+
+    filteredLogs.forEach((log) => {
+      const parsedDate = parseAuditLogDate(log);
+      const dateKey = parsedDate ? toLocalDateKey(parsedDate) : 'unknown';
+      const timeLabel = extractLogTimeString(log, parsedDate);
+
+      let group = groupMap.get(dateKey);
+      if (!group) {
+        group = {
+          dateKey,
+          label: formatDayGroupLabel(dateKey, log.timestamp),
+          items: [],
+        };
+        groupMap.set(dateKey, group);
+        groups.push(group);
+      }
+      group.items.push({ log, timeLabel });
+    });
+
+    return groups;
+  }, [filteredLogs]);
+
+  // Compact action breakdown for the timeline header
+  const timelineActionSummary = useMemo(() => {
+    const map = new Map<string, number>();
+    filteredLogs.forEach((l) => {
+      map.set(l.actionType, (map.get(l.actionType) || 0) + 1);
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [filteredLogs]);
+
+  const hasActiveFilters =
+    selectedModule !== 'ALL' ||
+    selectedAction !== 'ALL' ||
+    Boolean(searchQuery.trim()) ||
+    Boolean(selectedMonthFilter) ||
+    Boolean(selectedDateFilter) ||
+    Boolean(dateRangeStart) ||
+    Boolean(dateRangeEnd);
+
+  // Today's total data changes per action category (for dashboard summary card)
+  const todaySummary = useMemo(() => {
+    const now = new Date();
+    const todayKey = toLocalDateKey(now);
+    const todayDisplay = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const counts: Record<string, number> = {};
+    const orderedKeys: string[] = [...CORE_ACTION_CATEGORIES];
+    let total = 0;
+
+    logs.forEach((log) => {
+      const parsedDate = parseAuditLogDate(log);
+      if (!parsedDate || toLocalDateKey(parsedDate) !== todayKey) return;
+      total += 1;
+      const act = log.actionType || 'Ubah';
+      counts[act] = (counts[act] || 0) + 1;
+      if (!orderedKeys.includes(act)) {
+        orderedKeys.push(act);
+      }
+    });
+
+    const categories = orderedKeys.map((actionType) => {
+      const count = counts[actionType] || 0;
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      return {
+        actionType,
+        count,
+        pct,
+      };
+    });
+
+    return {
+      todayKey,
+      todayDisplay,
+      total,
+      categories,
+    };
+  }, [logs]);
 
   // Counts by module for tabs
   const moduleCounts = useMemo(() => {
@@ -280,59 +717,147 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
     onShowToast('Detail log berhasil disalin');
   };
 
-  // Export currently filtered logs to CSV (with UTF-8 BOM for offline Excel reporting)
-  const handleExportCsv = () => {
-    if (filteredLogs.length === 0) {
-      onShowToast('Tidak ada data audit log saat ini untuk diekspor');
+  const activeFilterSummaryLabel = useMemo(() => {
+    const parts: string[] = [];
+    parts.push(
+      `Modul: ${selectedModule === 'ALL' ? 'Semua' : selectedModule === 'ANOMALI' ? 'Anomali & Identitas' : selectedModule}`
+    );
+    parts.push(`Aksi: ${selectedAction === 'ALL' ? 'Semua' : selectedAction}`);
+    if (selectedDateFilter) {
+      parts.push(`Tanggal: ${selectedDateFilter}`);
+    } else if (selectedMonthFilter) {
+      parts.push(`Bulan: ${selectedMonthFilter}`);
+    } else if (dateRangeStart || dateRangeEnd) {
+      parts.push(`Periode: ${dateRangeStart || 'Awal'} s/d ${dateRangeEnd || 'Sekarang'}`);
+    } else {
+      parts.push('Periode: Semua Tanggal');
+    }
+    if (searchQuery.trim()) {
+      parts.push(`Cari: "${searchQuery.trim()}"`);
+    }
+    return parts.join(' | ');
+  }, [
+    selectedModule,
+    selectedAction,
+    selectedDateFilter,
+    selectedMonthFilter,
+    dateRangeStart,
+    dateRangeEnd,
+    searchQuery,
+  ]);
+
+  // Export filtered logs to CSV (with UTF-8 BOM & ISO dates for offline archiving in Excel/Sheets)
+  const handleExportCsv = (options?: {
+    scope?: 'current' | 'identitas';
+    delimiter?: ',' | ';';
+    includeFilterMeta?: boolean;
+  }) => {
+    const scope = options?.scope ?? 'current';
+    const delimiter = options?.delimiter ?? csvDelimiter;
+    const includeMeta = options?.includeFilterMeta ?? csvIncludeFilterMeta;
+    const targetLogs = scope === 'identitas' ? filteredIdentitasLogs : filteredLogs;
+
+    if (targetLogs.length === 0) {
+      onShowToast(
+        scope === 'identitas'
+          ? 'Tidak ada data audit perubahan identitas yang sesuai filter untuk diarsipkan'
+          : 'Tidak ada data audit log terfilter untuk diekspor'
+      );
       return;
     }
 
     const headers = [
       'No',
       'ID Log',
+      'Tanggal (YYYY-MM-DD)',
+      'Jam',
       'Waktu Perubahan',
       'ISO Timestamp',
       'Modul',
-      'ID Record',
-      'Subjek Record',
-      'Tipe Aksi',
-      'Field',
+      'ID / Kode Record',
+      'Subjek / Nama Lengkap',
+      'Kategori Aksi',
+      'Field Diubah',
       'Nilai Sebelumnya',
       'Nilai Baru',
-      'Alasan',
+      'Alasan Perubahan',
       'Operator / Admin',
       'Status Anomali',
+      ...(includeMeta ? ['Lingkup Filter Arsip'] : []),
     ];
 
-    const rows = filteredLogs.map((l, idx) => [
-      idx + 1,
-      l.id,
-      l.timestamp,
-      l.isoTimestamp || '',
-      l.module,
-      l.recordId,
-      l.recordTitle || '',
-      l.actionType,
-      l.field,
-      l.oldValue || '-',
-      l.newValue || '-',
-      l.alasan || '-',
-      l.author || 'Sistem',
-      flaggedLogIdMap.has(l.id) ? 'Terindikasi Anomali' : 'Normal',
-    ]);
+    const scopeLabel =
+      scope === 'identitas'
+        ? activeFilterSummaryLabel.replace(/^Modul: [^|]+/, 'Modul: IDENTITAS')
+        : activeFilterSummaryLabel;
 
-    const modSlug = selectedModule === 'ALL' ? 'Semua' : selectedModule.replace(/[^a-zA-Z0-9_-]/g, '');
-    const periodSlug = selectedDateFilter
-      ? `_${selectedDateFilter}`
-      : selectedMonthFilter
-      ? `_${selectedMonthFilter}`
+    const rows = targetLogs.map((l, idx) => {
+      const parsedDate = parseAuditLogDate(l);
+      const isoDate = parsedDate ? toLocalDateKey(parsedDate) : '-';
+      const timeStr = extractLogTimeString(l, parsedDate);
+      const isoFull =
+        l.isoTimestamp || (parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : '');
+      const flag = flaggedLogIdMap.get(l.id);
+      const anomalyLabel = flag
+        ? `Terindikasi Anomali (${flag.changeCount}x/${flag.windowDays}h)`
+        : 'Normal';
+
+      const baseRow = [
+        idx + 1,
+        l.id,
+        isoDate,
+        timeStr,
+        l.timestamp,
+        isoFull,
+        l.module,
+        l.recordId,
+        l.recordTitle || '',
+        l.actionType,
+        l.field,
+        l.oldValue || '-',
+        l.newValue || '-',
+        l.alasan || '-',
+        l.author || 'Sistem',
+        anomalyLabel,
+      ];
+
+      return includeMeta ? [...baseRow, scopeLabel] : baseRow;
+    });
+
+    const modSlug =
+      scope === 'identitas'
+        ? 'IDENTITAS'
+        : selectedModule === 'ALL'
+        ? 'Semua'
+        : sanitizeCsvFilenameSlug(selectedModule, 20) || 'Modul';
+    const actionSlug =
+      selectedAction !== 'ALL'
+        ? `_Aksi-${sanitizeCsvFilenameSlug(selectedAction, 18)}`
+        : '';
+    const periodSlug =
+      dateRangeStart || dateRangeEnd
+        ? `_${dateRangeStart || 'awal'}_sd_${dateRangeEnd || 'akhir'}`
+        : selectedDateFilter
+        ? `_${selectedDateFilter}`
+        : selectedMonthFilter
+        ? `_${selectedMonthFilter}`
+        : '';
+    const querySlug = searchQuery.trim()
+      ? `_Cari-${sanitizeCsvFilenameSlug(searchQuery, 18)}`
       : '';
-    downloadAuditCsv({
-      filename: `Audit_Log_Pusat_${modSlug}${periodSlug}_${formatCsvDateTag()}.csv`,
+    const prefix =
+      scope === 'identitas' ? 'Arsip_Identitas_Audit_Log' : 'Audit_Log_Pusat';
+
+    const result = downloadAuditCsv({
+      filename: `${prefix}_${modSlug}${actionSlug}${periodSlug}${querySlug}_${formatCsvDateTag()}.csv`,
       headers,
       rows,
+      delimiter,
     });
-    onShowToast(`${filteredLogs.length} log audit saat ini berhasil diunduh ke CSV`);
+
+    onShowToast(
+      `${result.rowCount} catatan audit berhasil diekspor ke ${result.filename}`
+    );
   };
 
   // Submit test manual event
@@ -449,12 +974,15 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
 
           <button
             type="button"
-            onClick={handleExportCsv}
-            title="Unduh log audit yang sedang tampil ke format CSV untuk dokumentasi offline"
+            onClick={() => {
+              setCsvExportScope(selectedModule === 'IDENTITAS' ? 'identitas' : 'current');
+              setIsExportCsvModalOpen(true);
+            }}
+            title="Konfigurasi dan unduh arsip CSV audit log terfilter untuk penyimpanan offline"
             className="px-3.5 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Unduh CSV</span>
+            <span>Ekspor CSV</span>
             <span className="font-mono tabular-nums px-1.5 py-0.5 rounded bg-white/80 dark:bg-slate-900/70 text-[11px]">
               {filteredLogs.length}
             </span>
@@ -482,55 +1010,184 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         </div>
 
         <div className="pt-2 md:pt-0 md:px-3">
-          <div className="text-[11px] font-medium text-slate-400">Background Worker</div>
-          <div className="text-sm font-semibold text-emerald-700 mt-1 flex items-center gap-1.5">
+          <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Background Worker</div>
+          <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             <span>Aktif (Tiap 30 dtk)</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Pemeriksaan ke-{anomalyReport.runCount}
           </div>
         </div>
 
         <div className="pt-2 md:pt-0 md:px-3">
-          <div className="text-[11px] font-medium text-slate-400">Deteksi Anomali Identitas</div>
+          <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Deteksi Anomali Identitas</div>
           <div className="text-xl sm:text-2xl font-bold mt-0.5 tabular-nums font-mono">
             {anomalyReport.activeFlagsCount > 0 ? (
-              <span className="text-rose-600">{anomalyReport.activeFlagsCount}</span>
+              <span className="text-rose-600 dark:text-rose-400">{anomalyReport.activeFlagsCount}</span>
             ) : (
-              <span className="text-slate-800">0</span>
+              <span className="text-slate-800 dark:text-slate-200">0</span>
             )}
-            <span className="text-xs font-normal text-slate-400"> kasus (&gt;3x/bln)</span>
+            <span className="text-xs font-normal text-slate-400 dark:text-slate-500"> kasus (&gt;3x/bln)</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             {anomalyReport.scannedIdentitasCount} profil dipantau
           </div>
         </div>
 
         <div className="pt-2 md:pt-0 md:px-3">
-          <div className="text-[11px] font-medium text-slate-400">Waktu Terakhir Aktif</div>
-          <div className="text-xs sm:text-sm font-semibold text-slate-800 mt-1 truncate">
+          <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Waktu Terakhir Aktif</div>
+          <div className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1 truncate">
             {logs[0]?.timestamp || '-'}
           </div>
-          <div className="text-[11px] text-slate-400 mt-0.5">
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
             Otomatis sinkron via event bus
           </div>
         </div>
       </div>
 
+      {/* 2b. Today Summary Card: Total Data Changes per Action Category for Today */}
+      <section
+        aria-label="Ringkasan perubahan data hari ini per kategori aksi"
+        className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf] shrink-0" />
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                Ringkasan Perubahan Hari Ini per Kategori Aksi
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2">
+              <span>{todaySummary.todayDisplay}</span>
+              <span aria-hidden="true">·</span>
+              <span>
+                Total{' '}
+                <strong className="font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                  {todaySummary.total}
+                </strong>{' '}
+                perubahan tercatat
+              </span>
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              const isAlreadyTodayAll =
+                selectedModule === 'ALL' &&
+                dateRangeStart === todaySummary.todayKey &&
+                dateRangeEnd === todaySummary.todayKey &&
+                selectedAction === 'ALL';
+              if (isAlreadyTodayAll) {
+                applyDatePreset('all');
+              } else {
+                setSelectedModule('ALL');
+                applyDatePreset('today');
+                setSelectedAction('ALL');
+              }
+            }}
+            className={`self-start sm:self-center px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+              selectedModule === 'ALL' &&
+              dateRangeStart === todaySummary.todayKey &&
+              dateRangeEnd === todaySummary.todayKey &&
+              selectedAction === 'ALL'
+                ? 'border-[#05828e] bg-teal-50/80 dark:bg-teal-950/50 text-[#05828e] dark:text-[#2dd4bf]'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 text-slate-700 dark:text-slate-200'
+            }`}
+          >
+            {selectedModule === 'ALL' &&
+            dateRangeStart === todaySummary.todayKey &&
+            dateRangeEnd === todaySummary.todayKey &&
+            selectedAction === 'ALL'
+              ? 'Tampilkan Semua Tanggal'
+              : 'Filter Log Hari Ini'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-[repeat(auto-fit,minmax(135px,1fr))] gap-px bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+          {todaySummary.categories.map((item) => {
+            const visual = getActionVisualMeta(item.actionType, false);
+            const IconComp = visual.icon;
+            const isSelectedToday =
+              selectedModule === 'ALL' &&
+              dateRangeStart === todaySummary.todayKey &&
+              dateRangeEnd === todaySummary.todayKey &&
+              selectedAction === item.actionType;
+
+            return (
+              <button
+                key={item.actionType}
+                type="button"
+                onClick={() => {
+                  if (isSelectedToday) {
+                    applyDatePreset('all');
+                    setSelectedAction('ALL');
+                  } else {
+                    setSelectedModule('ALL');
+                    applyDatePreset('today');
+                    setSelectedAction(item.actionType);
+                  }
+                }}
+                title={`Filter log hari ini untuk kategori ${item.actionType}`}
+                className={`text-left p-3.5 transition-colors cursor-pointer flex flex-col justify-between gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#05828e] ${
+                  isSelectedToday
+                    ? 'bg-teal-50/80 dark:bg-teal-950/50'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-800/70'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className={`text-xs font-semibold truncate ${visual.labelClass}`}>
+                    {item.actionType}
+                  </span>
+                  <IconComp className={`w-3.5 h-3.5 shrink-0 ${visual.labelClass} opacity-80`} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div
+                    className={`text-2xl font-bold font-mono tabular-nums leading-none ${
+                      item.count > 0
+                        ? 'text-slate-900 dark:text-slate-100'
+                        : 'text-slate-300 dark:text-slate-600'
+                    }`}
+                  >
+                    {item.count}
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          item.count > 0 ? 'bg-[#05828e] dark:bg-[#2dd4bf]' : 'bg-transparent'
+                        }`}
+                        style={{ width: `${item.count > 0 ? Math.max(item.pct, 6) : 0}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] font-mono tabular-nums text-slate-400 dark:text-slate-500">
+                      {item.count > 0 ? `${item.pct}% hari ini` : 'Belum ada'}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* 3. Sleek Anomaly Callout Card (Clean, Non-Garish, Helpful) */}
       {anomalyReport.flags.length > 0 && (
-        <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-5 shadow-xs space-y-3.5">
+        <div className="bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/60 rounded-2xl p-5 shadow-xs space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900">
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   Peringatan Deteksi Anomali Identitas
                 </h2>
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   Ditemukan modifikasi berulang lebih dari 3 kali pada field yang sama dalam 1 bulan terakhir.
                 </p>
               </div>
@@ -541,7 +1198,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                 type="button"
                 onClick={handleManualScan}
                 disabled={isScanningLive}
-                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <RefreshCw className={`w-3 h-3 ${isScanningLive ? 'animate-spin' : ''}`} />
                 <span>{isScanningLive ? 'Memindai...' : 'Pindai Ulang'}</span>
@@ -550,7 +1207,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               <button
                 type="button"
                 onClick={() => handleSimulate()}
-                className="px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100/60 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/50 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                 title="Kirim 4 modifikasi pengujian"
               >
                 <Play className="w-3 h-3 fill-current" />
@@ -568,25 +1225,25 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               return (
                 <div
                   key={flag.id}
-                  className="bg-white border border-slate-200/80 rounded-xl p-3.5 sm:p-4 text-xs space-y-2.5 shadow-2xs"
+                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 text-xs space-y-2.5 shadow-2xs"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-slate-900 text-sm">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                         {flag.recordTitle}
                       </span>
-                      <span className="font-mono text-[11px] text-slate-400">
+                      <span className="font-mono text-[11px] text-slate-400 dark:text-slate-500">
                         #{flag.recordId}
                       </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="font-semibold text-[#05828e]">
+                      <span className="text-slate-300 dark:text-slate-600">·</span>
+                      <span className="font-semibold text-[#05828e] dark:text-[#2dd4bf]">
                         Field: {flag.field}
                       </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
+                      <span className="text-slate-300 dark:text-slate-600">·</span>
+                      <span className="font-semibold text-rose-700 dark:text-rose-300">
                         {flag.changeCount}x Perubahan
                       </span>
-                      <span className="text-slate-400">({flag.windowDays} hari)</span>
+                      <span className="text-slate-400 dark:text-slate-500">({flag.windowDays} hari)</span>
                     </div>
 
                     {/* Actions */}
@@ -595,7 +1252,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onNavigateToIdentitas(flag.recordId)}
-                          className="px-2.5 py-1 rounded bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                         >
                           Buka Profil
                         </button>
@@ -606,14 +1263,14 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                           <button
                             type="button"
                             onClick={() => handleToggleFlagStatus(flag, 'INVESTIGATED')}
-                            className="px-2.5 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-medium transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-medium transition-colors cursor-pointer"
                           >
                             Tandai Diinvestigasi
                           </button>
                           <button
                             type="button"
                             onClick={() => handleToggleFlagStatus(flag, 'DISMISSED')}
-                            className="px-2.5 py-1 rounded hover:bg-slate-100 text-slate-500 text-xs font-medium transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-medium transition-colors cursor-pointer"
                           >
                             Abaikan
                           </button>
@@ -622,7 +1279,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleFlagStatus(flag, 'ACTIVE')}
-                          className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                         >
                           Buka Ulang
                         </button>
@@ -636,7 +1293,7 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                             [flag.id]: !prev[flag.id],
                           }))
                         }
-                        className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                         title={isExpanded ? 'Tutup rincian' : 'Lihat rincian riwayat'}
                       >
                         {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -644,17 +1301,17 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-slate-600 text-xs leading-relaxed">
+                  <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
                     {flag.reason}
                   </p>
 
                   {/* Expanded Sub-Timeline */}
                   {isExpanded && (
-                    <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                      <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                         Kronologi {flag.changeCount} Perubahan Field:
                       </div>
-                      <div className="space-y-1.5 pl-2 border-l border-slate-200">
+                      <div className="space-y-1.5 pl-2">
                         {flag.matchingLogs.map((mLog, idx) => (
                           <div
                             key={mLog.id}
@@ -707,6 +1364,9 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         onSelectDate={(d) => {
           setSelectedDateFilter(d);
           if (d) {
+            setDateRangeStart('');
+            setDateRangeEnd('');
+            setActiveDatePreset('all');
             onShowToast(`Filter aktif: Log tanggal ${d}`);
           } else {
             onShowToast('Filter tanggal direset');
@@ -723,6 +1383,9 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         onSelectMonth={(m) => {
           setSelectedMonthFilter(m);
           if (m) {
+            setDateRangeStart('');
+            setDateRangeEnd('');
+            setActiveDatePreset('all');
             onShowToast(`Filter aktif: Log bulan ${m}`);
           } else {
             onShowToast('Filter bulan direset: Menampilkan semua log');
@@ -733,127 +1396,264 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         flaggedLogIdMap={flaggedLogIdMap}
       />
 
-      {/* 5. Filter Bar: Clean Segmented Controls & Search */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
-        {/* Active Date Filter Chip Banner */}
-        {selectedDateFilter && (
-          <div className="flex items-center justify-between px-3.5 py-2 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/70 rounded-xl text-xs text-slate-800 dark:text-slate-200 animate-in fade-in duration-150">
+      {/* 5. Filter Bar: Module Tabs, Date Range Picker & Presets, Action Category Filter, Search */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
+        {/* Active Single-Date / Month / Date-Range Filter Banner */}
+        {(selectedDateFilter || selectedMonthFilter || dateRangeStart || dateRangeEnd) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/70 rounded-xl text-xs text-slate-800 dark:text-slate-200 animate-in fade-in duration-150">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf] shrink-0" />
               <span>
-                Menampilkan log khusus tanggal <strong className="font-mono font-semibold text-slate-900 dark:text-white">{selectedDateFilter}</strong>{' '}
-                <span className="font-mono text-slate-500 dark:text-slate-400">({filteredLogs.length} dari {logs.length} riwayat)</span>
+                {selectedDateFilter ? (
+                  <>
+                    Menampilkan log tanggal{' '}
+                    <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                      {selectedDateFilter}
+                    </strong>
+                  </>
+                ) : selectedMonthFilter ? (
+                  <>
+                    Menampilkan log periode{' '}
+                    <strong className="font-semibold text-slate-900 dark:text-white">
+                      {selectedMonthFilter}
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    Rentang tanggal{' '}
+                    <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                      {dateRangeStart || 'Awal'}
+                    </strong>{' '}
+                    s/d{' '}
+                    <strong className="font-mono font-semibold text-slate-900 dark:text-white">
+                      {dateRangeEnd || 'Sekarang'}
+                    </strong>
+                  </>
+                )}{' '}
+                <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                  ({filteredLogs.length} dari {logs.length} riwayat)
+                </span>
               </span>
             </div>
             <button
               type="button"
-              onClick={() => setSelectedDateFilter(null)}
+              onClick={() => {
+                setSelectedDateFilter(null);
+                setSelectedMonthFilter(null);
+                setDateRangeStart('');
+                setDateRangeEnd('');
+                setActiveDatePreset('all');
+              }}
               className="text-[#05828e] dark:text-[#2dd4bf] hover:text-[#046c76] font-semibold text-xs hover:underline cursor-pointer"
             >
-              Hapus Filter Tanggal
+              Reset Periode
             </button>
           </div>
         )}
 
-        {/* Active Month Filter Chip Banner */}
-        {selectedMonthFilter && (
-          <div className="flex items-center justify-between px-3.5 py-2 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/70 rounded-xl text-xs text-slate-800 dark:text-slate-200 animate-in fade-in duration-150">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf] shrink-0" />
-              <span>
-                Menampilkan log khusus periode <strong className="font-semibold text-slate-900 dark:text-white">{selectedMonthFilter}</strong>{' '}
-                <span className="font-mono text-slate-500 dark:text-slate-400">({filteredLogs.length} dari {logs.length} riwayat)</span>
-              </span>
-            </div>
+        {/* Row 1: Module Segmented Bar */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
             <button
               type="button"
-              onClick={() => setSelectedMonthFilter(null)}
-              className="text-[#05828e] dark:text-[#2dd4bf] hover:text-[#046c76] font-semibold text-xs hover:underline cursor-pointer"
-            >
-              Hapus Filter Bulan
-            </button>
-          </div>
-        )}
-
-        {/* Module Segmented Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedModule('ALL')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              selectedModule === 'ALL'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Semua Modul <span className="text-[11px] opacity-70 ml-1">({moduleCounts.ALL})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedModule('S-SALUR')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              selectedModule === 'S-SALUR'
-                ? 'bg-emerald-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            S-SALUR <span className="text-[11px] opacity-70 ml-1">({moduleCounts['S-SALUR']})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedModule('DONASI')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              selectedModule === 'DONASI'
-                ? 'bg-amber-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            D-DONASI <span className="text-[11px] opacity-70 ml-1">({moduleCounts['DONASI']})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedModule('AJAR')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              selectedModule === 'AJAR'
-                ? 'bg-indigo-700 text-white font-semibold shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            A-AJAR <span className="text-[11px] opacity-70 ml-1">({moduleCounts['AJAR']})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedModule('IDENTITAS')}
-            className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-              selectedModule === 'IDENTITAS'
-                ? 'bg-[#05828e] text-white font-semibold shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            IDENTITAS <span className="text-[11px] opacity-70 ml-1">({moduleCounts['IDENTITAS']})</span>
-          </button>
-
-          {anomalyReport.activeFlagsCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setSelectedModule('ANOMALI')}
+              onClick={() => setSelectedModule('ALL')}
               className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                selectedModule === 'ANOMALI'
-                  ? 'bg-rose-700 text-white font-semibold shadow-xs'
-                  : 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                selectedModule === 'ALL'
+                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Anomali ({anomalyReport.activeFlagsCount})
+              Semua Modul <span className="text-[11px] opacity-70 ml-1 font-mono tabular-nums">({moduleCounts.ALL})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModule('IDENTITAS')}
+              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                selectedModule === 'IDENTITAS'
+                  ? 'bg-[#05828e] text-white font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              IDENTITAS <span className="text-[11px] opacity-70 ml-1 font-mono tabular-nums">({moduleCounts['IDENTITAS']})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModule('S-SALUR')}
+              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                selectedModule === 'S-SALUR'
+                  ? 'bg-emerald-700 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              S-SALUR <span className="text-[11px] opacity-70 ml-1 font-mono tabular-nums">({moduleCounts['S-SALUR']})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModule('DONASI')}
+              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                selectedModule === 'DONASI'
+                  ? 'bg-amber-700 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              D-DONASI <span className="text-[11px] opacity-70 ml-1 font-mono tabular-nums">({moduleCounts['DONASI']})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModule('AJAR')}
+              className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                selectedModule === 'AJAR'
+                  ? 'bg-indigo-700 text-white font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              A-AJAR <span className="text-[11px] opacity-70 ml-1 font-mono tabular-nums">({moduleCounts['AJAR']})</span>
+            </button>
+
+            {anomalyReport.activeFlagsCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedModule('ANOMALI')}
+                className={`px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  selectedModule === 'ANOMALI'
+                    ? 'bg-rose-700 text-white font-semibold shadow-xs'
+                    : 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                }`}
+              >
+                Anomali ({anomalyReport.activeFlagsCount})
+              </button>
+            )}
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={handleResetAllFilters}
+              className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-[#05828e] dark:hover:text-[#2dd4bf] flex items-center gap-1 cursor-pointer whitespace-nowrap"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset Semua Filter</span>
             </button>
           )}
         </div>
 
-        {/* Search & Action Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+        {/* Row 2: Rentang Tanggal (Date Range Filter + Quick Presets) */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+              <span>Rentang Tanggal:</span>
+            </span>
+            {(
+              [
+                { key: 'all', label: 'Semua' },
+                { key: 'today', label: 'Hari Ini' },
+                { key: '7d', label: '7 Hari' },
+                { key: '30d', label: '30 Hari' },
+                { key: 'month', label: 'Bulan Ini' },
+              ] as const
+            ).map((preset) => (
+              <button
+                key={preset.key}
+                type="button"
+                onClick={() => applyDatePreset(preset.key)}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  activeDatePreset === preset.key && !selectedDateFilter && !selectedMonthFilter
+                    ? 'bg-teal-50 dark:bg-teal-950/60 text-[#05828e] dark:text-[#2dd4bf] border border-teal-200 dark:border-teal-800 font-semibold'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <span className="text-[11px]">Dari</span>
+              <input
+                type="date"
+                aria-label="Tanggal Mulai"
+                value={dateRangeStart}
+                onChange={(e) => handleChangeRangeStart(e.target.value)}
+                className="px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#05828e]"
+              />
+            </label>
+            <span className="text-slate-400 dark:text-slate-600">—</span>
+            <label className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+              <span className="text-[11px]">Sampai</span>
+              <input
+                type="date"
+                aria-label="Tanggal Akhir"
+                value={dateRangeEnd}
+                onChange={(e) => handleChangeRangeEnd(e.target.value)}
+                className="px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#05828e]"
+              />
+            </label>
+            {(dateRangeStart || dateRangeEnd) && (
+              <button
+                type="button"
+                onClick={() => applyDatePreset('all')}
+                title="Hapus rentang tanggal"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Row 3: Kategori Aksi (Interactive Segmented Action Category Filter) */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+            <Filter className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+            <span>Kategori Aksi:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedAction('ALL')}
+            className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer whitespace-nowrap ${
+              selectedAction === 'ALL'
+                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            Semua Aksi{' '}
+            <span className="font-mono tabular-nums text-[11px] opacity-75">
+              ({actionCounts.ALL || 0})
+            </span>
+          </button>
+          {actionCategories.map((act) => {
+            const count = actionCounts[act] || 0;
+            const isSelected = selectedAction === act;
+            return (
+              <button
+                key={act}
+                type="button"
+                onClick={() => setSelectedAction(isSelected ? 'ALL' : act)}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? 'bg-[#05828e] text-white font-semibold shadow-2xs'
+                    : count === 0
+                    ? 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {act}{' '}
+                <span className="font-mono tabular-nums text-[11px] opacity-75">
+                  ({count})
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Row 4: Search & Export Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
           <div className="relative flex-1 sm:max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -861,13 +1661,13 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               placeholder="Cari ID, nama donatur, field, nilai, atau alasan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#05828e] transition-all"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-[#05828e] transition-all"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -875,29 +1675,27 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400 dark:text-slate-500">Tipe Aksi:</span>
-            <select
-              value={selectedAction}
-              onChange={(e) => setSelectedAction(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-[#05828e]"
-            >
-              <option value="ALL">Semua Aksi</option>
-              <option value="Tambah">Tambah</option>
-              <option value="Ubah">Ubah Field</option>
-              <option value="Status Bayar">Status Bayar</option>
-              <option value="Pengiriman">Pengiriman / Resi</option>
-              <option value="Hapus">Hapus</option>
-            </select>
-
             <button
               type="button"
-              onClick={handleExportCsv}
-              title="Ekspor dan unduh daftar log audit yang sedang tampil ke file CSV"
+              onClick={() => handleExportCsv({ scope: 'current' })}
+              title="Unduh langsung seluruh data audit log yang sesuai filter saat ini ke format CSV"
               className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
               <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
-              <span>Ekspor CSV ({filteredLogs.length})</span>
+              <span>Ekspor CSV Terfilter ({filteredLogs.length})</span>
             </button>
+
+            {selectedModule !== 'IDENTITAS' && (
+              <button
+                type="button"
+                onClick={() => handleExportCsv({ scope: 'identitas' })}
+                title="Arsipkan khusus log perubahan Identitas yang sesuai filter tanggal, kategori aksi, dan pencarian saat ini"
+                className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Arsip Identitas CSV ({filteredIdentitasLogs.length})</span>
+              </button>
+            )}
 
             {onClearLogs && (
               <button
@@ -916,167 +1714,248 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         </div>
       </div>
 
-      {/* 5. VIEW 1: Visual Timeline Mode (Restyled, Zero-Pill Sandwich, Crisp & Calm) */}
+      {/* 5. VIEW 1: Visual Timeline Mode (Chronological Day-Grouped Timeline, Zero-Pill Metadata) */}
       {viewMode === 'timeline' && (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
+          {/* Timeline Summary & Identity Quick Focus */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-600 dark:text-slate-300">
+              <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                Linimasa Audit
+              </span>
+              <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+              <span className="font-mono tabular-nums font-semibold text-[#05828e] dark:text-[#2dd4bf]">
+                {filteredLogs.length} entri
+              </span>
+              <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+              <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                {timelineGroups.length} hari
+              </span>
+              {timelineActionSummary.length > 0 && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                  <span className="text-slate-500 dark:text-slate-400 truncate max-w-md">
+                    {timelineActionSummary
+                      .slice(0, 4)
+                      .map(([act, count]) => `${count} ${act}`)
+                      .join(' · ')}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {selectedModule !== 'IDENTITAS' && (
+              <button
+                type="button"
+                onClick={() => setSelectedModule('IDENTITAS')}
+                className="self-start sm:self-center text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Fokus Perubahan Identitas</span>
+              </button>
+            )}
+          </div>
+
           {filteredLogs.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs">
-              <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-              <div className="font-semibold text-slate-600 dark:text-slate-300">Tidak ada riwayat yang sesuai filter</div>
-              <p className="text-slate-400 dark:text-slate-500 mt-0.5">
-                Silakan ganti kata kunci pencarian atau pilih tab modul lain.
-              </p>
+            <div className="py-12 text-center text-slate-400 text-xs space-y-2.5">
+              <History className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+              <div>
+                <div className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                  Tidak ada riwayat yang sesuai filter
+                </div>
+                <p className="text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">
+                  Coba perluas rentang tanggal, pilih kategori aksi lain, atau hapus kata kunci pencarian.
+                </p>
+              </div>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetAllFilters}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset Semua Filter</span>
+                </button>
+              )}
             </div>
           ) : (
-            <div className="relative pl-6 sm:pl-7 space-y-5 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
-              {filteredLogs.map((log) => {
-                const theme = getModuleTheme(log.module);
-                const isSuspicious = flaggedLogIdMap.has(log.id);
-                const flagItem = flaggedLogIdMap.get(log.id);
-
-                return (
-                  <div key={log.id} className="relative group transition-all">
-                    {/* Node Dot: Minimal, Uncluttered */}
-                    <div
-                      className={`absolute -left-6 sm:-left-7 top-1.5 w-3 h-3 rounded-full ring-4 ring-white dark:ring-slate-900 transition-transform group-hover:scale-125 ${
-                        isSuspicious
-                          ? 'bg-rose-600 ring-rose-50 dark:ring-rose-950'
-                          : log.module === 'S-SALUR'
-                          ? 'bg-emerald-600'
-                          : log.module === 'DONASI'
-                          ? 'bg-amber-600'
-                          : log.module === 'AJAR'
-                          ? 'bg-indigo-600'
-                          : 'bg-[#05828e]'
-                      }`}
-                    />
-
-                    {/* Timeline Card: Hairline Border, Generous Whitespace, No Pill Clutter */}
-                    <div
-                      className={`border rounded-2xl p-4 sm:p-5 transition-all ${
-                        isSuspicious
-                          ? 'bg-rose-50/20 dark:bg-rose-950/20 hover:bg-rose-50/40 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-800/70'
-                          : 'bg-white dark:bg-slate-900/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
-                      }`}
-                    >
-                      {/* Top Meta Line: Clean Unboxed Text with Separators */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800 text-xs">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`font-semibold ${theme.text}`}>
-                            {log.module}
-                          </span>
-                          <span className="text-slate-300 dark:text-slate-600">·</span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            {log.recordTitle}
-                          </span>
-                          <span className="font-mono tabular-nums text-slate-400 dark:text-slate-500">
-                            #{log.recordId}
-                          </span>
-                          <span className="text-slate-300 dark:text-slate-600">·</span>
-                          <span className="font-medium text-slate-600 dark:text-slate-300">
-                            {log.actionType}
-                          </span>
-                          {isSuspicious && (
-                            <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200/80 dark:border-rose-800/80 inline-flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>Anomali: {flagItem?.changeCount}x Perubahan/{flagItem?.windowDays}d</span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[11px]">
-                          <Clock className="w-3 h-3" />
-                          <span className="font-mono tabular-nums">{log.timestamp}</span>
-                          <button
-                            type="button"
-                            onClick={() => setInspectedLog(log)}
-                            className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
-                          >
-                            <Eye className="w-3 h-3" />
-                            <span>Lihat Detail</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLog(log)}
-                            className="p-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                            title="Salin Rincian"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Main Comparison Block: Clean Strikethrough to New Value */}
-                      <div className="pt-2.5 space-y-2">
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <span>Field:</span>
-                          <strong className="font-semibold text-slate-900 dark:text-slate-100">{log.field}</strong>
-                        </div>
-
-                        {/* High-legibility before/after row */}
-                        <div
-                          onClick={() => setInspectedLog(log)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setInspectedLog(log);
-                            }
-                          }}
-                          title="Klik untuk melihat perbandingan nilai (diff) secara detail"
-                          className="bg-slate-50 dark:bg-slate-800/70 hover:bg-teal-50/40 dark:hover:bg-teal-950/30 rounded-xl p-3 border border-slate-100 dark:border-slate-800 hover:border-teal-200 dark:hover:border-teal-800/70 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase w-14 shrink-0">
-                              Sebelum:
-                            </span>
-                            <span className="font-mono text-rose-700 dark:text-rose-300 line-through decoration-rose-400/70 truncate">
-                              {log.oldValue || '-'}
-                            </span>
-                          </div>
-
-                          <ArrowRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0 hidden sm:block" />
-
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-[11px] font-medium text-[#05828e] dark:text-[#2dd4bf] uppercase w-14 shrink-0">
-                              Sesudah:
-                            </span>
-                            <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 truncate">
-                              {log.newValue || '-'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Footer: Reason & Author */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 text-xs">
-                          {log.alasan ? (
-                            <div className="text-slate-600 dark:text-slate-300 text-xs italic">
-                              &quot;{log.alasan}&quot;
-                            </div>
-                          ) : (
-                            <div />
-                          )}
-
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-2 self-start sm:self-center">
-                            <span>Oleh: <strong className="font-medium text-slate-700 dark:text-slate-200">{log.author || 'Sistem'}</strong></span>
-                            {log.module === 'IDENTITAS' && onNavigateToIdentitas && (
-                              <button
-                                type="button"
-                                onClick={() => onNavigateToIdentitas(log.recordId)}
-                                className="text-[#05828e] dark:text-[#2dd4bf] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
-                              >
-                                <span>Profil</span>
-                                <ArrowRight className="w-2.5 h-2.5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+            <div className="space-y-8">
+              {timelineGroups.map((group) => (
+                <section key={group.dateKey} className="space-y-4">
+                  {/* Chronological Day Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center shrink-0 border border-slate-200/70 dark:border-slate-700">
+                      <Calendar className="w-3.5 h-3.5" />
                     </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                      {group.label}
+                    </h3>
+                    <div className="flex-1 h-px bg-slate-200/80 dark:bg-slate-800" />
+                    <span className="text-[11px] font-mono tabular-nums font-medium text-slate-400 dark:text-slate-500 shrink-0">
+                      {group.items.length} aktivitas
+                    </span>
                   </div>
-                );
-              })}
+
+                  {/* Vertical Timeline Spine within Day Group */}
+                  <div className="relative pl-10 sm:pl-24 space-y-4 before:absolute before:left-[13px] sm:before:left-[75px] before:top-2 before:bottom-2 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
+                    {group.items.map(({ log, timeLabel }) => {
+                      const theme = getModuleTheme(log.module);
+                      const isSuspicious = flaggedLogIdMap.has(log.id);
+                      const flagItem = flaggedLogIdMap.get(log.id);
+                      const actionVisual = getActionVisualMeta(log.actionType, isSuspicious);
+                      const ActionIcon = actionVisual.icon;
+
+                      return (
+                        <div key={log.id} className="relative group">
+                          {/* Desktop Time Rail */}
+                          <div className="hidden sm:flex absolute -left-24 top-2.5 w-14 justify-end pr-2 font-mono tabular-nums text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                            {timeLabel}
+                          </div>
+
+                          {/* Semantic Timeline Node Icon */}
+                          <div
+                            className={`absolute -left-10 sm:-left-[29px] top-1.5 w-6 h-6 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 ${actionVisual.nodeClass}`}
+                            title={isSuspicious ? 'Terindikasi Anomali' : log.actionType}
+                          >
+                            <ActionIcon className="w-3 h-3" />
+                          </div>
+
+                          {/* Timeline Card: Hairline Border, Zero-Pill Metadata */}
+                          <div
+                            className={`border rounded-2xl p-4 sm:p-5 transition-all ${
+                              isSuspicious
+                                ? 'bg-rose-50/20 dark:bg-rose-950/20 hover:bg-rose-50/40 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-800/70'
+                                : 'bg-white dark:bg-slate-900/80 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
+                            }`}
+                          >
+                            {/* Top Meta Line: Clean Unboxed Typography */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800 text-xs">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`font-semibold ${theme.text}`}>
+                                  {log.module}
+                                </span>
+                                <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                                  {log.recordTitle}
+                                </span>
+                                <span className="font-mono tabular-nums text-slate-400 dark:text-slate-500">
+                                  #{log.recordId}
+                                </span>
+                                <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                                <span className={`font-semibold ${actionVisual.labelClass}`}>
+                                  {log.actionType}
+                                </span>
+                                {isSuspicious && (
+                                  <>
+                                    <span className="text-slate-300 dark:text-slate-600" aria-hidden="true">·</span>
+                                    <span className="text-[11px] font-semibold text-rose-700 dark:text-rose-300 inline-flex items-center gap-1">
+                                      <AlertTriangle className="w-3 h-3" />
+                                      <span>Anomali: {flagItem?.changeCount}x Perubahan/{flagItem?.windowDays}d</span>
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[11px]">
+                                <Clock className="w-3 h-3 sm:hidden" />
+                                <span className="font-mono tabular-nums">{log.timestamp}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectedLog(log)}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] dark:hover:border-[#2dd4bf] text-[11px] font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>Lihat Detail</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyLog(log)}
+                                  className="p-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                  title="Salin Rincian"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Main Comparison Block */}
+                            <div className="pt-2.5 space-y-2">
+                              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                <span>Field:</span>
+                                <strong className="font-semibold text-slate-900 dark:text-slate-100">{log.field}</strong>
+                              </div>
+
+                              <div
+                                onClick={() => setInspectedLog(log)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setInspectedLog(log);
+                                  }
+                                }}
+                                title="Klik untuk melihat perbandingan nilai (diff) secara detail"
+                                className="bg-slate-50 dark:bg-slate-800/70 hover:bg-teal-50/40 dark:hover:bg-teal-950/30 rounded-xl p-3 border border-slate-100 dark:border-slate-800 hover:border-teal-200 dark:hover:border-teal-800/70 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400 uppercase w-14 shrink-0">
+                                    Sebelum:
+                                  </span>
+                                  <span className="font-mono text-rose-700 dark:text-rose-300 line-through decoration-rose-400/70 truncate">
+                                    {log.oldValue || '-'}
+                                  </span>
+                                </div>
+
+                                <ArrowRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0 hidden sm:block" />
+
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span className="text-[11px] font-medium text-[#05828e] dark:text-[#2dd4bf] uppercase w-14 shrink-0">
+                                    Sesudah:
+                                  </span>
+                                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                    {log.newValue || '-'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Footer: Reason & Author */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 text-xs">
+                                {log.alasan ? (
+                                  <div className="text-slate-600 dark:text-slate-300 text-xs italic">
+                                    &quot;{log.alasan}&quot;
+                                  </div>
+                                ) : (
+                                  <div />
+                                )}
+
+                                <div className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-2 self-start sm:self-center">
+                                  <span>
+                                    Oleh:{' '}
+                                    <strong className="font-medium text-slate-700 dark:text-slate-200">
+                                      {log.author || 'Sistem'}
+                                    </strong>
+                                  </span>
+                                  {log.module === 'IDENTITAS' && onNavigateToIdentitas && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onNavigateToIdentitas(log.recordId)}
+                                      className="text-[#05828e] dark:text-[#2dd4bf] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+                                    >
+                                      <span>Profil</span>
+                                      <ArrowRight className="w-2.5 h-2.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
             </div>
           )}
         </div>
@@ -1425,6 +2304,239 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           else if (mod === 'AJAR' && onNavigateToAjar) onNavigateToAjar();
         }}
       />
+
+      {/* Offline Archive CSV Export Modal */}
+      {isExportCsvModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsExportCsvModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="export-csv-modal-title"
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-[#05828e] dark:text-[#2dd4bf] flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3
+                    id="export-csv-modal-title"
+                    className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base"
+                  >
+                    Ekspor &amp; Arsip Audit Log ke CSV
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Siapkan file CSV (UTF-8 BOM) untuk pengarsipan perubahan identitas secara offline.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExportCsvModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+                aria-label="Tutup modal ekspor CSV"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Active Filter Summary */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 p-3.5 text-xs space-y-1.5">
+              <div className="font-semibold text-slate-700 dark:text-slate-200">
+                Ringkasan Filter Aktif
+              </div>
+              <div className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                {csvExportScope === 'identitas'
+                  ? activeFilterSummaryLabel.replace(/^Modul: [^|]+/, 'Modul: IDENTITAS (Arsip Offline)')
+                  : activeFilterSummaryLabel}
+              </div>
+            </div>
+
+            {/* Scope Selection */}
+            <div className="space-y-2 text-xs">
+              <div className="font-semibold text-slate-700 dark:text-slate-200">
+                Cakupan Data Ekspor
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCsvExportScope('current')}
+                  className={`p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                    csvExportScope === 'current'
+                      ? 'border-[#05828e] bg-teal-50/70 dark:bg-teal-950/40'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 font-semibold text-slate-900 dark:text-slate-100">
+                    <span>Tampilan Terfilter</span>
+                    <span className="font-mono tabular-nums text-[#05828e] dark:text-[#2dd4bf]">
+                      {filteredLogs.length} baris
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    Mengikuti semua filter modul, tanggal, aksi, &amp; pencarian aktif.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCsvExportScope('identitas')}
+                  className={`p-3 rounded-xl border text-left transition-colors cursor-pointer ${
+                    csvExportScope === 'identitas'
+                      ? 'border-[#05828e] bg-teal-50/70 dark:bg-teal-950/40'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 font-semibold text-slate-900 dark:text-slate-100">
+                    <span>Arsip Identitas</span>
+                    <span className="font-mono tabular-nums text-[#05828e] dark:text-[#2dd4bf]">
+                      {filteredIdentitasLogs.length} baris
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    Khusus perubahan data IDENTITAS sesuai filter tanggal &amp; aksi aktif.
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Delimiter & Filter Metadata Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="space-y-1.5">
+                <label className="block font-semibold text-slate-700 dark:text-slate-200">
+                  Pemisah Kolom (Delimiter)
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCsvDelimiter(',')}
+                    className={`py-2 px-2.5 rounded-lg border font-medium transition-colors cursor-pointer ${
+                      csvDelimiter === ','
+                        ? 'border-[#05828e] bg-teal-50/70 dark:bg-teal-950/40 text-[#05828e] dark:text-[#2dd4bf] font-semibold'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    Koma ( , )
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCsvDelimiter(';')}
+                    className={`py-2 px-2.5 rounded-lg border font-medium transition-colors cursor-pointer ${
+                      csvDelimiter === ';'
+                        ? 'border-[#05828e] bg-teal-50/70 dark:bg-teal-950/40 text-[#05828e] dark:text-[#2dd4bf] font-semibold'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    Titik Koma ( ; )
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="block font-semibold text-slate-700 dark:text-slate-200">
+                  Kolom Konteks Arsip
+                </span>
+                <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <input
+                    type="checkbox"
+                    checked={csvIncludeFilterMeta}
+                    onChange={(e) => setCsvIncludeFilterMeta(e.target.checked)}
+                    className="rounded border-slate-300 text-[#05828e] focus:ring-[#05828e]"
+                  />
+                  <span className="text-slate-600 dark:text-slate-300">
+                    Sertakan kolom Lingkup Filter
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Preview First 3 Rows */}
+            {(() => {
+              const previewSource =
+                csvExportScope === 'identitas' ? filteredIdentitasLogs : filteredLogs;
+              return (
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <span>Pratinjau Data yang Akan Diekspor</span>
+                    <span className="font-mono tabular-nums">
+                      Menampilkan {Math.min(previewSource.length, 3)} dari {previewSource.length} baris
+                    </span>
+                  </div>
+                  {previewSource.length === 0 ? (
+                    <div className="p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-center text-slate-400 dark:text-slate-500">
+                      Tidak ada baris data yang cocok untuk cakupan ini.
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                      {previewSource.slice(0, 3).map((item) => (
+                        <div
+                          key={item.id}
+                          className="px-3 py-2 bg-white dark:bg-slate-900 flex items-center justify-between gap-3 text-[11px]"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                              {item.recordTitle}{' '}
+                              <span className="font-mono text-slate-400">#{item.recordId}</span>
+                            </div>
+                            <div className="text-slate-500 dark:text-slate-400 truncate">
+                              {item.actionType} · {item.field}: {item.oldValue || '-'} →{' '}
+                              {item.newValue || '-'}
+                            </div>
+                          </div>
+                          <span className="font-mono tabular-nums text-slate-400 shrink-0">
+                            {item.module}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsExportCsvModalOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={
+                  (csvExportScope === 'identitas'
+                    ? filteredIdentitasLogs.length
+                    : filteredLogs.length) === 0
+                }
+                onClick={() => {
+                  handleExportCsv({
+                    scope: csvExportScope,
+                    delimiter: csvDelimiter,
+                    includeFilterMeta: csvIncludeFilterMeta,
+                  });
+                  setIsExportCsvModalOpen(false);
+                }}
+                className="px-4 py-2 bg-[#05828e] hover:bg-[#046c76] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>
+                  Unduh Arsip CSV (
+                  {csvExportScope === 'identitas'
+                    ? filteredIdentitasLogs.length
+                    : filteredLogs.length}
+                  )
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

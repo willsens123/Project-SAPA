@@ -514,54 +514,48 @@ export const PapanTrelloView: React.FC<PapanTrelloViewProps> = ({
     targetStage: PapanTrelloCard['stage'],
     targetCardId?: string
   ) => {
-    let cardToSync: PapanTrelloCard | undefined;
-    let finalStatus: PapanTrelloCard['statusPengerjaan'];
+    const sourceCard = cards.find((c) => c.id === cardId);
+    if (!sourceCard) return;
+
+    let newStatus: PapanTrelloCard['statusPengerjaan'] = sourceCard.statusPengerjaan;
+    let tMulai = sourceCard.tanggalMulai;
+    let tSelesai = sourceCard.tanggalSelesai;
+    const riwayat = sourceCard.riwayatTanggalPengerjaan;
+
+    const now = new Date();
+    const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    if (targetStage === 'ongoing') {
+      newStatus = 'ongoing';
+      if (!tMulai) tMulai = dateStr;
+    } else if (targetStage === 'selesai_pending') {
+      if (!newStatus || newStatus === 'ongoing' || newStatus === 'belum_mulai') {
+        newStatus = 'selesai';
+      }
+      if (!tMulai) tMulai = '20/10';
+      if (!tSelesai) tSelesai = dateStr;
+    } else {
+      newStatus = 'belum_mulai';
+    }
+
+    const isNonProyek =
+      targetStage === 'not_started_non_proyek'
+        ? true
+        : targetStage === 'not_started_proyek_sapa'
+        ? false
+        : sourceCard.isNonProyek;
+
+    const modCard: PapanTrelloCard = {
+      ...sourceCard,
+      stage: targetStage,
+      statusPengerjaan: newStatus,
+      isNonProyek,
+      tanggalMulai: tMulai,
+      tanggalSelesai: tSelesai,
+      riwayatTanggalPengerjaan: riwayat,
+    };
 
     setCards((prev) => {
-      const sourceIndex = prev.findIndex((c) => c.id === cardId);
-      if (sourceIndex === -1) return prev;
-      const sourceCard = prev[sourceIndex];
-
-      let newStatus: PapanTrelloCard['statusPengerjaan'] = sourceCard.statusPengerjaan;
-      let tMulai = sourceCard.tanggalMulai;
-      let tSelesai = sourceCard.tanggalSelesai;
-      let riwayat = sourceCard.riwayatTanggalPengerjaan;
-
-      const now = new Date();
-      const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-      if (targetStage === 'ongoing') {
-        newStatus = 'ongoing';
-        if (!tMulai) tMulai = dateStr;
-      } else if (targetStage === 'selesai_pending') {
-        if (!newStatus || newStatus === 'ongoing' || newStatus === 'belum_mulai') {
-          newStatus = 'selesai';
-        }
-        if (!tMulai) tMulai = '20/10';
-        if (!tSelesai) tSelesai = dateStr;
-      } else {
-        newStatus = 'belum_mulai';
-      }
-
-      finalStatus = newStatus;
-      const isNonProyek =
-        targetStage === 'not_started_non_proyek'
-          ? true
-          : targetStage === 'not_started_proyek_sapa'
-          ? false
-          : sourceCard.isNonProyek;
-
-      const modCard: PapanTrelloCard = {
-        ...sourceCard,
-        stage: targetStage,
-        statusPengerjaan: newStatus,
-        isNonProyek,
-        tanggalMulai: tMulai,
-        tanggalSelesai: tSelesai,
-        riwayatTanggalPengerjaan: riwayat,
-      };
-      cardToSync = modCard;
-
       const withoutSource = prev.filter((c) => c.id !== cardId);
       if (targetCardId && targetCardId !== cardId) {
         const targetIdx = withoutSource.findIndex((c) => c.id === targetCardId);
@@ -571,13 +565,10 @@ export const PapanTrelloView: React.FC<PapanTrelloViewProps> = ({
           return nextList;
         }
       }
-
       return [...withoutSource, modCard];
     });
 
-    if (cardToSync) {
-      syncCardToTodoList(cardToSync, targetStage, finalStatus);
-    }
+    syncCardToTodoList(modCard, targetStage, newStatus);
 
     setActiveMenuCardId(null);
     const colTitle =
@@ -768,6 +759,8 @@ export const PapanTrelloView: React.FC<PapanTrelloViewProps> = ({
         deadline: newCard.deadline,
         idKaryawanAssignJob: newCard.idKaryawan,
         completed: isCompleted,
+        status: isCompleted ? 'completed' : formStatusPengerjaan === 'ongoing' ? 'ongoing' : 'not_started',
+        statusPengerjaan: formStatusPengerjaan,
         isNonProyek: formIsNonProyek,
         jenisNonProyekNama: newCard.proyekSapaOrJenisName,
         divisi: newCard.divisi,
@@ -778,6 +771,8 @@ export const PapanTrelloView: React.FC<PapanTrelloViewProps> = ({
             deadline: newCard.deadline,
             idKaryawanAssignJob: newCard.idKaryawan,
             completed: isCompleted,
+            status: isCompleted ? 'completed' : formStatusPengerjaan === 'ongoing' ? 'ongoing' : 'not_started',
+            statusPengerjaan: formStatusPengerjaan,
             divisi: newCard.divisi,
             isNonProyek: formIsNonProyek,
           },

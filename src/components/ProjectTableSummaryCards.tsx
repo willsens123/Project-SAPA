@@ -175,7 +175,11 @@ export const ProjectTableSummaryCards: React.FC<ProjectTableSummaryCardsProps> =
 
     projects.forEach((project) => {
       const statusLower = (project.status || '').trim().toLowerCase();
-      const isDone = statusLower === 'done' || statusLower.includes('done');
+      const isDone =
+        statusLower === 'done' ||
+        statusLower.includes('done') ||
+        statusLower === 'completed' ||
+        statusLower.includes('completed');
       const isWaiting = statusLower.includes('waiting');
 
       if (isDone) {

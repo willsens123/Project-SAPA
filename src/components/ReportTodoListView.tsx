@@ -356,14 +356,39 @@ export const ReportTodoListView: React.FC<ReportTodoListViewProps> = ({
         if (row.subTaskId) {
           const updatedSub = t.subTasks.map((st) => {
             if (st.id === row.subTaskId) {
-              return { ...st, completed: !st.completed };
+              const nextCompleted = !st.completed;
+              return {
+                ...st,
+                completed: nextCompleted,
+                status: nextCompleted ? ('completed' as const) : ('not_started' as const),
+                statusPengerjaan: nextCompleted ? ('selesai' as const) : ('belum_mulai' as const),
+              };
             }
             return st;
           });
-          const allSubDone = updatedSub.every((st) => st.completed);
-          return { ...t, subTasks: updatedSub, completed: allSubDone };
+          const allSubDone =
+            updatedSub.length > 0 &&
+            updatedSub.every(
+              (st) => st.completed || st.status === 'completed' || st.statusPengerjaan === 'selesai'
+            );
+          return {
+            ...t,
+            subTasks: updatedSub,
+            completed: allSubDone,
+            status: allSubDone
+              ? ('completed' as const)
+              : updatedSub.some((s) => s.status === 'ongoing' || s.statusPengerjaan === 'ongoing')
+              ? ('ongoing' as const)
+              : ('not_started' as const),
+          };
         } else {
-          return { ...t, completed: !t.completed };
+          const nextCompleted = !t.completed;
+          return {
+            ...t,
+            completed: nextCompleted,
+            status: nextCompleted ? ('completed' as const) : ('not_started' as const),
+            statusPengerjaan: nextCompleted ? ('selesai' as const) : ('belum_mulai' as const),
+          };
         }
       }
       return t;

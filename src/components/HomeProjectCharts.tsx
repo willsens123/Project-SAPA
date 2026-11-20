@@ -380,7 +380,7 @@ export const HomeProjectCharts: React.FC<HomeProjectChartsProps> = ({
         map[div].ongoing += 1;
         map[div].budgetEstimate += 12500000;
         map[div].participantEstimate += 65;
-      } else if (status.includes('done')) {
+      } else if (status.includes('done') || status.includes('completed')) {
         map[div].done += 1;
         map[div].budgetEstimate += 15000000;
         map[div].participantEstimate += 80;
