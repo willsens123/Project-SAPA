@@ -17,6 +17,7 @@ import {
   History,
   TrendingUp,
   TrendingDown,
+  GitMerge,
 } from 'lucide-react';
 import {
   CentralAuditLogEntry,
@@ -222,6 +223,11 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
     onShowToast?.(`${label} berhasil disalin`);
   };
 
+  const mergeRecord = log.metadata?.mergeSessionRecord;
+  const mergeSummaryLine = mergeRecord
+    ? `\nID Merge: ${mergeRecord.id} | Skor: ${mergeRecord.similarityScore}% (${mergeRecord.matchType}) | Utama: ${mergeRecord.primaryCodeId} ${mergeRecord.primaryName} | Sekunder Dilebur: ${mergeRecord.secondaryCodeId} ${mergeRecord.secondaryName} | Data Dipindahkan: ${mergeRecord.transferredData.totalDataPointsMoved} item`
+    : '';
+
   const summaryText = [
     `[AUDIT DIFF] ${modMeta.label} · #${log.recordId} (${log.recordTitle})`,
     `Waktu: ${log.timestamp}${log.isoTimestamp ? ` (${log.isoTimestamp})` : ''}`,
@@ -229,7 +235,7 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
     `Nilai Lama: ${log.oldValue || '-'}`,
     `Nilai Baru: ${log.newValue || '-'}`,
     `Alasan: ${log.alasan || '-'}`,
-    `Operator: ${log.author || 'Sistem'}`,
+    `Operator: ${log.author || 'Sistem'}${mergeSummaryLine}`,
   ].join('\n');
 
   const jsonPayload = JSON.stringify(log, null, 2);
@@ -606,6 +612,81 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
             )}
           </div>
 
+          {/* Forensic MergeSessionRecord Breakdown Panel */}
+          {mergeRecord && (
+            <div className="rounded-xl border border-teal-200 dark:border-teal-800/70 bg-teal-50/35 dark:bg-teal-950/20 p-4 space-y-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-teal-200/70 dark:border-teal-800/60">
+                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100">
+                  <GitMerge className="w-4 h-4 text-[#05828e] dark:text-[#2dd4bf]" />
+                  <span>Jejak Forensik Penggabungan Profil (MergeSessionRecord)</span>
+                </div>
+                <div className="font-mono tabular-nums text-[11px] text-slate-500 dark:text-slate-400">
+                  ID: {mergeRecord.id}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                  <div className="text-[11px] font-medium text-[#05828e] dark:text-[#2dd4bf]">
+                    Profil Utama (Dipertahankan)
+                  </div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100">
+                    {mergeRecord.primaryCodeId} · {mergeRecord.primaryName}
+                  </div>
+                  <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                    ID Sistem: {mergeRecord.primaryId}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                  <div className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                    Profil Sekunder (Dilebur &amp; Dihapus)
+                  </div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100">
+                    {mergeRecord.secondaryCodeId} · {mergeRecord.secondaryName}
+                  </div>
+                  <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                    ID Sistem: {mergeRecord.secondaryId}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Skor Kemiripan</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-0.5">
+                    {mergeRecord.similarityScore}% · {mergeRecord.matchType === 'fuzzy' ? 'Fuzzy' : 'Eksak'}
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Total Dipindahkan</div>
+                  <div className="font-bold text-[#05828e] dark:text-[#2dd4bf] font-mono tabular-nums mt-0.5">
+                    {mergeRecord.transferredData.totalDataPointsMoved} item
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Atribut &amp; Alamat</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-0.5">
+                    {mergeRecord.transferredData.fieldsEnriched} field · {mergeRecord.transferredData.addressesMoved} alamat
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Proyek &amp; Salur</div>
+                  <div className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-0.5">
+                    {mergeRecord.transferredData.projectsUpdated} proyek · {mergeRecord.transferredData.salurOrdersUpdated} salur
+                  </div>
+                </div>
+              </div>
+
+              {mergeRecord.transferredData.fieldsList.length > 0 && (
+                <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold">Atribut yang diperbarui/dipindahkan:</span>{' '}
+                  {mergeRecord.transferredData.fieldsList.join(', ')}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Alasan & Additional Metadata */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 space-y-1">
@@ -621,22 +702,27 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
               <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Metadata Tambahan
               </div>
-              {log.metadata && Object.keys(log.metadata).length > 0 ? (
-                <div className="space-y-1">
-                  {Object.entries(log.metadata).map(([k, v]) => (
-                    <div key={k} className="flex items-start justify-between gap-3">
-                      <span className="font-mono text-slate-500 dark:text-slate-400">{k}:</span>
-                      <span className="font-mono text-slate-800 dark:text-slate-200 text-right break-all">
-                        {typeof v === 'object' ? JSON.stringify(v) : String(v)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-slate-500 dark:text-slate-400">
-                  Tidak ada metadata sistem tambahan.
-                </div>
-              )}
+              {(() => {
+                const displayEntries = log.metadata
+                  ? Object.entries(log.metadata).filter(([k]) => k !== 'mergeSessionRecord')
+                  : [];
+                return displayEntries.length > 0 ? (
+                  <div className="space-y-1">
+                    {displayEntries.map(([k, v]) => (
+                      <div key={k} className="flex items-start justify-between gap-3">
+                        <span className="font-mono text-slate-500 dark:text-slate-400">{k}:</span>
+                        <span className="font-mono text-slate-800 dark:text-slate-200 text-right break-all">
+                          {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 dark:text-slate-400">
+                    Tidak ada metadata sistem tambahan.
+                  </div>
+                );
+              })()}
             </div>
           </div>
 

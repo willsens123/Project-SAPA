@@ -594,7 +594,7 @@ export interface IdentitasChangeLog {
   alasan: string;
   author?: string;
   actionType: 'Ubah' | 'Hapus' | 'Merge' | 'Tambah' | string;
-  metadata?: Record<string, any>;
+  metadata?: CentralAuditLogMetadata;
 }
 
 export type AuditModule =
@@ -605,6 +605,23 @@ export type AuditModule =
   | 'PROYEK'
   | 'PENGELUARAN'
   | 'MUTASI';
+
+export interface CentralAuditLogMetadata {
+  codeId?: string;
+  details?: string;
+  mergeRecordId?: string;
+  mergeSessionRecord?: MergeSessionRecord;
+  secondaryId?: string;
+  secondaryCodeId?: string;
+  secondaryName?: string;
+  similarityScore?: number;
+  matchType?: 'exact' | 'fuzzy';
+  mergeMethod?: 'quick' | 'curated' | 'batch';
+  transferredTotal?: number;
+  batchGroupId?: string;
+  isAnomaly?: boolean;
+  [key: string]: any;
+}
 
 export interface CentralAuditLogEntry {
   id: string;
@@ -620,7 +637,7 @@ export interface CentralAuditLogEntry {
   alasan?: string;
   author?: string;
   badgeColor?: string;
-  metadata?: Record<string, any>;
+  metadata?: CentralAuditLogMetadata;
 }
 
 export type SuspiciousSeverity = 'WARNING' | 'HIGH' | 'CRITICAL';
@@ -657,11 +674,48 @@ export interface AuditAnomalyJobReport {
   intervalSeconds: number;
 }
 
+export interface DuplicateFieldScore {
+  field: 'namaLengkap' | 'namaPanggilan' | 'nomorHandPhone' | 'email' | 'kota' | 'organisasi';
+  label: string;
+  score: number; // 0-100
+  value1: string;
+  value2: string;
+  algorithm: 'Exact' | 'Jaro-Winkler' | 'Levenshtein' | 'Token-Set' | 'Digit-Match';
+}
+
 export interface DuplicatePair {
   id: string;
   item1: IdentitasItem;
   item2: IdentitasItem;
   reason: string;
+  similarityScore?: number; // 0-100
+  matchType?: 'exact' | 'fuzzy';
+  fieldScores?: DuplicateFieldScore[];
+}
+
+export interface MergeTransferredData {
+  fieldsEnriched: number;
+  fieldsList: string[];
+  addressesMoved: number;
+  projectsUpdated: number;
+  salurOrdersUpdated: number;
+  totalDataPointsMoved: number;
+}
+
+export interface MergeSessionRecord {
+  id: string;
+  mergedAt: string; // ISO string
+  primaryId: string;
+  primaryCodeId: string;
+  primaryName: string;
+  secondaryId: string;
+  secondaryCodeId: string;
+  secondaryName: string;
+  similarityScore: number;
+  matchType: 'exact' | 'fuzzy';
+  reason: string;
+  method: 'quick' | 'curated' | 'batch';
+  transferredData: MergeTransferredData;
 }
 
 export interface JenisPanggilanItem {

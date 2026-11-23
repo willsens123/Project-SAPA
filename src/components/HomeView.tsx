@@ -68,6 +68,8 @@ import {
   NotificationScopeMode,
   NotificationReferenceMode,
 } from './HomeProjectDeadlineNotifications';
+import { HomeAuditRealtimeBanner } from './AuditRealtimeNotification';
+import { LiveAuditNotification } from '../utils/auditNotificationHelper';
 import {
   getOngoingProjectsWithinDays,
   toLocalIsoDate,
@@ -120,6 +122,9 @@ interface HomeViewProps {
   onFilterProjectsByLocation?: (locationQuery: string) => void;
   isDark?: boolean;
   onShowToast: (msg: string) => void;
+  liveAuditAlerts?: LiveAuditNotification[];
+  onDismissAuditAlert?: (alertId: string) => void;
+  onDismissAllAuditAlerts?: () => void;
 }
 
 const MONTH_NAMES = [
@@ -205,6 +210,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onFilterProjectsByLocation,
   isDark = false,
   onShowToast,
+  liveAuditAlerts = [],
+  onDismissAuditAlert,
+  onDismissAllAuditAlerts,
 }) => {
   // Modal states
   const [isChangeUserOpen, setIsChangeUserOpen] = useState(false);
@@ -862,6 +870,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Real-time Central Audit Log Banner (appears dynamically on important audit changes) */}
+      <HomeAuditRealtimeBanner
+        alerts={liveAuditAlerts}
+        onOpenAuditLog={(alertId) => {
+          if (alertId && onDismissAuditAlert) {
+            onDismissAuditAlert(alertId);
+          }
+          onNavigateView('auditLog');
+        }}
+        onDismissAlert={(alertId) => onDismissAuditAlert?.(alertId)}
+        onDismissAll={() => onDismissAllAuditAlerts?.()}
+      />
 
       {/* ============================================================== */}
       {/* RINGKASAN KEUANGAN: TOTAL ASET, PENDAPATAN & PENGELUARAN       */}

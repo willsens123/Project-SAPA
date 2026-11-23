@@ -481,7 +481,11 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         log.newValue.toLowerCase().includes(q) ||
         log.actionType.toLowerCase().includes(q) ||
         (log.alasan || '').toLowerCase().includes(q) ||
-        (log.author || '').toLowerCase().includes(q)
+        (log.author || '').toLowerCase().includes(q) ||
+        (log.metadata?.secondaryCodeId || '').toLowerCase().includes(q) ||
+        (log.metadata?.secondaryName || '').toLowerCase().includes(q) ||
+        (log.metadata?.mergeRecordId || '').toLowerCase().includes(q) ||
+        (log.metadata?.details || '').toLowerCase().includes(q)
       );
     });
   }, [
@@ -577,7 +581,11 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           log.newValue.toLowerCase().includes(q) ||
           log.actionType.toLowerCase().includes(q) ||
           (log.alasan || '').toLowerCase().includes(q) ||
-          (log.author || '').toLowerCase().includes(q)
+          (log.author || '').toLowerCase().includes(q) ||
+          (log.metadata?.secondaryCodeId || '').toLowerCase().includes(q) ||
+          (log.metadata?.secondaryName || '').toLowerCase().includes(q) ||
+          (log.metadata?.mergeRecordId || '').toLowerCase().includes(q) ||
+          (log.metadata?.details || '').toLowerCase().includes(q)
         );
       })
       .sort((a, b) => {
@@ -783,6 +791,8 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
       'Alasan Perubahan',
       'Operator / Admin',
       'Status Anomali',
+      'ID Catatan Merge',
+      'Rincian Transfer Merge',
       ...(includeMeta ? ['Lingkup Filter Arsip'] : []),
     ];
 
@@ -801,6 +811,11 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
       const anomalyLabel = flag
         ? `Terindikasi Anomali (${flag.changeCount}x/${flag.windowDays}h)`
         : 'Normal';
+      const mergeRec = l.metadata?.mergeSessionRecord;
+      const mergeRecId = mergeRec?.id || l.metadata?.mergeRecordId || '-';
+      const mergeTransferSummary = mergeRec
+        ? `${mergeRec.similarityScore}% (${mergeRec.matchType}) | +${mergeRec.transferredData.totalDataPointsMoved} item (${mergeRec.transferredData.fieldsEnriched} field, ${mergeRec.transferredData.addressesMoved} alamat, ${mergeRec.transferredData.projectsUpdated} proyek, ${mergeRec.transferredData.salurOrdersUpdated} salur)`
+        : '-';
 
       const baseRow = [
         idx + 1,
@@ -819,6 +834,8 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         l.alasan || '-',
         l.author || 'Sistem',
         anomalyLabel,
+        mergeRecId,
+        mergeTransferSummary,
       ];
 
       return includeMeta ? [...baseRow, scopeLabel] : baseRow;
@@ -1918,6 +1935,31 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                                   </span>
                                 </div>
                               </div>
+
+                              {/* Inline Forensic MergeSessionRecord Trace Line */}
+                              {log.metadata?.mergeSessionRecord && (() => {
+                                const mRec = log.metadata.mergeSessionRecord;
+                                const td = mRec.transferredData;
+                                return (
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5">
+                                    <span className="font-semibold text-[#05828e] dark:text-[#2dd4bf]">
+                                      Jejak Merge
+                                    </span>
+                                    <span aria-hidden="true">·</span>
+                                    <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                                      ID {mRec.id}
+                                    </span>
+                                    <span aria-hidden="true">·</span>
+                                    <span className="font-mono tabular-nums">
+                                      Skor {mRec.similarityScore}% ({mRec.matchType === 'fuzzy' ? 'Fuzzy' : 'Eksak'})
+                                    </span>
+                                    <span aria-hidden="true">·</span>
+                                    <span className="font-mono tabular-nums">
+                                      {td.totalDataPointsMoved} data dipindahkan ({td.fieldsEnriched} field, {td.addressesMoved} alamat, {td.projectsUpdated} proyek, {td.salurOrdersUpdated} salur)
+                                    </span>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Footer: Reason & Author */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pt-1 text-xs">

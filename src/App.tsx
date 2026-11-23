@@ -53,15 +53,22 @@ import {
   saveCentralAuditLogs,
   subscribeAuditEvent,
   dispatchAuditEvent,
+  dispatchMergeAuditEvent,
   auditDiffSalurOrders,
   auditDiffDonasiOrders,
   auditDiffTransaksiAjar,
+  CENTRAL_AUDIT_LOGS_STORAGE_KEY,
 } from './utils/auditEventBus';
 import {
   auditAnomalyWorker,
   saveAnomalyStatusOverride,
   simulateSuspiciousIdentitasUpdates,
 } from './utils/auditAnomalyDetector';
+import {
+  evaluateAuditNotification,
+  LiveAuditNotification,
+} from './utils/auditNotificationHelper';
+import { AuditRealtimeToast } from './components/AuditRealtimeNotification';
 import { MergeDuplicatesView } from './components/MergeDuplicatesView';
 import { OrganisasiDashboard } from './components/OrganisasiDashboard';
 import { FormOrganisasi } from './components/FormOrganisasi';
@@ -428,6 +435,8 @@ import {
   MengenalYpplnItem,
   IdentitasChangeLog,
   DuplicatePair,
+  MergeSessionRecord,
+  MergeTransferredData,
   OrganisasiItem,
   JenisItemSalurItem,
   SubJenisItemSalurItem,
@@ -1069,10 +1078,22 @@ export default function App() {
     return [];
   });
 
+  // Smart Merge fuzzy matching threshold (default > 80%)
+  const [smartMergeThreshold, setSmartMergeThreshold] = useState<number>(80);
+
+  // Merge session summary tracking for 'Ringkasan Hasil Merge' & official admin PDF export
+  const [mergeSessionRecords, setMergeSessionRecords] = useState<MergeSessionRecord[]>([]);
+  const [mergeSessionStartedAt, setMergeSessionStartedAt] = useState<string>(() =>
+    new Date().toISOString()
+  );
+
   // Calculate duplicate pairs and total duplicate records count
   const duplicatePairs = React.useMemo(
-    () => findDuplicatePairs(identitasList, dismissedPairIds),
-    [identitasList, dismissedPairIds]
+    () =>
+      findDuplicatePairs(identitasList, dismissedPairIds, {
+        minSimilarity: smartMergeThreshold,
+      }),
+    [identitasList, dismissedPairIds, smartMergeThreshold]
   );
 
   const totalDuplicateRecordsCount = React.useMemo(
@@ -1350,30 +1371,96 @@ export default function App() {
     return INITIAL_TRANSAKSI_AJAR_LIST;
   });
 
-  // Central Audit Log State & Event Listener
+  // Central Audit Log State & Real-Time Notification Event Listener
   const [centralAuditLogs, setCentralAuditLogs] = useState<CentralAuditLogEntry[]>(() => {
     return loadCentralAuditLogs();
   });
+  const [liveAuditAlerts, setLiveAuditAlerts] = useState<LiveAuditNotification[]>([]);
+  const [activeAuditToast, setActiveAuditToast] = useState<LiveAuditNotification | null>(null);
+  const [isAuditToastHovered, setIsAuditToastHovered] = useState<boolean>(false);
+
+  const centralAuditLogsRef = useRef<CentralAuditLogEntry[]>(centralAuditLogs);
+  centralAuditLogsRef.current = centralAuditLogs;
+
+  const currentViewRef = useRef<AppView | null>(null);
+  const auditToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Security & Anomaly Detector Background Job State
   const [anomalyReport, setAnomalyReport] = useState<AuditAnomalyJobReport>(() => {
     return auditAnomalyWorker.getReport(loadCentralAuditLogs());
   });
 
+  const pushRealtimeAuditNotification = (entry: CentralAuditLogEntry) => {
+    const notification = evaluateAuditNotification(entry);
+    if (!notification) return;
+
+    setLiveAuditAlerts((prev) => {
+      if (prev.some((a) => a.id === notification.id)) return prev;
+      return [notification, ...prev].slice(0, 10);
+    });
+
+    if (currentViewRef.current !== 'auditLog') {
+      setActiveAuditToast(notification);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeAuditToast || isAuditToastHovered) return;
+    if (auditToastTimerRef.current) {
+      clearTimeout(auditToastTimerRef.current);
+    }
+    auditToastTimerRef.current = setTimeout(() => {
+      setActiveAuditToast((prev) => (prev?.id === activeAuditToast.id ? null : prev));
+    }, 6500);
+
+    return () => {
+      if (auditToastTimerRef.current) {
+        clearTimeout(auditToastTimerRef.current);
+      }
+    };
+  }, [activeAuditToast, isAuditToastHovered]);
+
   useEffect(() => {
     // 1. Subscribe to real-time audit event listener for all modules
     const unsubscribeAudit = subscribeAuditEvent((newEntry) => {
+      let isNewEntry = false;
       setCentralAuditLogs((prev) => {
         if (prev.some((e) => e.id === newEntry.id)) return prev;
+        isNewEntry = true;
         const updated = [newEntry, ...prev];
         saveCentralAuditLogs(updated);
         return updated;
       });
+      if (isNewEntry || !centralAuditLogsRef.current.some((e) => e.id === newEntry.id)) {
+        pushRealtimeAuditNotification(newEntry);
+      }
     });
 
-    // 2. Start recurring background worker (scans Identitas changes > 3x/month every 30s)
+    // 2. Cross-tab real-time sync via localStorage storage events
+    const handleStorageSync = (e: StorageEvent) => {
+      if (e.key !== CENTRAL_AUDIT_LOGS_STORAGE_KEY || !e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue) as CentralAuditLogEntry[];
+        if (!Array.isArray(parsed)) return;
+        const existingIds = new Set(centralAuditLogsRef.current.map((item) => item.id));
+        const newlyAdded = parsed.filter((item) => item && item.id && !existingIds.has(item.id));
+        if (newlyAdded.length === 0) return;
+
+        setCentralAuditLogs(parsed);
+        newlyAdded
+          .slice(0, 5)
+          .reverse()
+          .forEach((entry) => pushRealtimeAuditNotification(entry));
+      } catch (err) {
+        console.error('Failed to sync cross-tab audit logs', err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageSync);
+
+    // 3. Start recurring background worker (scans Identitas changes > 3x/month every 30s)
     const cleanupWorker = auditAnomalyWorker.start(
-      () => centralAuditLogs,
+      () => centralAuditLogsRef.current,
       (rep) => {
         setAnomalyReport(rep);
       },
@@ -1382,9 +1469,10 @@ export default function App() {
 
     return () => {
       unsubscribeAudit();
+      window.removeEventListener('storage', handleStorageSync);
       cleanupWorker();
     };
-  }, [centralAuditLogs]);
+  }, []);
 
   const handleUpdateSalurOrders = (updated: SalurOrder[]) => {
     try {
@@ -2470,6 +2558,7 @@ export default function App() {
 
   // View state: 'table' | 'form' | 'jenisProyek' | 'report' | 'transaksiSalur' | 'formTransaksiSalur'
   const [currentView, setCurrentView] = useState<AppView>('home');
+  currentViewRef.current = currentView;
 
   // Sesi Login Anggota di memori React; opsional Remember Me hanya menyimpan referensi ID akun (bukan password)
   const [authenticatedUser, setAuthenticatedUser] = useState<KaryawanItem | null>(null);
@@ -3588,50 +3677,233 @@ export default function App() {
     // If name changed, update all related projects and salur orders
     if (editingIdentitas && editingIdentitas.namaLengkap !== updatedItem.namaLengkap) {
       setProjects((prev) =>
-        prev.map((p) =>
-          p.pic === editingIdentitas.namaLengkap ? { ...p, pic: updatedItem.namaLengkap } : p
-        )
+        prev.map((p) => {
+          const oldPic = (p as ProjectItem & { pic?: string }).pic;
+          const hasTarget = Array.isArray(p.target) && p.target.includes(editingIdentitas.namaLengkap);
+          if (oldPic !== editingIdentitas.namaLengkap && !hasTarget) return p;
+          return {
+            ...p,
+            ...(oldPic === editingIdentitas.namaLengkap ? { pic: updatedItem.namaLengkap } : {}),
+            ...(hasTarget
+              ? {
+                  target: p.target!.map((t) =>
+                    t === editingIdentitas.namaLengkap ? updatedItem.namaLengkap : t
+                  ),
+                }
+              : {}),
+          };
+        })
       );
       setSalurOrders((prev) =>
         prev.map((s) =>
-          s.penerima === editingIdentitas.namaLengkap ? { ...s, penerima: updatedItem.namaLengkap } : s
+          salurMatchesIdentitas(s, editingIdentitas)
+            ? migrateSalurOrderIdentitas(s, editingIdentitas, updatedItem)
+            : s
         )
       );
     }
   };
 
-  // Merge duplicates handler: merges secondary into primary and updates all related references
-  const handleMergePair = (pair: DuplicatePair) => {
-    const primary = pair.item1;
-    const secondary = pair.item2;
+  // Helpers to match & migrate cross-module references cleanly on ProjectItem & SalurOrder
+  const projectMatchesIdentitas = (p: ProjectItem, ident: IdentitasItem): boolean => {
+    const legacyPic = (p as ProjectItem & { pic?: string }).pic;
+    const nameMatch = Boolean(ident.namaLengkap) && legacyPic === ident.namaLengkap;
+    const targetMatch =
+      Boolean(ident.namaLengkap) &&
+      Array.isArray(p.target) &&
+      p.target.includes(ident.namaLengkap);
+    return nameMatch || targetMatch;
+  };
 
-    // Combine fields: primary has priority, fallback to secondary
-    const mergedItem: IdentitasItem = {
-      ...secondary,
-      ...primary,
-      email: primary.email || secondary.email,
-      nomorHandPhone: primary.nomorHandPhone || secondary.nomorHandPhone,
-      kota: primary.kota || secondary.kota,
-      organisasi:
-        primary.organisasi &&
-        secondary.organisasi &&
-        primary.organisasi !== '-' &&
-        secondary.organisasi !== '-' &&
-        primary.organisasi !== secondary.organisasi
-          ? `${primary.organisasi}, ${secondary.organisasi}`
-          : primary.organisasi !== '-'
-          ? primary.organisasi
-          : secondary.organisasi,
-      status: primary.status !== '-' ? primary.status : secondary.status,
-      custDuration:
-        primary.custDuration !== '-' ? primary.custDuration : secondary.custDuration,
-      alamatList: [
-        ...(primary.alamatList || []),
-        ...(secondary.alamatList || []).filter(
-          (sa) => !(primary.alamatList || []).some((pa) => pa.alamat === sa.alamat)
-        ),
-      ],
+  const migrateProjectIdentitas = (
+    p: ProjectItem,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): ProjectItem => {
+    const legacyPic = (p as ProjectItem & { pic?: string }).pic;
+    const hasTarget =
+      Array.isArray(p.target) && p.target.includes(fromIdent.namaLengkap);
+    return {
+      ...p,
+      ...(legacyPic === fromIdent.namaLengkap ? { pic: toIdent.namaLengkap } : {}),
+      ...(hasTarget
+        ? {
+            target: p.target!.map((t) =>
+              t === fromIdent.namaLengkap ? toIdent.namaLengkap : t
+            ),
+          }
+        : {}),
     };
+  };
+
+  const salurMatchesIdentitas = (s: SalurOrder, ident: IdentitasItem): boolean => {
+    const legacyPenerima = (s as SalurOrder & { penerima?: string }).penerima;
+    const fullLabel = `${ident.codeId || ''} ${ident.namaLengkap}`.trim();
+    const matchStr = (val?: string) => {
+      if (!val) return false;
+      const trimmed = val.trim();
+      return (
+        (ident.namaLengkap && trimmed === ident.namaLengkap) ||
+        (fullLabel && trimmed === fullLabel) ||
+        (ident.codeId && trimmed.startsWith(`${ident.codeId} `))
+      );
+    };
+    return (
+      matchStr(legacyPenerima) ||
+      matchStr(s.idPenerima) ||
+      matchStr(s.customerCode) ||
+      matchStr(s.customerId) ||
+      matchStr(s.idPembeli) ||
+      matchStr(s.alamat?.recipientName)
+    );
+  };
+
+  const migrateSalurOrderIdentitas = (
+    s: SalurOrder,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): SalurOrder => {
+    const legacyPenerima = (s as SalurOrder & { penerima?: string }).penerima;
+    const fromFull = `${fromIdent.codeId || ''} ${fromIdent.namaLengkap}`.trim();
+    const toFull = `${toIdent.codeId || ''} ${toIdent.namaLengkap}`.trim();
+    const replaceLabel = (val?: string): string | undefined => {
+      if (!val) return val;
+      const trimmed = val.trim();
+      if (
+        (fromFull && trimmed === fromFull) ||
+        (fromIdent.codeId && trimmed.startsWith(`${fromIdent.codeId} `))
+      ) {
+        return toFull || toIdent.namaLengkap;
+      }
+      if (fromIdent.namaLengkap && trimmed === fromIdent.namaLengkap) {
+        return toIdent.namaLengkap;
+      }
+      return val;
+    };
+
+    const nextAlamat =
+      s.alamat && s.alamat.recipientName === fromIdent.namaLengkap
+        ? { ...s.alamat, recipientName: toIdent.namaLengkap }
+        : s.alamat;
+
+    return {
+      ...s,
+      customerId: replaceLabel(s.customerId) ?? s.customerId,
+      customerCode: replaceLabel(s.customerCode) ?? s.customerCode,
+      idPembeli: replaceLabel(s.idPembeli),
+      idPenerima: replaceLabel(s.idPenerima),
+      alamat: nextAlamat,
+      ...(legacyPenerima === fromIdent.namaLengkap ? { penerima: toIdent.namaLengkap } : {}),
+    };
+  };
+
+  // Helper to build merged IdentitasItem when no custom override is passed
+  const buildDefaultMergedIdentitas = (primary: IdentitasItem, secondary: IdentitasItem): IdentitasItem => ({
+    ...secondary,
+    ...primary,
+    email: primary.email || secondary.email,
+    nomorHandPhone: primary.nomorHandPhone && primary.nomorHandPhone !== '-' ? primary.nomorHandPhone : secondary.nomorHandPhone,
+    kota: primary.kota || secondary.kota,
+    organisasi:
+      primary.organisasi &&
+      secondary.organisasi &&
+      primary.organisasi !== '-' &&
+      secondary.organisasi !== '-' &&
+      primary.organisasi !== secondary.organisasi
+        ? `${primary.organisasi}, ${secondary.organisasi}`
+        : primary.organisasi && primary.organisasi !== '-'
+        ? primary.organisasi
+        : secondary.organisasi,
+    status: primary.status && primary.status !== '-' ? primary.status : secondary.status,
+    custDuration:
+      primary.custDuration && primary.custDuration !== '-'
+        ? primary.custDuration
+        : secondary.custDuration,
+    alamatList: [
+      ...(primary.alamatList || []),
+      ...(secondary.alamatList || []).filter(
+        (sa) => !(primary.alamatList || []).some((pa) => pa.alamat === sa.alamat)
+      ),
+    ],
+  });
+
+  // Compute exact fields, addresses, and cross-module references transferred during merge
+  const computeTransferredData = (
+    primary: IdentitasItem,
+    secondary: IdentitasItem,
+    mergedItem: IdentitasItem,
+    projectsSnapshot: ProjectItem[],
+    salurSnapshot: SalurOrder[]
+  ): MergeTransferredData => {
+    const trackedFields: Array<{ key: keyof IdentitasItem; label: string }> = [
+      { key: 'namaLengkap', label: 'Nama Lengkap' },
+      { key: 'namaPanggilan', label: 'Panggilan' },
+      { key: 'nomorHandPhone', label: 'Nomor HP' },
+      { key: 'email', label: 'Email' },
+      { key: 'kota', label: 'Kota' },
+      { key: 'organisasi', label: 'Organisasi' },
+      { key: 'status', label: 'Status' },
+      { key: 'custDuration', label: 'Durasi Pelanggan' },
+      { key: 'pekerjaan', label: 'Pekerjaan' },
+      { key: 'pic', label: 'PIC' },
+    ];
+
+    const fieldsList: string[] = [];
+    trackedFields.forEach(({ key, label }) => {
+      const prevVal = String(primary[key] ?? '').trim();
+      const nextVal = String(mergedItem[key] ?? '').trim();
+      if (nextVal && nextVal !== '-' && nextVal !== prevVal) {
+        fieldsList.push(label);
+      }
+    });
+
+    const primaryAddrCount = (primary.alamatList || []).length;
+    const mergedAddrCount = (mergedItem.alamatList || []).length;
+    const addressesMoved = Math.max(0, mergedAddrCount - primaryAddrCount);
+
+    const projectsUpdated = projectsSnapshot.filter((p) =>
+      projectMatchesIdentitas(p, secondary)
+    ).length;
+    const salurOrdersUpdated = salurSnapshot.filter((s) =>
+      salurMatchesIdentitas(s, secondary)
+    ).length;
+
+    return {
+      fieldsEnriched: fieldsList.length,
+      fieldsList,
+      addressesMoved,
+      projectsUpdated,
+      salurOrdersUpdated,
+      totalDataPointsMoved:
+        fieldsList.length + addressesMoved + projectsUpdated + salurOrdersUpdated,
+    };
+  };
+
+  // Merge duplicates handler: supports Smart Merge custom field overrides and primary swapping
+  const handleMergePair = (
+    pair: DuplicatePair,
+    customMergedItem?: IdentitasItem,
+    primaryItemId?: string
+  ) => {
+    const useSecondAsPrimary = primaryItemId === pair.item2.id;
+    const primary = useSecondAsPrimary ? pair.item2 : pair.item1;
+    const secondary = useSecondAsPrimary ? pair.item1 : pair.item2;
+
+    const mergedItem: IdentitasItem = customMergedItem
+      ? {
+          ...buildDefaultMergedIdentitas(primary, secondary),
+          ...customMergedItem,
+          id: primary.id,
+        }
+      : buildDefaultMergedIdentitas(primary, secondary);
+
+    const transferredData = computeTransferredData(
+      primary,
+      secondary,
+      mergedItem,
+      projects,
+      salurOrders
+    );
 
     // 1. Update identity list
     setIdentitasList((prev) =>
@@ -3640,21 +3912,25 @@ export default function App() {
         .map((it) => (it.id === primary.id ? mergedItem : it))
     );
 
-    // 2. Update projects where pic or reference was secondary
+    // 2. Update projects referencing secondary
     setProjects((prev) =>
       prev.map((p) =>
-        p.pic === secondary.namaLengkap ? { ...p, pic: primary.namaLengkap } : p
+        projectMatchesIdentitas(p, secondary)
+          ? migrateProjectIdentitas(p, secondary, mergedItem)
+          : p
       )
     );
 
-    // 3. Update salur orders where penerima was secondary
+    // 3. Update salur orders referencing secondary
     setSalurOrders((prev) =>
       prev.map((s) =>
-        s.penerima === secondary.namaLengkap ? { ...s, penerima: primary.namaLengkap } : s
+        salurMatchesIdentitas(s, secondary)
+          ? migrateSalurOrderIdentitas(s, secondary, mergedItem)
+          : s
       )
     );
 
-    // 4. Record audit change log
+    // 4. Record audit change log + dispatch Central Audit Event
     const now = new Date();
     const timestampFormatted = now.toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -3665,37 +3941,212 @@ export default function App() {
       minute: '2-digit',
     });
 
+    const similarityInfo =
+      typeof pair.similarityScore === 'number'
+        ? `Skor ${pair.similarityScore}% (${pair.matchType === 'fuzzy' ? 'Smart Match' : 'Eksak'})`
+        : pair.reason;
+
+    const reasonText = customMergedItem
+      ? `Smart Merge Terkurasi — ${similarityInfo}: ${pair.reason}`
+      : `Merge Duplicates (${pair.reason})`;
+
+    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+
+    const sessionRecord: MergeSessionRecord = {
+      id: `mrec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      mergedAt: now.toISOString(),
+      primaryId: primary.id,
+      primaryCodeId: primary.codeId || '-',
+      primaryName: mergedItem.namaLengkap,
+      secondaryId: secondary.id,
+      secondaryCodeId: secondary.codeId || '-',
+      secondaryName: secondary.namaLengkap,
+      similarityScore: pair.similarityScore ?? 100,
+      matchType: pair.matchType ?? 'exact',
+      reason: pair.reason,
+      method: customMergedItem ? 'curated' : 'quick',
+      transferredData,
+    };
+
     const mergeLog: IdentitasChangeLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       identitasId: primary.id,
       codeId: primary.codeId || '',
-      namaLengkap: primary.namaLengkap,
+      namaLengkap: mergedItem.namaLengkap,
       timestamp: timestampFormatted,
-      field: 'Semua Field (Penggabungan Duplikat)',
+      isoTimestamp: now.toISOString(),
+      author: actorName,
+      field: 'Semua Field (Smart Merge Identitas)',
       oldValue: `Data ${secondary.codeId || '-'} ${secondary.namaLengkap} (${secondary.nomorHandPhone})`,
-      newValue: `Digabungkan ke ${primary.codeId || '-'} ${primary.namaLengkap}`,
-      alasan: `Merge Duplicates (${pair.reason})`,
+      newValue: `Digabungkan ke ${primary.codeId || '-'} ${mergedItem.namaLengkap}`,
+      alasan: reasonText,
       actionType: 'Merge',
+      metadata: {
+        mergeRecordId: sessionRecord.id,
+        mergeSessionRecord: sessionRecord,
+      },
     };
 
     setChangeLogs((prev) => [mergeLog, ...prev]);
-    showToast(`Data ${secondary.namaLengkap} (${secondary.codeId || '-'}) berhasil digabungkan ke ${primary.namaLengkap}`);
+    setMergeSessionRecords((prev) => [sessionRecord, ...prev]);
+
+    dispatchMergeAuditEvent(sessionRecord, actorName);
+
+    showToast(
+      `Data ${secondary.namaLengkap} (${secondary.codeId || '-'}) berhasil digabungkan ke ${mergedItem.namaLengkap}`
+    );
   };
 
-  // Merge all duplicate pairs
-  const handleMergeAll = () => {
-    if (duplicatePairs.length === 0) return;
-    const count = duplicatePairs.length;
-    duplicatePairs.forEach((pair) => {
-      handleMergePair(pair);
+  // Merge multiple duplicate pairs (defaults to all active pairs)
+  const handleMergeAll = (targetPairs?: DuplicatePair[]) => {
+    const pairsToProcess = targetPairs && targetPairs.length > 0 ? targetPairs : duplicatePairs;
+    if (pairsToProcess.length === 0) return;
+
+    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+    const now = new Date();
+    const batchId = `batch-${Date.now()}`;
+    const timestampFormatted = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
-    showToast(`Semua (${count}) pasangan data duplikat berhasil digabungkan`);
+
+    const removedIds = new Set<string>();
+    const replacements = new Map<string, IdentitasItem>();
+    const migrations: Array<{ fromIdent: IdentitasItem; toIdent: IdentitasItem }> = [];
+    const createdLogs: IdentitasChangeLog[] = [];
+    const batchSessionRecords: MergeSessionRecord[] = [];
+
+    pairsToProcess.forEach((pair, idx) => {
+      if (removedIds.has(pair.item1.id) || removedIds.has(pair.item2.id)) {
+        return;
+      }
+      const primary = replacements.get(pair.item1.id) || pair.item1;
+      const secondary = pair.item2;
+      const mergedItem = buildDefaultMergedIdentitas(primary, secondary);
+
+      const transferredData = computeTransferredData(
+        primary,
+        secondary,
+        mergedItem,
+        projects,
+        salurOrders
+      );
+
+      removedIds.add(secondary.id);
+      replacements.set(primary.id, mergedItem);
+      migrations.push({ fromIdent: secondary, toIdent: mergedItem });
+
+      const similarityInfo =
+        typeof pair.similarityScore === 'number'
+          ? `Skor ${pair.similarityScore}%`
+          : pair.reason;
+
+      const sessionRec: MergeSessionRecord = {
+        id: `mrec-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+        mergedAt: now.toISOString(),
+        primaryId: primary.id,
+        primaryCodeId: primary.codeId || '-',
+        primaryName: mergedItem.namaLengkap,
+        secondaryId: secondary.id,
+        secondaryCodeId: secondary.codeId || '-',
+        secondaryName: secondary.namaLengkap,
+        similarityScore: pair.similarityScore ?? 100,
+        matchType: pair.matchType ?? 'exact',
+        reason: pair.reason,
+        method: 'batch',
+        transferredData,
+      };
+      batchSessionRecords.push(sessionRec);
+
+      createdLogs.push({
+        id: `log-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+        identitasId: primary.id,
+        codeId: primary.codeId || '',
+        namaLengkap: mergedItem.namaLengkap,
+        timestamp: timestampFormatted,
+        isoTimestamp: now.toISOString(),
+        author: actorName,
+        field: 'Semua Field (Smart Merge Massal)',
+        oldValue: `Data ${secondary.codeId || '-'} ${secondary.namaLengkap} (${secondary.nomorHandPhone})`,
+        newValue: `Digabungkan ke ${primary.codeId || '-'} ${mergedItem.namaLengkap}`,
+        alasan: `Batch Smart Merge (${similarityInfo}: ${pair.reason})`,
+        actionType: 'Merge',
+        metadata: {
+          mergeRecordId: sessionRec.id,
+          mergeSessionRecord: sessionRec,
+          batchGroupId: batchId,
+        },
+      });
+    });
+
+    if (removedIds.size === 0) return;
+
+    setIdentitasList((prev) =>
+      prev
+        .filter((it) => !removedIds.has(it.id))
+        .map((it) => replacements.get(it.id) || it)
+    );
+
+    if (migrations.length > 0) {
+      setProjects((prev) =>
+        prev.map((p) => {
+          let updated = p;
+          for (const m of migrations) {
+            if (projectMatchesIdentitas(updated, m.fromIdent)) {
+              updated = migrateProjectIdentitas(updated, m.fromIdent, m.toIdent);
+            }
+          }
+          return updated;
+        })
+      );
+      setSalurOrders((prev) =>
+        prev.map((s) => {
+          let updated = s;
+          for (const m of migrations) {
+            if (salurMatchesIdentitas(updated, m.fromIdent)) {
+              updated = migrateSalurOrderIdentitas(updated, m.fromIdent, m.toIdent);
+            }
+          }
+          return updated;
+        })
+      );
+    }
+
+    setChangeLogs((prev) => [...createdLogs, ...prev]);
+    setMergeSessionRecords((prev) => [...[...batchSessionRecords].reverse(), ...prev]);
+
+    // Record individual traceable Central Audit Log entry for every merged pair
+    batchSessionRecords.forEach((sessionRec, idx) => {
+      dispatchMergeAuditEvent(sessionRec, actorName, {
+        batchId,
+        index: idx + 1,
+        total: batchSessionRecords.length,
+      });
+    });
+
+    showToast(`${removedIds.size} pasangan data duplikat berhasil digabungkan`);
+  };
+
+  const handleResetMergeSession = () => {
+    setMergeSessionRecords([]);
+    setMergeSessionStartedAt(new Date().toISOString());
+    showToast('Ringkasan sesi merge telah direset untuk sesi baru');
   };
 
   // Dismiss a duplicate pair
   const handleDismissPair = (pairId: string) => {
-    setDismissedPairIds((prev) => [...prev, pairId]);
+    setDismissedPairIds((prev) => (prev.includes(pairId) ? prev : [...prev, pairId]));
     showToast('Pasangan duplikat berhasil diabaikan');
+  };
+
+  // Reset all dismissed pairs
+  const handleResetDismissedPairs = () => {
+    setDismissedPairIds([]);
+    showToast('Daftar pasangan yang diabaikan telah dikembalikan untuk pemindaian ulang');
   };
 
   // Organisasi CRUD
@@ -4540,6 +4991,19 @@ export default function App() {
         </div>
       )}
 
+      {/* Real-Time Central Audit Log Toast Notification */}
+      <AuditRealtimeToast
+        notification={activeAuditToast}
+        hasSecondaryToastAbove={Boolean(toastMessage)}
+        onPauseHover={(paused) => setIsAuditToastHovered(paused)}
+        onClose={() => setActiveAuditToast(null)}
+        onOpenAuditLog={(alertId) => {
+          setLiveAuditAlerts((prev) => prev.filter((a) => a.id !== alertId));
+          setActiveAuditToast(null);
+          setCurrentView('auditLog');
+        }}
+      />
+
       {/* Left Menu Bar / Sidebar */}
       <Sidebar
         currentView={currentView}
@@ -4806,6 +5270,11 @@ export default function App() {
                 setCurrentView('table');
               }}
               onShowToast={showToast}
+              liveAuditAlerts={liveAuditAlerts}
+              onDismissAuditAlert={(alertId) =>
+                setLiveAuditAlerts((prev) => prev.filter((a) => a.id !== alertId))
+              }
+              onDismissAllAuditAlerts={() => setLiveAuditAlerts([])}
             />
           )}
 
@@ -7404,12 +7873,23 @@ export default function App() {
             </div>
           )}
 
-          {/* View: Merge Duplicates Dashboard matching Image 2 */}
+          {/* View: Smart Merge & Duplicates Dashboard */}
           {currentView === 'mergeDuplicates' && (
             <div className="mt-2 sm:mt-4">
               <MergeDuplicatesView
                 pairs={duplicatePairs}
+                totalIdentitasCount={identitasList.length}
                 totalDuplicateRecordsCount={totalDuplicateRecordsCount}
+                similarityThreshold={smartMergeThreshold}
+                dismissedCount={dismissedPairIds.length}
+                sessionRecords={mergeSessionRecords}
+                sessionStartedAt={mergeSessionStartedAt}
+                adminName={authenticatedUser?.namaLengkap || 'Admin Identitas YPPLN'}
+                adminEmail={authenticatedUser?.email || '-'}
+                onChangeThreshold={setSmartMergeThreshold}
+                onResetDismissedPairs={handleResetDismissedPairs}
+                onResetSession={handleResetMergeSession}
+                onShowToast={(msg) => showToast(msg)}
                 onBack={() => setCurrentView('identitas')}
                 onMergePair={handleMergePair}
                 onMergeAll={handleMergeAll}

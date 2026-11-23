@@ -1,4 +1,4 @@
-import { CentralAuditLogEntry, AuditModule } from '../types';
+import { CentralAuditLogEntry, AuditModule, MergeSessionRecord } from '../types';
 import { SalurOrder } from '../salurData';
 import { DonasiOrder } from '../donasiData';
 import { TransaksiAjarItem } from '../transaksiAjarData';
@@ -769,6 +769,82 @@ export function dispatchAuditEvent(payload: AuditEventPayload): CentralAuditLogE
   }
 
   return entry;
+}
+
+/**
+ * Automatically records a MergeSessionRecord into Central Audit Log with full forensic metadata.
+ */
+export function dispatchMergeAuditEvent(
+  record: MergeSessionRecord,
+  author: string = 'Admin Identitas',
+  batchMeta?: { batchId: string; index: number; total: number }
+): CentralAuditLogEntry {
+  const td = record.transferredData;
+  const movedSummaryParts: string[] = [];
+  if (td.fieldsEnriched > 0) {
+    movedSummaryParts.push(`${td.fieldsEnriched} field (${td.fieldsList.join(', ')})`);
+  }
+  if (td.addressesMoved > 0) {
+    movedSummaryParts.push(`${td.addressesMoved} alamat`);
+  }
+  if (td.projectsUpdated > 0) {
+    movedSummaryParts.push(`${td.projectsUpdated} proyek`);
+  }
+  if (td.salurOrdersUpdated > 0) {
+    movedSummaryParts.push(`${td.salurOrdersUpdated} transaksi salur`);
+  }
+
+  const methodLabel =
+    record.method === 'curated'
+      ? 'Smart Merge Terkurasi'
+      : record.method === 'batch'
+      ? 'Smart Merge Batch'
+      : 'Smart Merge Cepat';
+
+  const matchTypeLabel = record.matchType === 'fuzzy' ? 'Smart Match Fuzzy' : 'Duplikat Eksak';
+  const batchSuffix = batchMeta ? ` [${batchMeta.index}/${batchMeta.total}]` : '';
+
+  const primaryLabel = `${record.primaryCodeId || '-'} ${record.primaryName}`.trim();
+  const secondaryLabel = `${record.secondaryCodeId || '-'} ${record.secondaryName}`.trim();
+  const movedDetailStr =
+    movedSummaryParts.length > 0
+      ? movedSummaryParts.join(' · ')
+      : 'Konsolidasi profil tanpa field tambahan';
+
+  return dispatchAuditEvent({
+    id: `audit-merge-${record.id}`,
+    isoTimestamp: record.mergedAt,
+    timestamp: formatAuditTimestamp(new Date(record.mergedAt)),
+    module: 'IDENTITAS',
+    actionType: 'Merge',
+    recordId:
+      record.primaryCodeId && record.primaryCodeId !== '-'
+        ? record.primaryCodeId
+        : record.primaryId,
+    recordTitle: record.primaryName,
+    field: `${methodLabel}${batchSuffix}`,
+    oldValue: `${secondaryLabel} (Dilebur · ${record.similarityScore}% ${matchTypeLabel})`,
+    newValue: `${primaryLabel} (+${td.totalDataPointsMoved} data dipindahkan)`,
+    alasan: `${record.reason} · Metode: ${methodLabel} · Dipindahkan: ${movedDetailStr}`,
+    author,
+    metadata: {
+      codeId:
+        record.primaryCodeId && record.primaryCodeId !== '-'
+          ? record.primaryCodeId
+          : record.primaryId,
+      mergeRecordId: record.id,
+      mergeSessionRecord: record,
+      secondaryId: record.secondaryId,
+      secondaryCodeId: record.secondaryCodeId,
+      secondaryName: record.secondaryName,
+      similarityScore: record.similarityScore,
+      matchType: record.matchType,
+      mergeMethod: record.method,
+      transferredTotal: td.totalDataPointsMoved,
+      ...(batchMeta ? { batchGroupId: batchMeta.batchId } : {}),
+      details: `Penggabungan ${secondaryLabel} -> ${primaryLabel} (Skor ${record.similarityScore}%, ${td.totalDataPointsMoved} data dipindahkan: ${movedDetailStr})`,
+    },
+  });
 }
 
 /**
