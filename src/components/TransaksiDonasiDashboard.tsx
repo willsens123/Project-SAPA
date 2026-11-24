@@ -37,6 +37,7 @@ interface TransaksiDonasiDashboardProps {
   rekeningList?: RekeningItem[];
   mutasiItems?: MutasiItem[];
   onUpdateMutasiItems?: (updated: MutasiItem[]) => void;
+  currentActorName?: string;
 }
 
 export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> = ({
@@ -48,6 +49,7 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
   rekeningList = [],
   mutasiItems = [],
   onUpdateMutasiItems,
+  currentActorName,
 }) => {
   const [activeTab, setActiveTab] = useState<'Semua' | 'Belum Bayar' | 'Belum Konek Mutasi'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1058,6 +1060,7 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
           setSelectedOrderForKwitansi(null);
         }}
         onShowToast={onShowToast}
+        actorName={currentActorName}
       />
     </div>
   );

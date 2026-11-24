@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History, LogOut, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History, LogOut, Sun, Moon, KeyRound } from 'lucide-react';
 import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
@@ -21,6 +21,7 @@ interface HeaderProps {
   onManualSync?: () => void;
   currentUser?: KaryawanItem | null;
   onLogout?: () => void;
+  onOpenChangePassword?: () => void;
   theme?: AppTheme;
   onToggleTheme?: () => void;
 }
@@ -38,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onManualSync,
   currentUser,
   onLogout,
+  onOpenChangePassword,
   theme = 'light',
   onToggleTheme,
 }) => {
@@ -448,6 +450,21 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Reset ke Data Awal
+                </button>
+              )}
+
+              {onOpenChangePassword && (
+                <button
+                  id="btn-header-change-password"
+                  type="button"
+                  onClick={() => {
+                    setShowOptions(false);
+                    onOpenChangePassword();
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800 flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 mt-1 cursor-pointer"
+                >
+                  <KeyRound className="w-4 h-4 text-[#05828e] dark:text-teal-400" />
+                  Ganti Password Akun
                 </button>
               )}
 

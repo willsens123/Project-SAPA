@@ -18,6 +18,7 @@ import {
   TrendingUp,
   TrendingDown,
   GitMerge,
+  RotateCcw,
 } from 'lucide-react';
 import {
   CentralAuditLogEntry,
@@ -33,6 +34,8 @@ interface CentralAuditDiffModalProps {
   filteredLogs: CentralAuditLogEntry[];
   onSelectLog: (log: CentralAuditLogEntry) => void;
   flaggedLogIdMap?: Map<string, SuspiciousAuditFlag>;
+  canUndoMerge?: boolean;
+  onUndoMerge?: (mergeRecordId: string) => void;
   onShowToast?: (msg: string) => void;
   onNavigateToIdentitas?: (codeId: string) => void;
   onNavigateToModule?: (module: AuditModule) => void;
@@ -138,12 +141,19 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
   filteredLogs,
   onSelectLog,
   flaggedLogIdMap,
+  canUndoMerge = false,
+  onUndoMerge,
   onShowToast,
   onNavigateToIdentitas,
   onNavigateToModule,
 }) => {
   const [diffMode, setDiffMode] = useState<'split' | 'unified'>('split');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [confirmUndoMerge, setConfirmUndoMerge] = useState(false);
+
+  useEffect(() => {
+    setConfirmUndoMerge(false);
+  }, [log?.id, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -671,12 +681,30 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
                   </div>
                 </div>
                 <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Proyek &amp; Salur</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">Relasi Dialihkan</div>
                   <div className="font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-0.5">
-                    {mergeRecord.transferredData.projectsUpdated} proyek · {mergeRecord.transferredData.salurOrdersUpdated} salur
+                    {mergeRecord.transferredData.projectsUpdated} prj ·{' '}
+                    {mergeRecord.transferredData.salurOrdersUpdated} slr ·{' '}
+                    {(mergeRecord.transferredData.donasiOrdersUpdated ?? 0) +
+                      (mergeRecord.transferredData.dharmaPatronUpdated ?? 0) +
+                      (mergeRecord.transferredData.ajarOrdersUpdated ?? 0)}{' '}
+                    don/dpr/ajr
                   </div>
                 </div>
               </div>
+
+              {(log.metadata?.isRolledBack || mergeRecord.isRolledBack) && (
+                <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-2 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                  <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    Penggabungan ini sudah di-rollback
+                    {log.metadata?.rolledBackBy || mergeRecord.rolledBackBy
+                      ? ` oleh ${log.metadata?.rolledBackBy || mergeRecord.rolledBackBy}`
+                      : ''}
+                    .
+                  </span>
+                </div>
+              )}
 
               {mergeRecord.transferredData.fieldsList.length > 0 && (
                 <div className="text-[11px] text-slate-600 dark:text-slate-300">
@@ -808,7 +836,47 @@ export const CentralAuditDiffModal: React.FC<CentralAuditDiffModalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {log.actionType === 'Merge' &&
+              mergeRecord &&
+              !(log.metadata?.isRolledBack || mergeRecord.isRolledBack) &&
+              canUndoMerge &&
+              onUndoMerge && (
+                confirmUndoMerge ? (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/50 text-xs">
+                    <span className="text-rose-700 dark:text-rose-300 font-medium">
+                      Konfirmasi rollback?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmUndoMerge(false);
+                        onUndoMerge(mergeRecord.id);
+                      }}
+                      className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer"
+                    >
+                      Ya, Pulihkan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmUndoMerge(false)}
+                      className="px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-800 cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmUndoMerge(true)}
+                    className="px-3.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/80 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Rollback Merge</span>
+                  </button>
+                )
+              )}
+
             {log.module === 'IDENTITAS' && onNavigateToIdentitas && (
               <button
                 type="button"

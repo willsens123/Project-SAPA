@@ -2,20 +2,30 @@
   "entities": {
     "erpEntity": {
       "title": "ErpEntity",
-      "description": "YPPLN ERP document state with JSON payload and metadata",
+      "description": "YPPLN ERP document state containing synchronized dataset items (identitas, mutasi, salur_orders, donasi_orders, transaksi_ajar, pengeluaran, pos_keuangan, coa_accounts, projects, organisasi, dharma_patron_rutin, central_audit_logs, merge_session_records, identitas_change_logs, rbac_permissions, member_accounts, login_activity_logs, sapa_coverage_zones, cuti_karyawan, stok_salur_items, gudang_salur_data, stock_in_out_salur, lokasi_stok_salur, jenis_perubahan_salur)",
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier of the entity"
+          "description": "Unique identifier of the entity collection",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
         },
         "updatedAt": {
           "type": "string",
-          "description": "ISO timestamp of last update"
+          "description": "ISO timestamp of last update",
+          "minLength": 10,
+          "maxLength": 64
+        },
+        "items": {
+          "type": "array",
+          "description": "Array of serialized domain records for the collection (bounded <= 1500 entries)"
         },
         "data": {
           "type": "string",
-          "description": "JSON serialized data of the entity"
+          "description": "Optional JSON serialized data of the entity",
+          "maxLength": 500000
         }
       },
       "required": ["id", "updatedAt"]
@@ -24,7 +34,7 @@
   "firestore": {
     "/erp_state/{docId}": {
       "schema": "erpEntity",
-      "description": "Real-time synchronized ERP dataset across all devices and Vercel instances"
+      "description": "Real-time synchronized ERP dataset across admin devices (including central_audit_logs, merge_session_records, identitas_change_logs, dharma_patron_rutin, rbac_permissions, member_accounts, login_activity_logs, sapa_coverage_zones, cuti_karyawan, stok_salur_items, gudang_salur_data, stock_in_out_salur, lokasi_stok_salur, and jenis_perubahan_salur)"
     }
   }
 }

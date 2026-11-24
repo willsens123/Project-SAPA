@@ -26,6 +26,7 @@ interface AddEditCutiKaryawanModalProps {
   onSave: (item: CutiKaryawanItem) => void;
   editingItem?: CutiKaryawanItem | null;
   karyawanList: KaryawanItem[];
+  currentUserName?: string;
 }
 
 export const AddEditCutiKaryawanModal: React.FC<AddEditCutiKaryawanModalProps> = ({
@@ -34,6 +35,7 @@ export const AddEditCutiKaryawanModal: React.FC<AddEditCutiKaryawanModalProps> =
   onSave,
   editingItem,
   karyawanList,
+  currentUserName,
 }) => {
   const [selectedKaryawanId, setSelectedKaryawanId] = useState<string>('');
   const [jenisCuti, setJenisCuti] = useState<JenisCuti>('Ijin Cuti Full');
@@ -142,7 +144,7 @@ export const AddEditCutiKaryawanModal: React.FC<AddEditCutiKaryawanModalProps> =
         editingItem?.tanggalPengajuan || new Date().toISOString().split('T')[0],
       disetujuiOleh:
         status === 'Disetujui'
-          ? editingItem?.disetujuiOleh || 'Ko Agus (UMM)'
+          ? editingItem?.disetujuiOleh || currentUserName || 'Admin UMM'
           : undefined,
     };
 

@@ -5,7 +5,7 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  User,
+  User as UserIcon,
   Building2,
   AlertCircle,
   CheckCircle2,
@@ -15,8 +15,13 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
-import { KaryawanItem } from '../types';
-import { registerMemberAccountInFirestore } from '../firebase/authAccountService';
+import { KaryawanItem, LoginAuthMethod } from '../types';
+import {
+  fetchLatestMemberAccountsFromFirestore,
+  registerMemberAccountInFirestore,
+  upgradeMemberPasswordHashInFirestore,
+} from '../firebase/authAccountService';
+import { verifyPassword } from '../utils/passwordHash';
 import { AppTheme } from '../utils/themeManager';
 
 interface AuthPortalViewProps {
@@ -27,7 +32,11 @@ interface AuthPortalViewProps {
   theme?: AppTheme;
   onToggleTheme?: () => void;
   onRegisterSuccess: (createdAccount: KaryawanItem, updatedList: KaryawanItem[]) => void;
-  onLoginSuccess: (user: KaryawanItem, rememberMe?: boolean) => void;
+  onLoginSuccess: (
+    user: KaryawanItem,
+    rememberMe?: boolean,
+    authMethod?: LoginAuthMethod
+  ) => void;
 }
 
 const DIVISI_OPTIONS = [
@@ -49,7 +58,7 @@ const DIVISI_OPTIONS = [
 export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
   accounts,
   isLoadingAccounts,
-  initialMode = 'register',
+  initialMode = 'login',
   logoutNotice = null,
   theme = 'light',
   onToggleTheme,
@@ -89,9 +98,30 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
   const [loginAccount, setLoginAccount] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSuccessBanner, setLoginSuccessBanner] = useState<string | null>(null);
+
+  const completeEnterWorkspace = (
+    user: KaryawanItem,
+    remember: boolean,
+    authMethod: LoginAuthMethod
+  ) => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      onLoginSuccess(user, remember, authMethod);
+      return;
+    }
+
+    setIsEnteringWorkspace(true);
+    exitTimerRef.current = window.setTimeout(() => {
+      onLoginSuccess(user, remember, authMethod);
+    }, 220);
+  };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,19 +131,11 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
       setRegisterError('Nama lengkap anggota wajib diisi.');
       return;
     }
-    if (!regNamaAkun.trim()) {
-      setRegisterError('Nama akun / email login wajib diisi.');
+    if (!regNamaAkun.trim() || regNamaAkun.trim().length < 3) {
+      setRegisterError('Nama akun / email login minimal 3 karakter.');
       return;
     }
-    if (regNamaAkun.trim().length < 3) {
-      setRegisterError('Nama akun minimal 3 karakter.');
-      return;
-    }
-    if (!regPassword) {
-      setRegisterError('Password wajib diisi.');
-      return;
-    }
-    if (regPassword.length < 4) {
+    if (!regPassword || regPassword.length < 4) {
       setRegisterError('Password minimal 4 karakter.');
       return;
     }
@@ -137,12 +159,11 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
 
       onRegisterSuccess(created, updatedList);
 
-      // Clear register form and move directly to Login page with registered account pre-filled
       setLoginAccount(created.emailLogin);
       setLoginPassword('');
       setLoginError(null);
       setLoginSuccessBanner(
-        `Registrasi "${created.namaLengkap}" berhasil! Akun "${created.emailLogin}" telah tersimpan. Silakan login untuk melanjutkan.`
+        `Registrasi "${created.namaLengkap}" berhasil! Akun "${created.emailLogin}" telah tersimpan. Silakan login.`
       );
       setRegNamaLengkap('');
       setRegNamaPanggilan('');
@@ -159,14 +180,9 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
     }
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(null);
-
-    if (isLoadingAccounts && accounts.length === 0) {
-      setLoginError('Sedang memuat data akun anggota, silakan coba sesaat lagi.');
-      return;
-    }
 
     const identifier = loginAccount.trim().toLowerCase();
     if (!identifier) {
@@ -178,44 +194,63 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
       return;
     }
 
-    const matched = accounts.find(
-      (acc) =>
-        (acc.emailLogin || '').trim().toLowerCase() === identifier ||
-        (acc.kodeKaryawan || '').trim().toLowerCase() === identifier
-    );
+    setIsLoggingIn(true);
+    try {
+      const authoritativeList = await fetchLatestMemberAccountsFromFirestore(accounts);
+      if (isLoadingAccounts && authoritativeList.length === 0) {
+        setLoginError('Sedang memuat data akun anggota, silakan coba sesaat lagi.');
+        return;
+      }
 
-    if (!matched) {
-      setLoginError(
-        `Akun "${loginAccount.trim()}" tidak ditemukan. Silakan periksa nama akun atau daftar di tab Register.`
+      const matched = authoritativeList.find(
+        (acc) =>
+          (acc.emailLogin || '').trim().toLowerCase() === identifier ||
+          (acc.kodeKaryawan || '').trim().toLowerCase() === identifier
       );
-      return;
-    }
 
-    if (matched.aktif === false) {
+      if (!matched) {
+        setLoginError(
+          `Akun "${loginAccount.trim()}" tidak ditemukan. Silakan periksa nama akun atau daftar di tab Register.`
+        );
+        return;
+      }
+
+      if (matched.aktif === false) {
+        setLoginError(
+          `Akun "${matched.namaLengkap}" berstatus Tidak Aktif. Hubungi Super Admin.`
+        );
+        return;
+      }
+
+      const pwCheck = await verifyPassword(loginPassword, matched.password);
+      if (!pwCheck.valid) {
+        setLoginError('Password tidak sesuai. Silakan periksa kembali password akun Anda.');
+        return;
+      }
+
+      let activeUser = matched;
+      if (pwCheck.needsRehash) {
+        const migrated = await upgradeMemberPasswordHashInFirestore(
+          matched.id,
+          loginPassword,
+          authoritativeList
+        );
+        if (migrated) {
+          activeUser = migrated.updatedUser;
+          onRegisterSuccess(migrated.updatedUser, migrated.updatedList);
+        }
+      }
+
+      completeEnterWorkspace(activeUser, rememberMe, 'member_credentials');
+    } catch (err) {
       setLoginError(
-        `Akun "${matched.namaLengkap}" berstatus Tidak Aktif. Silakan hubungi admin atau gunakan akun anggota yang aktif.`
+        err instanceof Error
+          ? err.message
+          : 'Gagal memeriksa kredensial akun anggota. Silakan coba lagi.'
       );
-      return;
+    } finally {
+      setIsLoggingIn(false);
     }
-
-    if (matched.password !== loginPassword) {
-      setLoginError('Password tidak sesuai. Silakan periksa kembali password akun Anda.');
-      return;
-    }
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReducedMotion) {
-      onLoginSuccess(matched, rememberMe);
-      return;
-    }
-
-    setIsEnteringWorkspace(true);
-    exitTimerRef.current = window.setTimeout(() => {
-      onLoginSuccess(matched, rememberMe);
-    }, 230);
   };
 
   const passwordsMatch =
@@ -231,9 +266,8 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           : 'animate-sapa-portal-enter'
       }`}
     >
-      {/* Left Column: Clean Architectural Brand & Workspace Panel (Desktop, Tanpa Gambar) */}
+      {/* Left Column: Brand & Workspace Overview */}
       <aside className="hidden lg:flex lg:col-span-6 xl:col-span-7 relative overflow-hidden bg-[#033237] text-white flex-col justify-between p-10 xl:p-14">
-        {/* Animated Ambient Light Layers (Compositor-Only) */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-24 -left-20 w-[28rem] h-[28rem] rounded-full bg-[#14b8a6]/20 blur-3xl animate-sapa-drift"
@@ -246,27 +280,6 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]"
         />
-
-        {/* Subtle Architectural Orbital Rings */}
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 420 420"
-          className="pointer-events-none absolute -top-24 -right-24 w-[28rem] h-[28rem] text-teal-200/20 animate-sapa-orbit"
-          fill="none"
-        >
-          <circle cx="210" cy="210" r="190" stroke="currentColor" strokeWidth="1" strokeDasharray="6 10" />
-          <circle cx="210" cy="210" r="140" stroke="currentColor" strokeWidth="1" strokeOpacity="0.65" />
-          <circle cx="210" cy="210" r="90" stroke="currentColor" strokeWidth="1" strokeDasharray="3 8" />
-        </svg>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 320 320"
-          className="pointer-events-none absolute -bottom-20 left-1/3 w-[20rem] h-[20rem] text-teal-100/10 animate-sapa-orbit-reverse"
-          fill="none"
-        >
-          <circle cx="160" cy="160" r="145" stroke="currentColor" strokeWidth="1" strokeDasharray="4 12" />
-          <circle cx="160" cy="160" r="98" stroke="currentColor" strokeWidth="1" strokeOpacity="0.6" />
-        </svg>
 
         {/* Top Foundation Lockup */}
         <div className="relative z-10 flex items-center gap-3.5">
@@ -296,7 +309,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
         {/* Bottom Editorial Anchor */}
         <div className="relative z-10 max-w-2xl">
           <p className="text-xs font-semibold text-teal-200/90 tracking-wide mb-3">
-            Manajemen Proyek · Keuangan Terpadu · Distribusi Anggota
+            Sistem Manajemen Operasional &amp; Amanah Terpadu · Audit Terpusat
           </p>
           <h1 className="text-3xl xl:text-4xl font-extrabold text-white tracking-tight leading-[1.18] [text-wrap:balance]">
             Satu ruang kerja terpadu untuk program, arsip, dan amanah yayasan.
@@ -304,27 +317,26 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           <p className="mt-4 text-sm xl:text-[15px] text-teal-50/85 leading-relaxed max-w-xl">
             Koordinasikan target proyek lintas divisi, pantau arus kas dan jurnal umum
             secara transparan, serta kelola alur distribusi S-SALUR dan donasi
-            D-DONASI dalam satu sistem terstruktur.
+            D-DONASI dengan perlindungan akses berbasis peran.
           </p>
 
-          {/* Clean Hairline Module Highlights (No pills, no card boxes) */}
           <div className="mt-8 pt-6 border-t border-white/15 grid grid-cols-3 gap-6">
-            <div className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 motion-reduce:transition-none">
+            <div>
               <h2 className="text-xs font-bold text-white">Proyek &amp; Agenda</h2>
               <p className="mt-1 text-xs text-teal-100/75 leading-relaxed">
-                Timeline program, to-do tim, dan pantauan tenggat divisi.
+                Timeline program, filter divisi RBAC, dan pengingat tenggat.
               </p>
             </div>
-            <div className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 motion-reduce:transition-none">
+            <div>
               <h2 className="text-xs font-bold text-white">Laporan Keuangan</h2>
               <p className="mt-1 text-xs text-teal-100/75 leading-relaxed">
-                Jurnal umum otomatis, mutasi rekening, dan grafik arus kas.
+                Jurnal umum otomatis, piutang Dharma Patron, dan arus kas.
               </p>
             </div>
-            <div className="transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 motion-reduce:transition-none">
-              <h2 className="text-xs font-bold text-white">S-SALUR &amp; Donasi</h2>
+            <div>
+              <h2 className="text-xs font-bold text-white">Keamanan &amp; Audit</h2>
               <p className="mt-1 text-xs text-teal-100/75 leading-relaxed">
-                Pencatatan order, stok gudang, dan laporan anggota terpusat.
+                Jejak audit aktor asli, kontrol sesi perangkat, dan sinkronisasi cloud.
               </p>
             </div>
           </div>
@@ -333,7 +345,6 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
 
       {/* Right Column: Clean Auth Workspace */}
       <div className="lg:col-span-6 xl:col-span-5 bg-white dark:bg-slate-950 flex flex-col justify-between min-h-screen p-5 sm:p-8 lg:p-12 xl:p-14 border-l border-slate-200/80 dark:border-slate-800">
-        {/* Top Bar (Mobile Brand Lockup + Desktop Quiet Context & Theme Toggle) */}
         <header className="w-full max-w-md mx-auto">
           <div className="flex lg:hidden items-center justify-between gap-3 pb-5 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3 min-w-0">
@@ -364,8 +375,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 type="button"
                 onClick={onToggleTheme}
                 aria-label={theme === 'dark' ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap'}
-                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
-                className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] dark:hover:text-teal-400 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] flex items-center justify-center shrink-0 cursor-pointer"
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
@@ -375,15 +385,13 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           <div className="hidden lg:flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
             <span>Portal Anggota Proyek SAPA</span>
             <div className="flex items-center gap-3">
-              <span className="text-slate-400 dark:text-slate-500">Akses Internal Divisi</span>
               {onToggleTheme && (
                 <button
                   id="btn-auth-toggle-theme"
                   type="button"
                   onClick={onToggleTheme}
                   aria-label={theme === 'dark' ? 'Aktifkan Mode Terang' : 'Aktifkan Mode Gelap'}
-                  title={theme === 'dark' ? 'Ganti ke Mode Terang' : 'Ganti ke Mode Gelap'}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] dark:hover:text-teal-400 hover:border-teal-300 dark:hover:border-teal-700 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-[#05828e] transition-colors cursor-pointer"
                 >
                   {theme === 'dark' ? (
                     <>
@@ -408,9 +416,8 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           <div
             role="tablist"
             aria-label="Mode Portal Akun"
-            className="relative p-1 bg-slate-100 dark:bg-slate-900 rounded-xl grid grid-cols-2 gap-1 mb-7 border border-transparent dark:border-slate-800"
+            className="relative p-1 bg-slate-100 dark:bg-slate-900 rounded-xl grid grid-cols-2 gap-1 mb-6 border border-transparent dark:border-slate-800"
           >
-            {/* Sliding Active Pill Background */}
             <div
               aria-hidden="true"
               className={`absolute top-1 bottom-1 left-1 w-[calc(50%-0.25rem)] rounded-lg bg-white dark:bg-slate-800 shadow-xs transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
@@ -426,7 +433,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 setMode('register');
                 setRegisterError(null);
               }}
-              className={`relative z-10 min-h-[42px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05828e] ${
+              className={`relative z-10 min-h-[40px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
                 mode === 'register'
                   ? 'text-slate-900 dark:text-white font-bold'
                   : 'text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-200'
@@ -444,7 +451,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 setMode('login');
                 setLoginError(null);
               }}
-              className={`relative z-10 min-h-[42px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 transition-colors duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05828e] ${
+              className={`relative z-10 min-h-[40px] px-3 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
                 mode === 'login'
                   ? 'text-slate-900 dark:text-white font-bold'
                   : 'text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-slate-200'
@@ -455,7 +462,6 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
             </button>
           </div>
 
-          {/* Logout Notice Banner */}
           {logoutNotice && mode === 'login' && !loginSuccessBanner && (
             <div className="mb-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 animate-sapa-panel-enter">
               <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -467,11 +473,18 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           )}
 
           {mode === 'register' ? (
-            <form key="register-form" onSubmit={handleRegisterSubmit} className="space-y-4 animate-sapa-panel-enter">
-              <div className="mb-5">
-                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight [text-wrap:balance]">
+            <form
+              key="register-form"
+              onSubmit={handleRegisterSubmit}
+              className="space-y-4 animate-sapa-panel-enter"
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Registrasi Akun Anggota
                 </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Daftarkan akun anggota baru untuk mengakses sistem ERP Proyek SAPA.
+                </p>
               </div>
 
               {registerError && (
@@ -493,14 +506,14 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     Nama Lengkap <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <UserIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="reg-nama-lengkap"
                       type="text"
                       value={regNamaLengkap}
                       onChange={(e) => setRegNamaLengkap(e.target.value)}
                       placeholder="Budi Santoso"
-                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 </div>
@@ -518,7 +531,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     value={regNamaPanggilan}
                     onChange={(e) => setRegNamaPanggilan(e.target.value)}
                     placeholder="Budi (opsional)"
-                    className="w-full h-11 px-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 px-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -539,7 +552,7 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                       value={regNamaAkun}
                       onChange={(e) => setRegNamaAkun(e.target.value)}
                       placeholder="budi@lamrimnesia.org"
-                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                      className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 </div>
@@ -552,12 +565,12 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     Divisi <span className="text-rose-600 dark:text-rose-400">*</span>
                   </label>
                   <div className="relative">
-                    <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <select
                       id="reg-divisi"
                       value={regDivisi}
                       onChange={(e) => setRegDivisi(e.target.value)}
-                      className="w-full h-11 pl-9 pr-3 text-sm font-semibold bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 cursor-pointer transition-all duration-150"
+                      className="w-full h-11 pl-9 pr-3 text-sm font-semibold bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 cursor-pointer"
                     >
                       {DIVISI_OPTIONS.map((div) => (
                         <option key={div} value={div}>
@@ -584,12 +597,12 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Minimal 4 karakter"
-                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
                     aria-label={showRegPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                   >
                     {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -626,16 +639,12 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     value={regConfirmPassword}
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     placeholder="Ulangi password Anda"
-                    className={`w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-3 transition-all duration-150 ${
-                      passwordsMismatch
-                        ? 'border-rose-300 dark:border-rose-700 focus:border-rose-500 focus:ring-rose-500/12'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 focus:border-[#05828e] focus:ring-[#05828e]/12'
-                    }`}
+                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegConfirmPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
                     aria-label={
                       showRegConfirmPassword
                         ? 'Sembunyikan konfirmasi password'
@@ -656,38 +665,29 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                   id="btn-submit-register"
                   type="submit"
                   disabled={isRegistering}
-                  className="group w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#05828e] hover:bg-[#046e78] active:scale-[0.99] disabled:opacity-60 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#05828e]"
+                  className="group w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#05828e] hover:bg-[#046e78] disabled:opacity-60 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <UserPlus className="w-4 h-4 shrink-0" />
                   <span className="whitespace-nowrap">
                     {isRegistering ? 'Menyimpan Akun...' : 'Daftar & Lanjut ke Login'}
                   </span>
-                  <ArrowRight className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none" />
-                </button>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('login');
-                    setRegisterError(null);
-                  }}
-                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer"
-                >
-                  Sudah memiliki akun anggota?{' '}
-                  <span className="text-[#05828e] dark:text-teal-400 underline underline-offset-4">
-                    Masuk ke halaman Login
-                  </span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
                 </button>
               </div>
             </form>
           ) : (
-            <form key="login-form" onSubmit={handleLoginSubmit} className="space-y-4 animate-sapa-panel-enter">
-              <div className="mb-5">
-                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight [text-wrap:balance]">
-                  Masuk ke Workspace
+            <form
+              key="login-form"
+              onSubmit={handleLoginSubmit}
+              className="space-y-4 animate-sapa-panel-enter"
+            >
+              <div className="mb-4">
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  Masuk dengan Akun Anggota
                 </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Gunakan nama akun, email login, atau kode anggota beserta password Anda.
+                </p>
               </div>
 
               {loginSuccessBanner && (
@@ -718,14 +718,14 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                   Nama Akun / Email / Kode Anggota <span className="text-rose-600 dark:text-rose-400">*</span>
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <UserIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     id="login-nama-akun"
                     type="text"
                     value={loginAccount}
                     onChange={(e) => setLoginAccount(e.target.value)}
-                    placeholder="Masukkan nama akun atau email"
-                    className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    placeholder="Masukkan nama akun atau kode"
+                    className="w-full h-11 pl-10 pr-3.5 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -745,12 +745,12 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="Masukkan password akun"
-                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 hover:border-slate-300 dark:hover:border-slate-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-[#05828e] focus:ring-3 focus:ring-[#05828e]/12 transition-all duration-150"
+                    className="w-full h-11 pl-10 pr-11 text-sm bg-slate-50/70 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword((prev) => !prev)}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
                     aria-label={showLoginPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -758,7 +758,6 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 </div>
               </div>
 
-              {/* Remember Me Checkbox Control */}
               <div className="flex items-center justify-between pt-0.5">
                 <label
                   htmlFor="login-remember-me"
@@ -773,15 +772,15 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                   />
                   <span
                     aria-hidden="true"
-                    className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center transition-all duration-150 shrink-0 peer-focus-visible:ring-2 peer-focus-visible:ring-[#05828e] ${
+                    className={`w-4.5 h-4.5 rounded-md border flex items-center justify-center transition-all duration-150 shrink-0 ${
                       rememberMe
-                        ? 'bg-[#05828e] border-[#05828e] text-white shadow-2xs'
-                        : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-slate-400 dark:group-hover:border-slate-600'
+                        ? 'bg-[#05828e] border-[#05828e] text-white'
+                        : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700'
                     }`}
                   >
                     {rememberMe && <Check className="w-3 h-3 stroke-[3]" />}
                   </span>
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Remember Me
                   </span>
                 </label>
@@ -794,29 +793,16 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
                 <button
                   id="btn-submit-login"
                   type="submit"
-                  disabled={isEnteringWorkspace}
-                  className="group w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#05828e] hover:bg-[#046e78] active:scale-[0.99] disabled:opacity-80 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all duration-150 motion-reduce:transition-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#05828e]"
+                  disabled={isEnteringWorkspace || isLoggingIn}
+                  className="group w-full min-h-[46px] px-4 py-2.5 rounded-xl bg-[#05828e] hover:bg-[#046e78] disabled:opacity-70 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
-                  <LogIn className="w-4 h-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none" />
+                  <LogIn className="w-4 h-4 shrink-0" />
                   <span className="whitespace-nowrap">
-                    {isEnteringWorkspace ? 'Membuka Dashboard...' : 'Masuk ke Aplikasi'}
-                  </span>
-                </button>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode('register');
-                    setLoginError(null);
-                    setLoginSuccessBanner(null);
-                  }}
-                  className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer"
-                >
-                  Belum memiliki akun anggota?{' '}
-                  <span className="text-[#05828e] dark:text-teal-400 underline underline-offset-4">
-                    Register Anggota Baru
+                    {isLoggingIn
+                      ? 'Memverifikasi Akun...'
+                      : isEnteringWorkspace
+                      ? 'Membuka Dashboard...'
+                      : 'Masuk ke Aplikasi'}
                   </span>
                 </button>
               </div>
@@ -824,7 +810,6 @@ export const AuthPortalView: React.FC<AuthPortalViewProps> = ({
           )}
         </main>
 
-        {/* Quiet Footer */}
         <footer className="w-full max-w-md mx-auto pt-6 border-t border-slate-100 dark:border-slate-800 text-center lg:text-left text-xs text-slate-400 dark:text-slate-500">
           &copy; {new Date().getFullYear()} Yayasan Pelestarian dan Pengembangan Lamrim Nusantara · Sistem Proyek SAPA
         </footer>

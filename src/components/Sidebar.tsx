@@ -66,7 +66,12 @@ import {
   CheckCircle2,
   LogOut,
 } from 'lucide-react';
-import { ProjectItem, AppView, KaryawanItem } from '../types';
+import { ProjectItem, AppView, KaryawanItem, RbacPolicyConfig } from '../types';
+import {
+  canAccessView,
+  resolveEffectiveRole,
+  ROLE_METADATA,
+} from '../utils/rbacManager';
 import { SSalurIcon } from './SSalurIcon';
 import { ItemSSalurIcon } from './ItemSSalurIcon';
 import { DDonasiIcon } from './DDonasiIcon';
@@ -92,7 +97,9 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
   currentUser?: KaryawanItem | null;
+  rbacConfig?: RbacPolicyConfig;
   onLogout?: () => void;
+  onOpenChangePassword?: () => void;
   animateEntrance?: boolean;
 }
 
@@ -128,7 +135,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onMobileClose,
   currentUser,
+  rbacConfig,
   onLogout,
+  onOpenChangePassword,
   animateEntrance = false,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -891,11 +900,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  const visibleNavItems = useMemo(() => {
+    if (!currentUser) return navItems;
+    return navItems.filter((item) => canAccessView(currentUser, item.view, rbacConfig));
+  }, [navItems, currentUser, rbacConfig]);
+
   const navItemsMap = useMemo(() => {
     const map = new Map<string, NavItemDef>();
-    navItems.forEach((item) => map.set(item.id, item));
+    visibleNavItems.forEach((item) => map.set(item.id, item));
     return map;
-  }, [navItems]);
+  }, [visibleNavItems]);
 
   // Logical condensed categories grouping all items cleanly
   const categories: MenuCategoryDef[] = useMemo(
@@ -1073,9 +1087,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     []
   );
 
+  const visibleCategories = useMemo(() => {
+    return categories
+      .map((cat) => ({
+        ...cat,
+        itemIds: cat.itemIds.filter((id) => navItemsMap.has(id)),
+      }))
+      .filter((cat) => cat.itemIds.length > 0);
+  }, [categories, navItemsMap]);
+
   // Determine which category holds the current view
   const activeCategoryId = useMemo(() => {
-    for (const cat of categories) {
+    for (const cat of visibleCategories) {
       for (const itemId of cat.itemIds) {
         const item = navItemsMap.get(itemId);
         if (item && checkIsItemActive(item.view, currentView)) {
@@ -1083,8 +1106,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
       }
     }
-    return 'cat-utama';
-  }, [categories, navItemsMap, currentView]);
+    return visibleCategories[0]?.id || 'cat-utama';
+  }, [visibleCategories, navItemsMap, currentView]);
 
   // Track expanded categories (accordion). Default: expand active category
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => ({
@@ -1110,7 +1133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleExpandAll = () => {
     const allExpanded: Record<string, boolean> = {};
-    categories.forEach((cat) => {
+    visibleCategories.forEach((cat) => {
       allExpanded[cat.id] = true;
     });
     setExpandedCategories(allExpanded);
@@ -1129,12 +1152,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const filteredNavItems = useMemo(() => {
     if (!isSearching) return [];
     const query = searchQuery.toLowerCase().trim();
-    return navItems.filter(
+    return visibleNavItems.filter(
       (item) =>
         item.title.toLowerCase().includes(query) ||
         item.subtitle.toLowerCase().includes(query)
     );
-  }, [isSearching, searchQuery, navItems]);
+  }, [isSearching, searchQuery, visibleNavItems]);
 
   const renderNavButton = (item: NavItemDef, isCompact = true) => {
     const Icon = item.icon;
@@ -1372,7 +1395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : isCollapsed ? (
           /* Case 2: Collapsed Icon-Only Mode */
           <div className="flex flex-col gap-1.5 py-1">
-            {categories.map((cat) => {
+            {visibleCategories.map((cat) => {
               const CatIcon = cat.icon;
               const isCategoryActive = cat.id === activeCategoryId;
               return (
@@ -1435,7 +1458,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ) : (
           /* Case 3: Expanded Categorized Accordion (Compact, Summarized Sidebar) */
-          categories.map((cat) => {
+          visibleCategories.map((cat) => {
             const CatIcon = cat.icon;
             const isCategoryActive = cat.id === activeCategoryId;
             const isExpanded = !!expandedCategories[cat.id];
@@ -1601,25 +1624,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {currentUser?.namaPanggilan || currentUser?.namaLengkap || 'Anggota SAPA'}
                   </div>
                   <div className="text-[10px] text-slate-400 dark:text-slate-400 truncate">
-                    {currentUser?.kodeKaryawan ? `${currentUser.kodeKaryawan} • ` : ''}
+                    {currentUser?.kodeKaryawan ? `${currentUser.kodeKaryawan} · ` : ''}
                     {currentUser?.divisi || 'Online'}
+                    {currentUser
+                      ? ` · ${ROLE_METADATA[resolveEffectiveRole(currentUser)].shortLabel}`
+                      : ''}
                   </div>
                 </div>
               </div>
-              {onLogout ? (
-                <button
-                  id="btn-sidebar-logout"
-                  type="button"
-                  onClick={onLogout}
-                  title="Logout / Keluar Akun"
-                  className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 text-rose-600 dark:text-rose-400 text-[10.5px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3 h-3" />
-                  <span>Logout</span>
-                </button>
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-900 shrink-0" />
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {onOpenChangePassword && (
+                  <button
+                    id="btn-sidebar-change-password"
+                    type="button"
+                    onClick={onOpenChangePassword}
+                    title="Ganti Password Akun"
+                    aria-label="Ganti Password Akun"
+                    className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/70 text-[#05828e] dark:text-teal-300 transition-colors cursor-pointer"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {onLogout ? (
+                  <button
+                    id="btn-sidebar-logout"
+                    type="button"
+                    onClick={onLogout}
+                    title="Logout / Keluar Akun"
+                    className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/70 text-rose-600 dark:text-rose-400 text-[10.5px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>Logout</span>
+                  </button>
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-900 shrink-0" />
+                )}
+              </div>
             </div>
           </>
         ) : (
@@ -1628,6 +1668,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-900"
               title="Online"
             />
+            {onOpenChangePassword && (
+              <button
+                type="button"
+                onClick={onOpenChangePassword}
+                title="Ganti Password Akun"
+                aria-label="Ganti Password Akun"
+                className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/70 text-[#05828e] dark:text-teal-300 transition-colors cursor-pointer"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+              </button>
+            )}
             {onLogout && (
               <button
                 type="button"
@@ -1678,7 +1729,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <EditMenuArrangementModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        allNavItems={navItems}
+        allNavItems={visibleNavItems}
         currentConfig={menuConfig}
         onSave={(newConfig) => {
           setMenuConfig(newConfig);

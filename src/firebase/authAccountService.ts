@@ -1,7 +1,8 @@
 import { doc, getDoc, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { auth, db } from './config';
+import { db } from './config';
 import { KaryawanItem } from '../types';
 import { INITIAL_KARYAWAN, clearLegacyAuthLocalStorage } from '../karyawanData';
+import { hashPassword, isHashedPassword, verifyPassword } from '../utils/passwordHash';
 
 const MEMBER_ACCOUNTS_COLLECTION = 'erp_state';
 const MEMBER_ACCOUNTS_DOC_ID = 'member_accounts';
@@ -90,16 +91,12 @@ export function handleFirestoreError(
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid ?? null,
-      email: auth.currentUser?.email ?? null,
-      emailVerified: auth.currentUser?.emailVerified ?? null,
-      isAnonymous: auth.currentUser?.isAnonymous ?? null,
-      tenantId: auth.currentUser?.tenantId ?? null,
-      providerInfo:
-        auth.currentUser?.providerData?.map((provider) => ({
-          providerId: provider.providerId,
-          email: provider.email,
-        })) || [],
+      userId: null,
+      email: null,
+      emailVerified: null,
+      isAnonymous: null,
+      tenantId: null,
+      providerInfo: [],
     },
     operationType,
     path,
@@ -132,6 +129,8 @@ function normalizeAccountRecord(item: KaryawanItem, idx: number): KaryawanItem {
     namaLengkap: fullName,
     namaPanggilan: item.namaPanggilan?.trim() || fullName.split(' ')[0],
     divisi: (item.divisi || 'UMM').trim().toUpperCase(),
+    role: item.role || fallback?.role || (item.id === 'karyawan-1' ? 'super_admin' : 'admin_operasional'),
+    ...(item.customPermissions ? { customPermissions: item.customPermissions } : {}),
     emailLogin: (item.emailLogin || '').trim(),
     password: item.password || '',
     avatarInitial: (item.avatarInitial || fullName.charAt(0) || 'A').toUpperCase(),
@@ -141,6 +140,26 @@ function normalizeAccountRecord(item: KaryawanItem, idx: number): KaryawanItem {
     ...(item.tanggalBerhenti ? { tanggalBerhenti: item.tanggalBerhenti } : {}),
     aktif: item.aktif !== undefined ? item.aktif : item.tanggalBerhenti ? false : true,
   };
+}
+
+export async function fetchLatestMemberAccountsFromFirestore(
+  fallback: KaryawanItem[] = INITIAL_KARYAWAN
+): Promise<KaryawanItem[]> {
+  const path = `${MEMBER_ACCOUNTS_COLLECTION}/${MEMBER_ACCOUNTS_DOC_ID}`;
+  const docRef = doc(db, MEMBER_ACCOUNTS_COLLECTION, MEMBER_ACCOUNTS_DOC_ID);
+  try {
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data() as MemberAccountsCloudDoc;
+      if (Array.isArray(data?.items) && data.items.length > 0) {
+        return data.items.map((item, idx) => normalizeAccountRecord(item, idx));
+      }
+    }
+    return fallback;
+  } catch (err) {
+    console.warn('Gagal mengambil akun terbaru dari Firestore, menggunakan data lokal sementara:', path, err);
+    return fallback;
+  }
 }
 
 /**
@@ -173,13 +192,19 @@ export function subscribeToMemberAccounts(
       if (!seededOnce) {
         seededOnce = true;
         try {
+          const hashedSeed = await Promise.all(
+            INITIAL_KARYAWAN.map(async (item) => ({
+              ...item,
+              password: item.password ? await hashPassword(item.password) : '',
+            }))
+          );
           const payload: MemberAccountsCloudDoc = {
             id: MEMBER_ACCOUNTS_DOC_ID,
             updatedAt: new Date().toISOString(),
-            items: INITIAL_KARYAWAN,
+            items: hashedSeed,
           };
           await setDoc(docRef, payload);
-          onUpdate(INITIAL_KARYAWAN);
+          onUpdate(hashedSeed);
           onReady?.();
         } catch (err) {
           onUpdate(INITIAL_KARYAWAN);
@@ -206,13 +231,24 @@ export function subscribeToMemberAccounts(
 }
 
 /**
- * Save entire member accounts list directly to Cloud Firestore (no localStorage).
+ * Save entire member accounts list directly to Cloud Firestore (ensuring all passwords are salted SHA-256 hashes).
  */
 export async function saveMemberAccountsToFirestore(accounts: KaryawanItem[]): Promise<void> {
   clearLegacyAuthLocalStorage();
   const path = `${MEMBER_ACCOUNTS_COLLECTION}/${MEMBER_ACCOUNTS_DOC_ID}`;
   const docRef = doc(db, MEMBER_ACCOUNTS_COLLECTION, MEMBER_ACCOUNTS_DOC_ID);
-  const sanitized = accounts.map((item, idx) => normalizeAccountRecord(item, idx));
+  const sanitized = await Promise.all(
+    accounts.map(async (item, idx) => {
+      const normalized = normalizeAccountRecord(item, idx);
+      if (normalized.password && !isHashedPassword(normalized.password)) {
+        return {
+          ...normalized,
+          password: await hashPassword(normalized.password),
+        };
+      }
+      return normalized;
+    })
+  );
 
   const payload: MemberAccountsCloudDoc = {
     id: MEMBER_ACCOUNTS_DOC_ID,
@@ -236,7 +272,7 @@ export interface RegisterMemberInput {
 }
 
 /**
- * Register a new member account into Cloud Firestore and return the created account + updated list.
+ * Register a new member account into Cloud Firestore with hashed password.
  */
 export async function registerMemberAccountInFirestore(
   input: RegisterMemberInput,
@@ -283,6 +319,7 @@ export async function registerMemberAccountInFirestore(
 
   const fullName = input.namaLengkap.trim();
   const nickname = input.namaPanggilan?.trim() || fullName.split(' ')[0];
+  const hashedPassword = await hashPassword(input.password);
 
   const newAccount: KaryawanItem = {
     id: `karyawan-${Date.now()}`,
@@ -290,8 +327,9 @@ export async function registerMemberAccountInFirestore(
     namaLengkap: fullName,
     namaPanggilan: nickname,
     divisi: (input.divisi || 'UMM').trim().toUpperCase(),
+    role: 'admin_operasional',
     emailLogin: trimmedAccount,
-    password: input.password,
+    password: hashedPassword,
     avatarInitial: fullName.charAt(0).toUpperCase() || 'A',
     avatarBg: AVATAR_COLORS[latestList.length % AVATAR_COLORS.length],
     aktif: true,
@@ -302,4 +340,64 @@ export async function registerMemberAccountInFirestore(
   await saveMemberAccountsToFirestore(updatedList);
 
   return { created: newAccount, updatedList };
+}
+
+/**
+ * Transparently upgrades a legacy plaintext password to a salted SHA-256 hash on successful login.
+ */
+export async function upgradeMemberPasswordHashInFirestore(
+  memberId: string,
+  plainPassword: string,
+  currentAccounts: KaryawanItem[]
+): Promise<{ updatedUser: KaryawanItem; updatedList: KaryawanItem[] } | null> {
+  try {
+    const latest = await fetchLatestMemberAccountsFromFirestore(currentAccounts);
+    const target = latest.find((acc) => acc.id === memberId);
+    if (!target || isHashedPassword(target.password)) {
+      return null;
+    }
+    const hashed = await hashPassword(plainPassword);
+    const updatedUser: KaryawanItem = { ...target, password: hashed };
+    const updatedList = latest.map((acc) => (acc.id === memberId ? updatedUser : acc));
+    await saveMemberAccountsToFirestore(updatedList);
+    return { updatedUser, updatedList };
+  } catch (err) {
+    console.warn('Gagal memigrasikan hash password legacy:', err);
+    return null;
+  }
+}
+
+/**
+ * Verifies current password and saves newly hashed password to Firestore.
+ */
+export async function changeMemberPasswordInFirestore(
+  memberId: string,
+  currentPassword: string,
+  newPassword: string,
+  currentAccounts: KaryawanItem[]
+): Promise<{ updatedUser: KaryawanItem; updatedList: KaryawanItem[] }> {
+  const latest = await fetchLatestMemberAccountsFromFirestore(currentAccounts);
+  const target = latest.find((acc) => acc.id === memberId);
+  if (!target) {
+    throw new Error('Akun anggota tidak ditemukan.');
+  }
+
+  const check = await verifyPassword(currentPassword, target.password);
+  if (!check.valid) {
+    throw new Error('Password saat ini tidak sesuai.');
+  }
+
+  if (!newPassword || newPassword.trim().length < 4) {
+    throw new Error('Password baru minimal 4 karakter.');
+  }
+
+  const hashedNew = await hashPassword(newPassword.trim());
+  const updatedUser: KaryawanItem = {
+    ...target,
+    password: hashedNew,
+  };
+  const updatedList = latest.map((acc) => (acc.id === memberId ? updatedUser : acc));
+  await saveMemberAccountsToFirestore(updatedList);
+
+  return { updatedUser, updatedList };
 }

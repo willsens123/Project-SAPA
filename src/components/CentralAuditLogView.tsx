@@ -72,6 +72,11 @@ interface CentralAuditLogViewProps {
   onTriggerJobScan?: () => void;
   onUpdateAnomalyStatus?: (flagId: string, status: SuspiciousStatus, notes?: string) => void;
   onSimulateAnomaly?: (codeId?: string, name?: string, field?: string) => void;
+  canUndoMerge?: boolean;
+  canClearLogs?: boolean;
+  canManageAnomalies?: boolean;
+  canExportCsv?: boolean;
+  onUndoMerge?: (mergeRecordId: string) => void;
   onBack?: () => void;
   onClearLogs?: () => void;
   onShowToast: (msg: string) => void;
@@ -87,6 +92,7 @@ const CORE_ACTION_CATEGORIES = [
   'Tambah',
   'Ubah',
   'Merge',
+  'Undo Merge',
   'Hapus',
   'Status Bayar',
   'Pengiriman',
@@ -183,6 +189,13 @@ function getActionVisualMeta(actionType: string, isSuspicious: boolean) {
           'bg-violet-600 text-white ring-4 ring-white dark:ring-slate-900',
         labelClass: 'text-violet-700 dark:text-violet-300',
       };
+    case 'Undo Merge':
+      return {
+        icon: RotateCcw,
+        nodeClass:
+          'bg-amber-600 text-white ring-4 ring-white dark:ring-slate-900',
+        labelClass: 'text-amber-700 dark:text-amber-300',
+      };
     case 'Hapus':
       return {
         icon: Trash2,
@@ -229,6 +242,11 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
   onTriggerJobScan,
   onUpdateAnomalyStatus,
   onSimulateAnomaly,
+  canUndoMerge = false,
+  canClearLogs = true,
+  canManageAnomalies = true,
+  canExportCsv = true,
+  onUndoMerge,
   onBack,
   onClearLogs,
   onShowToast,
@@ -271,6 +289,8 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
   const [csvIncludeFilterMeta, setCsvIncludeFilterMeta] = useState<boolean>(true);
   const [isScanningLive, setIsScanningLive] = useState<boolean>(false);
   const [inspectedLog, setInspectedLog] = useState<CentralAuditLogEntry | null>(null);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState<boolean>(false);
+  const [pendingRollbackMergeId, setPendingRollbackMergeId] = useState<string | null>(null);
 
   // Expanded flag cards in Anomaly Panel
   const [expandedFlagIds, setExpandedFlagIds] = useState<Record<string, boolean>>({});
@@ -989,30 +1009,34 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
             <span>{sortOrder === 'desc' ? 'Terbaru' : 'Terlama'}</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setCsvExportScope(selectedModule === 'IDENTITAS' ? 'identitas' : 'current');
-              setIsExportCsvModalOpen(true);
-            }}
-            title="Konfigurasi dan unduh arsip CSV audit log terfilter untuk penyimpanan offline"
-            className="px-3.5 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Ekspor CSV</span>
-            <span className="font-mono tabular-nums px-1.5 py-0.5 rounded bg-white/80 dark:bg-slate-900/70 text-[11px]">
-              {filteredLogs.length}
-            </span>
-          </button>
+          {canExportCsv && (
+            <button
+              type="button"
+              onClick={() => {
+                setCsvExportScope(selectedModule === 'IDENTITAS' ? 'identitas' : 'current');
+                setIsExportCsvModalOpen(true);
+              }}
+              title="Konfigurasi dan unduh arsip CSV audit log terfilter untuk penyimpanan offline"
+              className="px-3.5 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shadow-2xs"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Ekspor CSV</span>
+              <span className="font-mono tabular-nums px-1.5 py-0.5 rounded bg-white/80 dark:bg-slate-900/70 text-[11px]">
+                {filteredLogs.length}
+              </span>
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setIsTestModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Uji Coba</span>
-          </button>
+          {canManageAnomalies && (
+            <button
+              type="button"
+              onClick={() => setIsTestModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Uji Coba</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1210,27 +1234,29 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleManualScan}
-                disabled={isScanningLive}
-                className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3 h-3 ${isScanningLive ? 'animate-spin' : ''}`} />
-                <span>{isScanningLive ? 'Memindai...' : 'Pindai Ulang'}</span>
-              </button>
+            {canManageAnomalies && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleManualScan}
+                  disabled={isScanningLive}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isScanningLive ? 'animate-spin' : ''}`} />
+                  <span>{isScanningLive ? 'Memindai...' : 'Pindai Ulang'}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleSimulate()}
-                className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/50 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
-                title="Kirim 4 modifikasi pengujian"
-              >
-                <Play className="w-3 h-3 fill-current" />
-                <span>Uji Coba 4x</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => handleSimulate()}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/50 text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                  title="Kirim 4 modifikasi pengujian"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Uji Coba 4x</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* List of Flags */}
@@ -1275,31 +1301,33 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                         </button>
                       )}
 
-                      {isActive ? (
-                        <>
+                      {canManageAnomalies && (
+                        isActive ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleFlagStatus(flag, 'INVESTIGATED')}
+                              className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-medium transition-colors cursor-pointer"
+                            >
+                              Tandai Diinvestigasi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleFlagStatus(flag, 'DISMISSED')}
+                              className="px-2.5 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-medium transition-colors cursor-pointer"
+                            >
+                              Abaikan
+                            </button>
+                          </>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => handleToggleFlagStatus(flag, 'INVESTIGATED')}
-                            className="px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-medium transition-colors cursor-pointer"
+                            onClick={() => handleToggleFlagStatus(flag, 'ACTIVE')}
+                            className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                           >
-                            Tandai Diinvestigasi
+                            Buka Ulang
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleFlagStatus(flag, 'DISMISSED')}
-                            className="px-2.5 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-medium transition-colors cursor-pointer"
-                          >
-                            Abaikan
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleFlagStatus(flag, 'ACTIVE')}
-                          className="px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          Buka Ulang
-                        </button>
+                        )
                       )}
 
                       <button
@@ -1692,36 +1720,36 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleExportCsv({ scope: 'current' })}
-              title="Unduh langsung seluruh data audit log yang sesuai filter saat ini ke format CSV"
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-            >
-              <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
-              <span>Ekspor CSV Terfilter ({filteredLogs.length})</span>
-            </button>
+            {canExportCsv && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleExportCsv({ scope: 'current' })}
+                  title="Unduh langsung seluruh data audit log yang sesuai filter saat ini ke format CSV"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-teal-300 dark:hover:border-teal-700 hover:text-[#05828e] dark:hover:text-[#2dd4bf] text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#05828e] dark:text-[#2dd4bf]" />
+                  <span>Ekspor CSV Terfilter ({filteredLogs.length})</span>
+                </button>
 
-            {selectedModule !== 'IDENTITAS' && (
-              <button
-                type="button"
-                onClick={() => handleExportCsv({ scope: 'identitas' })}
-                title="Arsipkan khusus log perubahan Identitas yang sesuai filter tanggal, kategori aksi, dan pencarian saat ini"
-                className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Arsip Identitas CSV ({filteredIdentitasLogs.length})</span>
-              </button>
+                {selectedModule !== 'IDENTITAS' && (
+                  <button
+                    type="button"
+                    onClick={() => handleExportCsv({ scope: 'identitas' })}
+                    title="Arsipkan khusus log perubahan Identitas yang sesuai filter tanggal, kategori aksi, dan pencarian saat ini"
+                    className="px-3 py-1.5 rounded-xl border border-teal-200 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/80 dark:hover:bg-teal-900/50 text-xs font-semibold text-[#05828e] dark:text-[#2dd4bf] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>Arsip Identitas CSV ({filteredIdentitasLogs.length})</span>
+                  </button>
+                )}
+              </>
             )}
 
-            {onClearLogs && (
+            {onClearLogs && canClearLogs && (
               <button
                 type="button"
-                onClick={() => {
-                  if (confirm('Kosongkan semua riwayat audit log?')) {
-                    onClearLogs();
-                  }
-                }}
+                onClick={() => setIsClearConfirmOpen(true)}
                 className="text-xs text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 px-2 py-1 transition-colors cursor-pointer"
               >
                 Bersihkan
@@ -1940,8 +1968,15 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                               {log.metadata?.mergeSessionRecord && (() => {
                                 const mRec = log.metadata.mergeSessionRecord;
                                 const td = mRec.transferredData;
+                                const rolledBack = Boolean(
+                                  log.metadata?.isRolledBack || mRec.isRolledBack
+                                );
+                                const extras =
+                                  (td.donasiOrdersUpdated ?? 0) +
+                                  (td.dharmaPatronUpdated ?? 0) +
+                                  (td.ajarOrdersUpdated ?? 0);
                                 return (
-                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5">
+                                  <div className="text-[11px] text-slate-600 dark:text-slate-300 flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
                                     <span className="font-semibold text-[#05828e] dark:text-[#2dd4bf]">
                                       Jejak Merge
                                     </span>
@@ -1955,8 +1990,32 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
                                     </span>
                                     <span aria-hidden="true">·</span>
                                     <span className="font-mono tabular-nums">
-                                      {td.totalDataPointsMoved} data dipindahkan ({td.fieldsEnriched} field, {td.addressesMoved} alamat, {td.projectsUpdated} proyek, {td.salurOrdersUpdated} salur)
+                                      {td.totalDataPointsMoved} data dipindahkan ({td.fieldsEnriched} field, {td.addressesMoved} alamat, {td.projectsUpdated} proyek, {td.salurOrdersUpdated} salur{extras > 0 ? `, ${extras} don/dpr/ajar` : ''})
                                     </span>
+                                    {rolledBack ? (
+                                      <>
+                                        <span aria-hidden="true">·</span>
+                                        <span className="font-semibold text-amber-700 dark:text-amber-400 inline-flex items-center gap-1">
+                                          <RotateCcw className="w-3 h-3" />
+                                          <span>Sudah Di-rollback</span>
+                                        </span>
+                                      </>
+                                    ) : (
+                                      canUndoMerge &&
+                                      onUndoMerge && (
+                                        <>
+                                          <span aria-hidden="true">·</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setPendingRollbackMergeId(mRec.id)}
+                                            className="font-semibold text-rose-600 dark:text-rose-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                          >
+                                            <RotateCcw className="w-3 h-3" />
+                                            <span>Rollback Merge</span>
+                                          </button>
+                                        </>
+                                      )
+                                    )}
                                   </div>
                                 );
                               })()}
@@ -2338,6 +2397,10 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
         filteredLogs={filteredLogs}
         onSelectLog={(nextLog) => setInspectedLog(nextLog)}
         flaggedLogIdMap={flaggedLogIdMap}
+        canUndoMerge={canUndoMerge}
+        onUndoMerge={(mergeRecordId) => {
+          onUndoMerge?.(mergeRecordId);
+        }}
         onShowToast={onShowToast}
         onNavigateToIdentitas={onNavigateToIdentitas}
         onNavigateToModule={(mod) => {
@@ -2346,6 +2409,97 @@ export const CentralAuditLogView: React.FC<CentralAuditLogViewProps> = ({
           else if (mod === 'AJAR' && onNavigateToAjar) onNavigateToAjar();
         }}
       />
+
+      {/* Safe In-App Confirmation Modal for Clear Audit Logs */}
+      {isClearConfirmOpen && onClearLogs && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  Kosongkan Riwayat Audit Log?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Semua catatan audit log pada tampilan ini akan dihapus permanen. Pastikan Anda sudah mengekspor arsip CSV jika masih dibutuhkan.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsClearConfirmOpen(false)}
+                className="px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsClearConfirmOpen(false);
+                  onClearLogs();
+                }}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer"
+              >
+                Ya, Kosongkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Safe In-App Confirmation Modal for Inline Rollback Merge */}
+      {pendingRollbackMergeId && onUndoMerge && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  Rollback Penggabungan Profil?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Profil utama &amp; sekunder serta seluruh transaksi Proyek, S-Salur, Donasi, Patron, dan A-AJAR pada sesi{' '}
+                  <span className="font-mono font-semibold">{pendingRollbackMergeId}</span> akan dipulihkan ke kondisi sebelum merge.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setPendingRollbackMergeId(null)}
+                className="px-4 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = pendingRollbackMergeId;
+                  setPendingRollbackMergeId(null);
+                  onUndoMerge(target);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Ya, Pulihkan Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Offline Archive CSV Export Modal */}
       {isExportCsvModalOpen && (

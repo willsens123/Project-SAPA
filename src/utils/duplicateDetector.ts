@@ -278,29 +278,263 @@ export const comparePhoneFuzzy = (rawA?: string, rawB?: string): StringCompariso
   };
 };
 
-export const findDuplicatePairs = (
-  items: IdentitasItem[],
-  dismissedPairIds: string[] = [],
+export interface DuplicateCandidateMatch {
+  existingItem: IdentitasItem;
+  reason: string;
+  similarityScore: number;
+  matchType: 'exact' | 'fuzzy';
+  fieldScores: DuplicateFieldScore[];
+}
+
+export const scoreIdentitasPair = (
+  a: Partial<IdentitasItem>,
+  b: IdentitasItem,
   options: DuplicateDetectionOptions = {}
-): DuplicatePair[] => {
+): {
+  matches: boolean;
+  reason: string;
+  similarityScore: number;
+  matchType: 'exact' | 'fuzzy';
+  fieldScores: DuplicateFieldScore[];
+} | null => {
   const {
     minSimilarity = 80,
     includeExact = true,
     includeFuzzy = true,
   } = options;
 
+  const aName = a.namaLengkap || '';
+  const aNick = a.namaPanggilan || '';
+  const aPhone = a.nomorHandPhone || '';
+  const aEmail = a.email || '';
+  const aKota = a.kota || '';
+  const aOrg = a.organisasi || '';
+
+  const nameCmp = compareTextFuzzy(aName, b.namaLengkap);
+  const nickCmp = compareTextFuzzy(aNick, b.namaPanggilan);
+  const phoneCmp = comparePhoneFuzzy(aPhone, b.nomorHandPhone);
+  const emailCmp = compareEmailFuzzy(aEmail, b.email);
+  const cityCmp = compareTextFuzzy(aKota, b.kota);
+  const orgCmp = compareTextFuzzy(aOrg, b.organisasi);
+
+  const normIdA = (a.nomorIdentitas || '').replace(/[\s\-.]/g, '').toLowerCase();
+  const normIdB = (b.nomorIdentitas || '').replace(/[\s\-.]/g, '').toLowerCase();
+  const isSameIdDoc =
+    normIdA.length >= 6 &&
+    normIdB.length >= 6 &&
+    normIdA !== '-' &&
+    normIdA === normIdB;
+
+  const fieldScores: DuplicateFieldScore[] = [];
+  if (isMeaningfulValue(aName) && isMeaningfulValue(b.namaLengkap) && nameCmp.score > 0) {
+    fieldScores.push({
+      field: 'namaLengkap',
+      label: 'Nama Lengkap',
+      score: nameCmp.score,
+      value1: aName,
+      value2: b.namaLengkap,
+      algorithm: nameCmp.algorithm,
+    });
+  }
+  if (isMeaningfulValue(aPhone) && isMeaningfulValue(b.nomorHandPhone) && phoneCmp.score > 0) {
+    fieldScores.push({
+      field: 'nomorHandPhone',
+      label: 'Nomor HP',
+      score: phoneCmp.score,
+      value1: aPhone,
+      value2: b.nomorHandPhone,
+      algorithm: phoneCmp.algorithm,
+    });
+  }
+  if (isMeaningfulValue(aEmail) && isMeaningfulValue(b.email) && emailCmp.score > 0) {
+    fieldScores.push({
+      field: 'email',
+      label: 'Email',
+      score: emailCmp.score,
+      value1: aEmail || '-',
+      value2: b.email || '-',
+      algorithm: emailCmp.algorithm,
+    });
+  }
+  if (isMeaningfulValue(aNick) && isMeaningfulValue(b.namaPanggilan) && nickCmp.score >= 60) {
+    fieldScores.push({
+      field: 'namaPanggilan',
+      label: 'Panggilan',
+      score: nickCmp.score,
+      value1: aNick,
+      value2: b.namaPanggilan,
+      algorithm: nickCmp.algorithm,
+    });
+  }
+  if (isMeaningfulValue(aKota) && isMeaningfulValue(b.kota) && cityCmp.score >= 70) {
+    fieldScores.push({
+      field: 'kota',
+      label: 'Kota',
+      score: cityCmp.score,
+      value1: aKota || '-',
+      value2: b.kota || '-',
+      algorithm: cityCmp.algorithm,
+    });
+  }
+  if (isMeaningfulValue(aOrg) && isMeaningfulValue(b.organisasi) && orgCmp.score >= 70) {
+    fieldScores.push({
+      field: 'organisasi',
+      label: 'Organisasi',
+      score: orgCmp.score,
+      value1: aOrg,
+      value2: b.organisasi,
+      algorithm: orgCmp.algorithm,
+    });
+  }
+
+  // Exact matches (100%)
+  const exactReasons: string[] = [];
+  if (isSameIdDoc) exactReasons.push('Nomor Identitas sama');
+  if (nameCmp.score === 100) exactReasons.push('Nama Lengkap sama');
+  if (phoneCmp.score === 100) exactReasons.push('Nomor HandPhone sama');
+  if (emailCmp.score === 100) exactReasons.push('Alamat Email sama');
+
+  if (exactReasons.length > 0) {
+    if (!includeExact) return null;
+    return {
+      matches: true,
+      reason: exactReasons.join(' & '),
+      similarityScore: 100,
+      matchType: 'exact',
+      fieldScores: fieldScores.sort((x, y) => y.score - x.score),
+    };
+  }
+
+  if (!includeFuzzy) return null;
+
+  const phoneCorroborated =
+    phoneCmp.score >= 88 &&
+    (nameCmp.score >= 65 || emailCmp.score >= 70 || nickCmp.score >= 75);
+
+  const effectivePhoneScore = phoneCorroborated ? phoneCmp.score : 0;
+
+  let weightedSum = 0;
+  let weightTotal = 0;
+
+  if (isMeaningfulValue(aName) && isMeaningfulValue(b.namaLengkap)) {
+    weightedSum += nameCmp.score * 0.5;
+    weightTotal += 0.5;
+  }
+  if (effectivePhoneScore > 0) {
+    weightedSum += effectivePhoneScore * 0.22;
+    weightTotal += 0.22;
+  }
+  if (
+    isMeaningfulValue(aEmail) &&
+    isMeaningfulValue(b.email) &&
+    aEmail.includes('@') &&
+    (b.email || '').includes('@')
+  ) {
+    weightedSum += emailCmp.score * 0.16;
+    weightTotal += 0.16;
+  }
+  if (isMeaningfulValue(aNick) && isMeaningfulValue(b.namaPanggilan)) {
+    weightedSum += nickCmp.score * 0.06;
+    weightTotal += 0.06;
+  }
+  if (isMeaningfulValue(aKota) && isMeaningfulValue(b.kota)) {
+    weightedSum += cityCmp.score * 0.06;
+    weightTotal += 0.06;
+  }
+
+  const compositeScore = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 0;
+  const peakIdentifierScore = Math.max(nameCmp.score, emailCmp.score, effectivePhoneScore);
+
+  let similarityScore = Math.max(compositeScore, peakIdentifierScore);
+  if (similarityScore >= 100) similarityScore = 99;
+
+  const passesThreshold =
+    minSimilarity === 80 ? similarityScore > 80 : similarityScore >= minSimilarity;
+
+  if (passesThreshold && peakIdentifierScore > 75) {
+    const fuzzyReasons: string[] = [];
+    if (nameCmp.score > 80) fuzzyReasons.push(`Nama Lengkap mirip ${nameCmp.score}%`);
+    if (emailCmp.score > 80) fuzzyReasons.push(`Email mirip ${emailCmp.score}%`);
+    if (effectivePhoneScore > 80) fuzzyReasons.push(`Nomor HP mirip ${effectivePhoneScore}%`);
+    if (nickCmp.score > 80 && fuzzyReasons.length === 0) {
+      fuzzyReasons.push(`Panggilan mirip ${nickCmp.score}%`);
+    }
+    if (fuzzyReasons.length === 0) {
+      fuzzyReasons.push(`Kemiripan profil gabungan ${similarityScore}%`);
+    }
+
+    return {
+      matches: true,
+      reason: fuzzyReasons.join(' · '),
+      similarityScore,
+      matchType: 'fuzzy',
+      fieldScores: fieldScores.sort((x, y) => y.score - x.score),
+    };
+  }
+
+  return null;
+};
+
+export const findCandidateDuplicates = (
+  candidate: Partial<IdentitasItem>,
+  existingList: IdentitasItem[],
+  options: DuplicateDetectionOptions & { excludeId?: string; limit?: number } = {}
+): DuplicateCandidateMatch[] => {
+  const { excludeId, limit = 5, ...detOptions } = options;
+  const normIdLen = (candidate.nomorIdentitas || '').replace(/[\s\-.]/g, '').length;
+  const hasMeaningfulInput =
+    isMeaningfulValue(candidate.namaLengkap) ||
+    isMeaningfulValue(candidate.email) ||
+    normalizePhone(candidate.nomorHandPhone).length >= 8 ||
+    normIdLen >= 6;
+
+  if (!hasMeaningfulInput) return [];
+
+  const matches: DuplicateCandidateMatch[] = [];
+  for (const existing of existingList) {
+    if (excludeId && existing.id === excludeId) continue;
+    const scored = scoreIdentitasPair(candidate, existing, detOptions);
+    if (scored && scored.matches) {
+      matches.push({
+        existingItem: existing,
+        reason: scored.reason,
+        similarityScore: scored.similarityScore,
+        matchType: scored.matchType,
+        fieldScores: scored.fieldScores,
+      });
+    }
+  }
+
+  return matches
+    .sort((x, y) => y.similarityScore - x.similarityScore)
+    .slice(0, limit);
+};
+
+export const findDuplicatePairs = (
+  items: IdentitasItem[],
+  dismissedPairIds: string[] = [],
+  options: DuplicateDetectionOptions = {}
+): DuplicatePair[] => {
   const pairs: DuplicatePair[] = [];
   const checkedKeys = new Set<string>();
 
   for (let i = 0; i < items.length; i++) {
     const a = items[i];
-    if (!isMeaningfulValue(a.namaLengkap) && !isMeaningfulValue(a.email) && normalizePhone(a.nomorHandPhone).length < 8) {
+    if (
+      !isMeaningfulValue(a.namaLengkap) &&
+      !isMeaningfulValue(a.email) &&
+      normalizePhone(a.nomorHandPhone).length < 8
+    ) {
       continue;
     }
 
     for (let j = i + 1; j < items.length; j++) {
       const b = items[j];
-      if (!isMeaningfulValue(b.namaLengkap) && !isMeaningfulValue(b.email) && normalizePhone(b.nomorHandPhone).length < 8) {
+      if (
+        !isMeaningfulValue(b.namaLengkap) &&
+        !isMeaningfulValue(b.email) &&
+        normalizePhone(b.nomorHandPhone).length < 8
+      ) {
         continue;
       }
 
@@ -313,163 +547,17 @@ export const findDuplicatePairs = (
         dismissedPairIds.includes(`${b.id}-${a.id}`);
       if (isDismissed) continue;
 
-      const nameCmp = compareTextFuzzy(a.namaLengkap, b.namaLengkap);
-      const nickCmp = compareTextFuzzy(a.namaPanggilan, b.namaPanggilan);
-      const phoneCmp = comparePhoneFuzzy(a.nomorHandPhone, b.nomorHandPhone);
-      const emailCmp = compareEmailFuzzy(a.email, b.email);
-      const cityCmp = compareTextFuzzy(a.kota, b.kota);
-      const orgCmp = compareTextFuzzy(a.organisasi, b.organisasi);
-
-      const fieldScores: DuplicateFieldScore[] = [];
-      if (isMeaningfulValue(a.namaLengkap) && isMeaningfulValue(b.namaLengkap) && nameCmp.score > 0) {
-        fieldScores.push({
-          field: 'namaLengkap',
-          label: 'Nama Lengkap',
-          score: nameCmp.score,
-          value1: a.namaLengkap,
-          value2: b.namaLengkap,
-          algorithm: nameCmp.algorithm,
-        });
-      }
-      if (isMeaningfulValue(a.nomorHandPhone) && isMeaningfulValue(b.nomorHandPhone) && phoneCmp.score > 0) {
-        fieldScores.push({
-          field: 'nomorHandPhone',
-          label: 'Nomor HP',
-          score: phoneCmp.score,
-          value1: a.nomorHandPhone,
-          value2: b.nomorHandPhone,
-          algorithm: phoneCmp.algorithm,
-        });
-      }
-      if (isMeaningfulValue(a.email) && isMeaningfulValue(b.email) && emailCmp.score > 0) {
-        fieldScores.push({
-          field: 'email',
-          label: 'Email',
-          score: emailCmp.score,
-          value1: a.email || '-',
-          value2: b.email || '-',
-          algorithm: emailCmp.algorithm,
-        });
-      }
-      if (isMeaningfulValue(a.namaPanggilan) && isMeaningfulValue(b.namaPanggilan) && nickCmp.score >= 60) {
-        fieldScores.push({
-          field: 'namaPanggilan',
-          label: 'Panggilan',
-          score: nickCmp.score,
-          value1: a.namaPanggilan,
-          value2: b.namaPanggilan,
-          algorithm: nickCmp.algorithm,
-        });
-      }
-      if (isMeaningfulValue(a.kota) && isMeaningfulValue(b.kota) && cityCmp.score >= 70) {
-        fieldScores.push({
-          field: 'kota',
-          label: 'Kota',
-          score: cityCmp.score,
-          value1: a.kota || '-',
-          value2: b.kota || '-',
-          algorithm: cityCmp.algorithm,
-        });
-      }
-      if (isMeaningfulValue(a.organisasi) && isMeaningfulValue(b.organisasi) && orgCmp.score >= 70) {
-        fieldScores.push({
-          field: 'organisasi',
-          label: 'Organisasi',
-          score: orgCmp.score,
-          value1: a.organisasi,
-          value2: b.organisasi,
-          algorithm: orgCmp.algorithm,
-        });
-      }
-
-      // Check exact matches first (100%)
-      const exactReasons: string[] = [];
-      if (nameCmp.score === 100) exactReasons.push('Nama Lengkap sama');
-      if (phoneCmp.score === 100) exactReasons.push('Nomor HandPhone sama');
-      if (emailCmp.score === 100) exactReasons.push('Alamat Email sama');
-
-      if (exactReasons.length > 0) {
-        if (!includeExact) continue;
+      const scored = scoreIdentitasPair(a, b, options);
+      if (scored && scored.matches) {
         checkedKeys.add(pairKey);
         pairs.push({
           id: pairKey,
           item1: a,
           item2: b,
-          reason: exactReasons.join(' & '),
-          similarityScore: 100,
-          matchType: 'exact',
-          fieldScores: fieldScores.sort((x, y) => y.score - x.score),
-        });
-        continue;
-      }
-
-      if (!includeFuzzy) continue;
-
-      // Near-exact phone typo (e.g. 1 digit typo) must be corroborated by strong name/email/nickname overlap
-      // to prevent sequential test phone numbers (...7890 vs ...7891) across unrelated contacts from colliding.
-      const phoneCorroborated =
-        phoneCmp.score >= 88 &&
-        (nameCmp.score >= 65 || emailCmp.score >= 70 || nickCmp.score >= 75);
-
-      const effectivePhoneScore = phoneCorroborated ? phoneCmp.score : 0;
-
-      // Weighted composite identity score across available comparable fields
-      let weightedSum = 0;
-      let weightTotal = 0;
-
-      if (isMeaningfulValue(a.namaLengkap) && isMeaningfulValue(b.namaLengkap)) {
-        weightedSum += nameCmp.score * 0.5;
-        weightTotal += 0.5;
-      }
-      if (effectivePhoneScore > 0) {
-        weightedSum += effectivePhoneScore * 0.22;
-        weightTotal += 0.22;
-      }
-      if (isMeaningfulValue(a.email) && isMeaningfulValue(b.email) && (a.email || '').includes('@') && (b.email || '').includes('@')) {
-        weightedSum += emailCmp.score * 0.16;
-        weightTotal += 0.16;
-      }
-      if (isMeaningfulValue(a.namaPanggilan) && isMeaningfulValue(b.namaPanggilan)) {
-        weightedSum += nickCmp.score * 0.06;
-        weightTotal += 0.06;
-      }
-      if (isMeaningfulValue(a.kota) && isMeaningfulValue(b.kota)) {
-        weightedSum += cityCmp.score * 0.06;
-        weightTotal += 0.06;
-      }
-
-      const compositeScore = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 0;
-
-      const peakIdentifierScore = Math.max(nameCmp.score, emailCmp.score, effectivePhoneScore);
-
-      let similarityScore = Math.max(compositeScore, peakIdentifierScore);
-      if (similarityScore >= 100) similarityScore = 99;
-
-      // Strict "> 80%" check when minSimilarity is 80 (default), otherwise ">= minSimilarity"
-      const passesThreshold =
-        minSimilarity === 80
-          ? similarityScore > 80
-          : similarityScore >= minSimilarity;
-
-      if (passesThreshold && peakIdentifierScore > 75) {
-        const fuzzyReasons: string[] = [];
-        if (nameCmp.score > 80) fuzzyReasons.push(`Nama Lengkap mirip ${nameCmp.score}%`);
-        if (emailCmp.score > 80) fuzzyReasons.push(`Email mirip ${emailCmp.score}%`);
-        if (effectivePhoneScore > 80) fuzzyReasons.push(`Nomor HP mirip ${effectivePhoneScore}%`);
-        if (nickCmp.score > 80 && fuzzyReasons.length === 0) fuzzyReasons.push(`Panggilan mirip ${nickCmp.score}%`);
-        if (fuzzyReasons.length === 0) {
-          fuzzyReasons.push(`Kemiripan profil gabungan ${similarityScore}%`);
-        }
-
-        checkedKeys.add(pairKey);
-        pairs.push({
-          id: pairKey,
-          item1: a,
-          item2: b,
-          reason: fuzzyReasons.join(' · '),
-          similarityScore,
-          matchType: 'fuzzy',
-          fieldScores: fieldScores.sort((x, y) => y.score - x.score),
+          reason: scored.reason,
+          similarityScore: scored.similarityScore,
+          matchType: scored.matchType,
+          fieldScores: scored.fieldScores,
         });
       }
     }

@@ -793,6 +793,15 @@ export function dispatchMergeAuditEvent(
   if (td.salurOrdersUpdated > 0) {
     movedSummaryParts.push(`${td.salurOrdersUpdated} transaksi salur`);
   }
+  if ((td.donasiOrdersUpdated ?? 0) > 0) {
+    movedSummaryParts.push(`${td.donasiOrdersUpdated} donasi`);
+  }
+  if ((td.dharmaPatronUpdated ?? 0) > 0) {
+    movedSummaryParts.push(`${td.dharmaPatronUpdated} patron rutin`);
+  }
+  if ((td.ajarOrdersUpdated ?? 0) > 0) {
+    movedSummaryParts.push(`${td.ajarOrdersUpdated} transaksi ajar`);
+  }
 
   const methodLabel =
     record.method === 'curated'
@@ -843,6 +852,52 @@ export function dispatchMergeAuditEvent(
       transferredTotal: td.totalDataPointsMoved,
       ...(batchMeta ? { batchGroupId: batchMeta.batchId } : {}),
       details: `Penggabungan ${secondaryLabel} -> ${primaryLabel} (Skor ${record.similarityScore}%, ${td.totalDataPointsMoved} data dipindahkan: ${movedDetailStr})`,
+    },
+  });
+}
+
+/**
+ * Records an Undo/Rollback Merge action in the Central Audit Log.
+ */
+export function dispatchUndoMergeAuditEvent(
+  record: MergeSessionRecord,
+  author: string = 'Admin Identitas'
+): CentralAuditLogEntry {
+  const nowIso = new Date().toISOString();
+  const primaryLabel = `${record.primaryCodeId || '-'} ${record.primaryName}`.trim();
+  const secondaryLabel = `${record.secondaryCodeId || '-'} ${record.secondaryName}`.trim();
+  const td = record.transferredData;
+  const restoredCrossCount =
+    td.projectsUpdated +
+    td.salurOrdersUpdated +
+    (td.donasiOrdersUpdated ?? 0) +
+    (td.dharmaPatronUpdated ?? 0) +
+    (td.ajarOrdersUpdated ?? 0);
+
+  return dispatchAuditEvent({
+    id: `audit-undo-merge-${record.id}-${Date.now()}`,
+    isoTimestamp: nowIso,
+    timestamp: formatAuditTimestamp(new Date(nowIso)),
+    module: 'IDENTITAS',
+    actionType: 'Undo Merge',
+    recordId:
+      record.primaryCodeId && record.primaryCodeId !== '-'
+        ? record.primaryCodeId
+        : record.primaryId,
+    recordTitle: `${record.primaryName} & ${record.secondaryName}`,
+    field: 'Rollback Penggabungan Profil',
+    oldValue: `Digabung ke ${primaryLabel} (Sesi ${record.id})`,
+    newValue: `Dipulihkan: ${primaryLabel} & ${secondaryLabel}`,
+    alasan: `Pembatalan merge sesi ${record.id}; ${restoredCrossCount} referensi proyek & transaksi dipulihkan ke kondisi sebelum merge.`,
+    author,
+    metadata: {
+      codeId: record.primaryCodeId,
+      targetMergeRecordId: record.id,
+      secondaryId: record.secondaryId,
+      secondaryCodeId: record.secondaryCodeId,
+      secondaryName: record.secondaryName,
+      restoredCrossCount,
+      details: `Rollback penggabungan ${secondaryLabel} <-> ${primaryLabel} (${restoredCrossCount} relasi modul dikembalikan).`,
     },
   });
 }

@@ -40,6 +40,7 @@ interface FormCutiKaryawanViewProps {
   onUpdateStatus?: (id: string, newStatus: CutiStatus) => void;
   onNavigateToKaryawan?: () => void;
   onShowToast?: (message: string) => void;
+  currentUserName?: string;
 }
 
 export const FormCutiKaryawanView: React.FC<FormCutiKaryawanViewProps> = ({
@@ -50,6 +51,7 @@ export const FormCutiKaryawanView: React.FC<FormCutiKaryawanViewProps> = ({
   onUpdateStatus,
   onNavigateToKaryawan,
   onShowToast = (_msg: string) => {},
+  currentUserName,
 }) => {
   // Privacy toggle
   const [hideSensitive, setHideSensitive] = useState(false);
@@ -184,7 +186,7 @@ export const FormCutiKaryawanView: React.FC<FormCutiKaryawanViewProps> = ({
       const updated: CutiKaryawanItem = {
         ...item,
         status: nextStatus,
-        disetujuiOleh: nextStatus === 'Disetujui' ? 'Ko Agus (UMM)' : undefined,
+        disetujuiOleh: nextStatus === 'Disetujui' ? (currentUserName || 'Admin UMM') : undefined,
       };
       onSaveItem(updated);
     }
@@ -719,6 +721,7 @@ export const FormCutiKaryawanView: React.FC<FormCutiKaryawanViewProps> = ({
         }}
         editingItem={editingItem}
         karyawanList={karyawanList}
+        currentUserName={currentUserName}
       />
     </div>
   );

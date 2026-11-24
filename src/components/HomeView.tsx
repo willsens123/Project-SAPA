@@ -45,6 +45,7 @@ import {
   MutasiItem,
   PengeluaranItem,
   VolunteerSSebarItem,
+  DharmaPatronRutinItem,
 } from '../types';
 import { PosKeuanganItem } from '../posKeuanganData';
 import { PosPemasukanGroup } from '../posPemasukanData';
@@ -68,6 +69,7 @@ import {
   NotificationScopeMode,
   NotificationReferenceMode,
 } from './HomeProjectDeadlineNotifications';
+import { HomeOperationalAlerts } from './HomeOperationalAlerts';
 import { HomeAuditRealtimeBanner } from './AuditRealtimeNotification';
 import { LiveAuditNotification } from '../utils/auditNotificationHelper';
 import {
@@ -125,6 +127,8 @@ interface HomeViewProps {
   liveAuditAlerts?: LiveAuditNotification[];
   onDismissAuditAlert?: (alertId: string) => void;
   onDismissAllAuditAlerts?: () => void;
+  dharmaPatronList?: DharmaPatronRutinItem[];
+  isDivisionProjectScoped?: boolean;
 }
 
 const MONTH_NAMES = [
@@ -213,6 +217,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   liveAuditAlerts = [],
   onDismissAuditAlert,
   onDismissAllAuditAlerts,
+  dharmaPatronList = [],
+  isDivisionProjectScoped = false,
 }) => {
   // Modal states
   const [isChangeUserOpen, setIsChangeUserOpen] = useState(false);
@@ -408,12 +414,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // Buat dalam rentang 2 minggu sebelum dan 2 minggu sesudah dari hari ini."
   const tanggalKhususList = useMemo(() => {
     const userCodes = [
-      currentUser.kodeKaryawan,
+      currentUser.kodeKaryawan?.toLowerCase(),
       currentUser.namaLengkap?.toLowerCase(),
       currentUser.namaPanggilan?.toLowerCase(),
-      'agustino',
-      'ko agus',
-      '00031',
     ].filter(Boolean) as string[];
 
     const isUserPic = (picVal?: string) => {
@@ -553,11 +556,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
   // Filter PMs for login ID or division
   const userPMList = useMemo(() => {
+    const activeName = (currentUser.namaLengkap || '').toLowerCase();
     return listPMItems.filter((pm) => {
       const matchDivisi = pm.proyekKode === activeDivisi || activeDivisi === 'ALL';
       const hasUser = pm.detailRows?.some(
         (dr) =>
-          dr.nama?.toLowerCase().includes('agustino') ||
+          (activeName && dr.nama?.toLowerCase().includes(activeName)) ||
           dr.codeId === currentUser.kodeKaryawan
       );
       return matchDivisi || hasUser;
@@ -945,6 +949,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
         onOpenProjectReport={onOpenProjectReport}
         onOpenProjectTodos={onOpenProjectTodos}
         onNavigateView={onNavigateView}
+      />
+
+      {isDivisionProjectScoped && (
+        <div className="rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-teal-50/70 dark:bg-teal-950/30 px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-teal-900 dark:text-teal-200">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#008d91] dark:text-teal-400 shrink-0" />
+            <span>
+              <strong>Mode Proyek Terfokus:</strong> Menampilkan proyek &amp; To-Do khusus{' '}
+              <span className="font-mono font-bold">Divisi {currentUser.divisi}</span> sesuai kebijakan RBAC.
+            </span>
+          </div>
+          <span className="font-mono text-[11px] font-semibold tabular-nums text-[#008d91] dark:text-teal-300 shrink-0">
+            {projects.length} proyek
+          </span>
+        </div>
+      )}
+
+      <HomeOperationalAlerts
+        projects={projects}
+        todoTasks={todoTasks}
+        dharmaPatronList={dharmaPatronList}
+        salurItems={salurItems}
+        onNavigateView={onNavigateView}
+        onOpenProjectTodos={onOpenProjectTodos}
       />
 
       {/* ============================================================== */}

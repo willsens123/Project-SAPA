@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Header } from './components/Header';
 import { useCloudSyncManager } from './firebase/useCloudSyncManager';
+import { saveCollectionToCloud } from './firebase/syncService';
 import { testFirestoreConnection } from './firebase/config';
 import {
   subscribeToMemberAccounts,
@@ -10,6 +11,7 @@ import {
   clearRememberedMemberRef,
 } from './firebase/authAccountService';
 import { AuthPortalView } from './components/AuthPortalView';
+import { ChangePasswordModal } from './components/ChangePasswordModal';
 import { useAppTheme } from './utils/themeManager';
 import { TableToolbar } from './components/TableToolbar';
 import { isProjectPersiapanInRange } from './utils/projectPersiapanFilter';
@@ -54,11 +56,33 @@ import {
   subscribeAuditEvent,
   dispatchAuditEvent,
   dispatchMergeAuditEvent,
+  dispatchUndoMergeAuditEvent,
   auditDiffSalurOrders,
   auditDiffDonasiOrders,
   auditDiffTransaksiAjar,
   CENTRAL_AUDIT_LOGS_STORAGE_KEY,
 } from './utils/auditEventBus';
+import {
+  createDefaultRbacConfig,
+  normalizeRbacConfig,
+  hasPermission,
+  canAccessView,
+  ROLE_METADATA,
+  resolveEffectiveRole,
+  shouldRestrictProjectsToDivision,
+  filterProjectsForUser,
+  formatAuditActorName,
+} from './utils/rbacManager';
+import {
+  getOrCreateDeviceSessionId,
+  resetDeviceSessionId,
+  createLoginActivityEntry,
+  upsertLoginSessionRecord,
+  markSessionLoggedOut,
+  revokeSessionRecord,
+  loadLocalLoginActivityLogs,
+  saveLocalLoginActivityLogs,
+} from './utils/loginActivityHelper';
 import {
   auditAnomalyWorker,
   saveAnomalyStatusOverride,
@@ -437,6 +461,9 @@ import {
   DuplicatePair,
   MergeSessionRecord,
   MergeTransferredData,
+  MergeRollbackSnapshot,
+  RbacPolicyConfig,
+  PermissionKey,
   OrganisasiItem,
   JenisItemSalurItem,
   SubJenisItemSalurItem,
@@ -449,6 +476,8 @@ import {
   ComplaintItem,
   CentralAuditLogEntry,
   AuditAnomalyJobReport,
+  LoginActivityRecord,
+  LoginAuthMethod,
 } from './types';
 import { ComplaintView } from './components/ComplaintView';
 import { FormComplaint } from './components/FormComplaint';
@@ -508,6 +537,8 @@ const PEKERJAAN_STORAGE_KEY = 'master_pekerjaan_v1';
 const MENGENAL_YPPLN_STORAGE_KEY = 'master_mengenal_yppln_v1';
 const IDENTITAS_CHANGE_LOGS_STORAGE_KEY = 'identitas_change_logs_v1';
 const DISMISSED_DUPLICATES_STORAGE_KEY = 'dismissed_duplicate_pairs_v1';
+const MERGE_SESSION_RECORDS_STORAGE_KEY = 'merge_session_records_v1';
+const RBAC_POLICY_STORAGE_KEY = 'yppln_rbac_policy_v1';
 const SALUR_ITEMS_STORAGE_KEY = 'salur_items_data_v1';
 const JENIS_ITEM_SALUR_STORAGE_KEY = 'master_jenis_item_salur_v1';
 const SUB_JENIS_ITEM_SALUR_STORAGE_KEY = 'master_sub_jenis_item_salur_v1';
@@ -1082,10 +1113,34 @@ export default function App() {
   const [smartMergeThreshold, setSmartMergeThreshold] = useState<number>(80);
 
   // Merge session summary tracking for 'Ringkasan Hasil Merge' & official admin PDF export
-  const [mergeSessionRecords, setMergeSessionRecords] = useState<MergeSessionRecord[]>([]);
+  const [mergeSessionRecords, setMergeSessionRecords] = useState<MergeSessionRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(MERGE_SESSION_RECORDS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load merge session records from localStorage', e);
+    }
+    return [];
+  });
   const [mergeSessionStartedAt, setMergeSessionStartedAt] = useState<string>(() =>
     new Date().toISOString()
   );
+
+  // Role & Division RBAC policy state (synced across admin devices via Firestore)
+  const [rbacConfig, setRbacConfig] = useState<RbacPolicyConfig>(() => {
+    try {
+      const saved = localStorage.getItem(RBAC_POLICY_STORAGE_KEY);
+      if (saved) {
+        return normalizeRbacConfig(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load RBAC config from localStorage', e);
+    }
+    return createDefaultRbacConfig();
+  });
 
   // Calculate duplicate pairs and total duplicate records count
   const duplicatePairs = React.useMemo(
@@ -1476,7 +1531,11 @@ export default function App() {
 
   const handleUpdateSalurOrders = (updated: SalurOrder[]) => {
     try {
-      auditDiffSalurOrders(salurOrders, updated, 'Admin S-SALUR');
+      auditDiffSalurOrders(
+        salurOrders,
+        updated,
+        formatAuditActorName(authenticatedUser, 'Admin S-SALUR')
+      );
     } catch (e) {
       console.error('Audit diff error on Salur orders:', e);
     }
@@ -1490,7 +1549,11 @@ export default function App() {
 
   const handleUpdateDonasiOrders = (updated: DonasiOrder[]) => {
     try {
-      auditDiffDonasiOrders(donasiOrders, updated, 'Admin Donasi');
+      auditDiffDonasiOrders(
+        donasiOrders,
+        updated,
+        formatAuditActorName(authenticatedUser, 'Admin Donasi')
+      );
     } catch (e) {
       console.error('Audit diff error on Donasi orders:', e);
     }
@@ -1504,7 +1567,11 @@ export default function App() {
 
   const handleUpdateTransaksiAjar = (updated: TransaksiAjarItem[]) => {
     try {
-      auditDiffTransaksiAjar(transaksiAjarList, updated, 'Admin Ajar');
+      auditDiffTransaksiAjar(
+        transaksiAjarList,
+        updated,
+        formatAuditActorName(authenticatedUser, 'Admin Ajar')
+      );
     } catch (e) {
       console.error('Audit diff error on Transaksi Ajar:', e);
     }
@@ -2300,6 +2367,10 @@ export default function App() {
   });
 
   const handleSaveKaryawanItem = (savedItem: KaryawanItem) => {
+    if (!hasPermission(authenticatedUser, 'manageAccountsAndRoles', rbacConfig)) {
+      showToast('Akses ditolak: Hanya Super Admin atau peran berizin yang dapat mengelola akun & role.');
+      return;
+    }
     let updated: KaryawanItem[];
     const exists = karyawanList.some((item) => item.id === savedItem.id);
     if (exists) {
@@ -2323,6 +2394,10 @@ export default function App() {
   };
 
   const handleDeleteKaryawanItem = (id: string) => {
+    if (!hasPermission(authenticatedUser, 'manageAccountsAndRoles', rbacConfig)) {
+      showToast('Akses ditolak: Anda tidak memiliki izin untuk menghapus akun anggota.');
+      return;
+    }
     const target = karyawanList.find((it) => it.id === id);
     const updated = karyawanList.filter((it) => it.id !== id);
     setKaryawanList(updated);
@@ -2338,6 +2413,14 @@ export default function App() {
       return prev;
     });
     showToast(`Karyawan "${target?.namaLengkap || ''}" berhasil dihapus`);
+  };
+
+  const handleUpdateRbacConfig = (next: RbacPolicyConfig) => {
+    if (!hasPermission(authenticatedUser, 'manageAccountsAndRoles', rbacConfig)) {
+      showToast('Akses ditolak: Anda tidak memiliki izin untuk mengubah pengaturan hak akses RBAC.');
+      return;
+    }
+    setRbacConfig(normalizeRbacConfig(next));
   };
 
   // Form Cuti Karyawan State & Handlers
@@ -2368,18 +2451,33 @@ export default function App() {
   };
 
   const handleUpdateCutiStatus = (id: string, newStatus: CutiStatus) => {
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin UMM');
+    const target = cutiKaryawanList.find((it) => it.id === id);
     const updated = cutiKaryawanList.map((it) => {
       if (it.id === id) {
         return {
           ...it,
           status: newStatus,
-          disetujuiOleh: newStatus === 'Disetujui' ? 'Ko Agus (UMM)' : undefined,
+          disetujuiOleh: newStatus === 'Disetujui' ? actorName : undefined,
         };
       }
       return it;
     });
     setCutiKaryawanList(updated);
     saveCutiKaryawanList(updated);
+    if (target && target.status !== newStatus) {
+      dispatchAuditEvent({
+        module: 'IDENTITAS',
+        recordId: target.nomorPengajuan || target.id,
+        recordTitle: `Cuti ${target.namaKaryawan} (${target.kodeKaryawan})`,
+        actionType: 'Ubah',
+        field: 'Status Pengajuan Cuti',
+        oldValue: target.status,
+        newValue: newStatus,
+        alasan: `Pembaruan status cuti oleh ${actorName}`,
+        author: actorName,
+      });
+    }
   };
 
   // List Account State & Handlers
@@ -2560,13 +2658,21 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>('home');
   currentViewRef.current = currentView;
 
-  // Sesi Login Anggota di memori React; opsional Remember Me hanya menyimpan referensi ID akun (bukan password)
+  // Sesi Login Anggota (tanpa Firebase Auth / Google Sign-In)
+  const [loginActivityLogs, setLoginActivityLogs] = useState<LoginActivityRecord[]>(() =>
+    loadLocalLoginActivityLogs()
+  );
+  const activeSessionIdRef = useRef<string>(getOrCreateDeviceSessionId());
+  const loginActivityLogsRef = useRef<LoginActivityRecord[]>(loginActivityLogs);
+  loginActivityLogsRef.current = loginActivityLogs;
+
   const [authenticatedUser, setAuthenticatedUser] = useState<KaryawanItem | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState<boolean>(false);
   const [isRestoringSession, setIsRestoringSession] = useState<boolean>(() =>
     Boolean(loadRememberedMemberRef())
   );
   const skipAutoRestoreRef = React.useRef<boolean>(false);
-  const [authInitialMode, setAuthInitialMode] = useState<'register' | 'login'>('register');
+  const [authInitialMode, setAuthInitialMode] = useState<'register' | 'login'>('login');
   const [logoutNotice, setLogoutNotice] = useState<string | null>(null);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const [currentDivisi, setCurrentDivisi] = useState<string>('MAD');
@@ -2575,8 +2681,14 @@ export default function App() {
     authenticatedUser || karyawanList[0] || INITIAL_KARYAWAN[0];
 
   useEffect(() => {
+    saveLocalLoginActivityLogs(loginActivityLogs);
+  }, [loginActivityLogs]);
+
+  // 1. Subscribe to Firestore member_accounts directly on startup
+  useEffect(() => {
     clearLegacyAuthLocalStorage();
     testFirestoreConnection();
+    setIsLoadingAccounts(true);
 
     const restoreRememberedFromList = (accounts: KaryawanItem[]) => {
       const remembered = loadRememberedMemberRef();
@@ -2653,6 +2765,49 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // 2. Ensure restored sessions register a device session record if not already active
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    const sessId = activeSessionIdRef.current;
+    const hasSessionRecord = loginActivityLogsRef.current.some(
+      (item) => item.sessionId === sessId
+    );
+    if (!hasSessionRecord) {
+      const restoreEntry = createLoginActivityEntry({
+        user: authenticatedUser,
+        sessionId: sessId,
+        authMethod: 'session_restore',
+      });
+      const nextLogs = upsertLoginSessionRecord(loginActivityLogsRef.current, restoreEntry);
+      setLoginActivityLogs(nextLogs);
+      saveLocalLoginActivityLogs(nextLogs);
+      saveCollectionToCloud('login_activity_logs', nextLogs, 0).catch(() => {});
+    }
+  }, [authenticatedUser?.id]);
+
+  // 3. Enforce remote session revocation initiated by Super Admin on another device
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    const sessId = activeSessionIdRef.current;
+    const revokedRecord = loginActivityLogs.find(
+      (item) => item.sessionId === sessId && item.status === 'revoked'
+    );
+    if (revokedRecord) {
+      clearLegacyAuthLocalStorage();
+      clearRememberedMemberRef();
+      skipAutoRestoreRef.current = true;
+      activeSessionIdRef.current = resetDeviceSessionId();
+      setIsRestoringSession(false);
+      setAuthenticatedUser(null);
+      setJustLoggedIn(false);
+      setAuthInitialMode('login');
+      setLogoutNotice(
+        `Sesi perangkat ini telah diputus oleh ${revokedRecord.revokedBy || 'Super Admin'}. Silakan login ulang.`
+      );
+      setCurrentView('home');
+    }
+  }, [loginActivityLogs, authenticatedUser]);
+
   const handleUpdateCurrentUser = (user: KaryawanItem, divisi: string) => {
     clearLegacyAuthLocalStorage();
     setAuthenticatedUser(user);
@@ -2667,10 +2822,20 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [justLoggedIn]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const sessId = activeSessionIdRef.current;
+    const nextLogs = markSessionLoggedOut(loginActivityLogsRef.current, sessId);
+    setLoginActivityLogs(nextLogs);
+    saveLocalLoginActivityLogs(nextLogs);
+    try {
+      await saveCollectionToCloud('login_activity_logs', nextLogs, 0);
+    } catch {
+      // Proceed with logout even if cloud flush encounters network issue
+    }
     clearLegacyAuthLocalStorage();
     clearRememberedMemberRef();
     skipAutoRestoreRef.current = true;
+    activeSessionIdRef.current = resetDeviceSessionId();
     setIsRestoringSession(false);
     setAuthenticatedUser(null);
     setJustLoggedIn(false);
@@ -2678,10 +2843,34 @@ export default function App() {
     setLogoutNotice('Anda berhasil logout. Silakan login terlebih dahulu sebelum mengakses sistem.');
     setCurrentView('home');
   };
+
+  const handleRevokeSession = (record: LoginActivityRecord) => {
+    if (!requirePermission('manageAccountsAndRoles', 'memutus sesi perangkat admin')) return;
+    const actorName = formatAuditActorName(authenticatedUser, 'Super Admin');
+    const nextLogs = revokeSessionRecord(loginActivityLogsRef.current, record.id, actorName);
+    setLoginActivityLogs(nextLogs);
+    saveLocalLoginActivityLogs(nextLogs);
+    saveCollectionToCloud('login_activity_logs', nextLogs, 0).catch(() => {});
+    dispatchAuditEvent({
+      module: 'IDENTITAS',
+      recordId: record.sessionId,
+      recordTitle: `${record.namaLengkap} (${record.deviceLabel})`,
+      actionType: 'Hapus',
+      field: 'Sesi Perangkat Admin',
+      oldValue: 'Active',
+      newValue: 'Revoked',
+      alasan: `Sesi perangkat diputus oleh ${actorName}`,
+      author: actorName,
+    });
+    showToast(`Sesi "${record.namaLengkap}" (${record.deviceLabel}) berhasil diputus.`);
+  };
+
   const [returnViewAfterAdd, setReturnViewAfterAdd] = useState<AppView | null>(null);
 
-  // Real-Time Cloud Synchronization Manager across all Vercel instances
+  // Real-Time Cloud Synchronization Manager across all admin instances
   const { syncStatus, lastSyncedAt, forceManualSync } = useCloudSyncManager({
+    isAuthenticated: Boolean(authenticatedUser),
+
     identitasList,
     mutasiItems,
     salurOrders,
@@ -2692,6 +2881,13 @@ export default function App() {
     coaList,
     projects,
     organisasiList,
+    dharmaPatronList,
+    cutiKaryawanList,
+    centralAuditLogs,
+    mergeSessionRecords,
+    changeLogs,
+    rbacConfig,
+    loginActivityLogs,
 
     setIdentitasList,
     setMutasiItems,
@@ -2703,7 +2899,80 @@ export default function App() {
     setCoaList,
     setProjects,
     setOrganisasiList,
+    setDharmaPatronList,
+    setCutiKaryawanList,
+    setCentralAuditLogs,
+    setMergeSessionRecords,
+    setChangeLogs,
+    setRbacConfig,
+    setLoginActivityLogs,
+
+    onRemoteAuditEntries: (newEntries) => {
+      newEntries
+        .slice(0, 5)
+        .reverse()
+        .forEach((entry) => pushRealtimeAuditNotification(entry));
+    },
   });
+
+  // RBAC Division-Scoped Project Filtering (keeps raw `projects` untouched for cloud sync & migrations)
+  const isDivisionProjectScoped = useMemo(
+    () => shouldRestrictProjectsToDivision(authenticatedUser, rbacConfig),
+    [authenticatedUser, rbacConfig]
+  );
+
+  const scopedProjects = useMemo(
+    () => filterProjectsForUser(projects, authenticatedUser, rbacConfig),
+    [projects, authenticatedUser, rbacConfig]
+  );
+
+  const requirePermission = (permission: PermissionKey, actionLabel?: string): boolean => {
+    if (!authenticatedUser) return false;
+    if (hasPermission(authenticatedUser, permission, rbacConfig)) return true;
+    const roleLabel = ROLE_METADATA[resolveEffectiveRole(authenticatedUser)].label;
+    showToast(
+      `Akses ditolak: Role "${roleLabel}" (${authenticatedUser.divisi}) tidak diizinkan untuk ${actionLabel || permission}.`
+    );
+    return false;
+  };
+
+  const handleNavigateView = (view: AppView) => {
+    if (authenticatedUser && !canAccessView(authenticatedUser, view, rbacConfig)) {
+      const roleLabel = ROLE_METADATA[resolveEffectiveRole(authenticatedUser)].shortLabel;
+      showToast(
+        `Akses menu ditolak untuk Role ${roleLabel} (Divisi ${authenticatedUser.divisi}).`
+      );
+      return;
+    }
+    if (view === 'table') {
+      setEditingProject(null);
+      setTodoProject(null);
+    }
+    if (view === 'identitas') {
+      setEditingIdentitas(null);
+    }
+    if (view === 'organisasi') {
+      setEditingOrganisasi(null);
+    }
+    setCurrentView(view);
+  };
+
+  useEffect(() => {
+    if (!authenticatedUser) return;
+    if (!canAccessView(authenticatedUser, currentView, rbacConfig)) {
+      const fallbackView: AppView = canAccessView(authenticatedUser, 'home', rbacConfig)
+        ? 'home'
+        : canAccessView(authenticatedUser, 'identitas', rbacConfig)
+        ? 'identitas'
+        : 'home';
+      if (currentView !== fallbackView) {
+        setCurrentView(fallbackView);
+        showToast(
+          `Dialihkan ke beranda karena Role Anda tidak lagi memiliki izin ke halaman tersebut.`
+        );
+      }
+    }
+  }, [authenticatedUser, rbacConfig, currentView]);
   const [projectFormReturnView, setProjectFormReturnView] = useState<'table' | 'timelineProyekSapa'>('table');
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null);
   const [viewingProject, setViewingProject] = useState<ProjectItem | null>(null);
@@ -2819,6 +3088,8 @@ export default function App() {
       })
     );
 
+    const autoActor = formatAuditActorName(authenticatedUser, 'Sistem Otomatis SAPA');
+
     completedUpdates.forEach(({ project, oldStatus }) => {
       showToast(
         `Semua sub-tugas selesai! Status proyek "${project.namaKegiatan}" otomatis diperbarui menjadi Completed`
@@ -2832,7 +3103,7 @@ export default function App() {
         oldValue: oldStatus,
         newValue: 'Completed',
         alasan: 'Otomatis diperbarui karena semua sub-tugas dalam To-Do List telah berstatus Completed',
-        author: 'Sistem Otomatis SAPA',
+        author: autoActor,
       });
     });
 
@@ -2849,7 +3120,7 @@ export default function App() {
         oldValue: oldStatus,
         newValue: 'Ongoing',
         alasan: 'Status dikembalikan ke Ongoing karena terdapat sub-tugas dalam To-Do List yang belum selesai',
-        author: 'Sistem Otomatis SAPA',
+        author: autoActor,
       });
     });
   }, [projectTodos]);
@@ -3177,6 +3448,39 @@ export default function App() {
     }
   }, [changeLogs]);
 
+  // Sync merge session records, dharma patron, A-AJAR, central audit logs & RBAC config
+  useEffect(() => {
+    try {
+      localStorage.setItem(MERGE_SESSION_RECORDS_STORAGE_KEY, JSON.stringify(mergeSessionRecords));
+    } catch (e) {
+      console.error('Failed to save merge session records to localStorage', e);
+    }
+  }, [mergeSessionRecords]);
+
+  useEffect(() => {
+    saveDharmaPatronToStorage(dharmaPatronList);
+  }, [dharmaPatronList]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('yppln_transaksi_ajar_list', JSON.stringify(transaksiAjarList));
+    } catch (e) {
+      console.error('Failed to save transaksi ajar list to localStorage', e);
+    }
+  }, [transaksiAjarList]);
+
+  useEffect(() => {
+    saveCentralAuditLogs(centralAuditLogs);
+  }, [centralAuditLogs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RBAC_POLICY_STORAGE_KEY, JSON.stringify(rbacConfig));
+    } catch (e) {
+      console.error('Failed to save RBAC config to localStorage', e);
+    }
+  }, [rbacConfig]);
+
   // Sync dismissed duplicate pairs with localStorage
   useEffect(() => {
     try {
@@ -3467,10 +3771,23 @@ export default function App() {
   };
 
   const handleSaveProject = (data: Omit<ProjectItem, 'id'> | ProjectItem) => {
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Proyek');
     if ('id' in data) {
+      const existing = projects.find((p) => p.id === data.id);
       setProjects((prev) =>
         prev.map((p) => (p.id === data.id ? (data as ProjectItem) : p))
       );
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: data.id,
+        recordTitle: data.namaKegiatan,
+        actionType: 'Ubah',
+        field: 'Data Proyek SAPA',
+        oldValue: existing ? `${existing.namaKegiatan} (${existing.status})` : '-',
+        newValue: `${data.namaKegiatan} (${data.status})`,
+        alasan: `Pembaruan data proyek oleh ${actorName}`,
+        author: actorName,
+      });
       showToast('Proyek berhasil diperbarui');
     } else {
       const newProject: ProjectItem = {
@@ -3478,6 +3795,17 @@ export default function App() {
         id: `proj-${Date.now()}`,
       };
       setProjects((prev) => [...prev, newProject]);
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: newProject.id,
+        recordTitle: newProject.namaKegiatan,
+        actionType: 'Tambah',
+        field: 'Proyek SAPA Baru',
+        oldValue: '-',
+        newValue: `${newProject.namaKegiatan} (Divisi ${newProject.divisi})`,
+        alasan: `Penambahan proyek baru oleh ${actorName}`,
+        author: actorName,
+      });
       showToast('Proyek baru berhasil ditambahkan');
     }
     setCurrentView(projectFormReturnView);
@@ -3485,14 +3813,45 @@ export default function App() {
   };
 
   const handleDeleteProject = (id: string) => {
+    if (!requirePermission('deleteData', 'menghapus data proyek')) return;
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Proyek');
+    const target = projects.find((p) => p.id === id);
     setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (target) {
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: target.id,
+        recordTitle: target.namaKegiatan,
+        actionType: 'Hapus',
+        field: 'Hapus Proyek SAPA',
+        oldValue: `${target.namaKegiatan} (${target.divisi})`,
+        newValue: 'Dihapus',
+        alasan: `Penghapusan proyek oleh ${actorName}`,
+        author: actorName,
+      });
+    }
     showToast('Proyek telah dihapus');
   };
 
   const handleUpdateStatus = (id: string, newStatus: string) => {
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Proyek');
+    const target = projects.find((p) => p.id === id);
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
     );
+    if (target && target.status !== newStatus) {
+      dispatchAuditEvent({
+        module: 'PROYEK',
+        recordId: target.id,
+        recordTitle: target.namaKegiatan,
+        actionType: 'Ubah',
+        field: 'Status Proyek',
+        oldValue: target.status,
+        newValue: newStatus,
+        alasan: `Perubahan status proyek oleh ${actorName}`,
+        author: actorName,
+      });
+    }
     showToast(`Status diubah menjadi ${newStatus}`);
   };
 
@@ -3640,7 +3999,7 @@ export default function App() {
 
   // Edit Identitas change log handler
   const handleSaveEditIdentitas = (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => {
-    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Identitas');
     const nowIso = new Date().toISOString();
     const enrichedLogs = newLogs.map((log) => ({
       ...log,
@@ -3797,6 +4156,151 @@ export default function App() {
     };
   };
 
+  // Shared label match & replace helpers for Donasi, Dharma Patron Rutin & A-AJAR
+  const identitasLabelMatches = (val: string | undefined, ident: IdentitasItem): boolean => {
+    if (!val) return false;
+    const trimmed = val.trim();
+    const fullLabel = `${ident.codeId || ''} ${ident.namaLengkap}`.trim();
+    return (
+      (Boolean(ident.namaLengkap) &&
+        trimmed.toLowerCase() === ident.namaLengkap.trim().toLowerCase()) ||
+      (Boolean(fullLabel) && trimmed.toLowerCase() === fullLabel.toLowerCase()) ||
+      (Boolean(ident.codeId) && trimmed.startsWith(`${ident.codeId} `)) ||
+      (Boolean(ident.codeId) && trimmed === ident.codeId)
+    );
+  };
+
+  const replaceIdentitasLabel = (
+    val: string | undefined,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): string => {
+    if (!val) return '';
+    const trimmed = val.trim();
+    const fromFull = `${fromIdent.codeId || ''} ${fromIdent.namaLengkap}`.trim();
+    const toFull = `${toIdent.codeId || ''} ${toIdent.namaLengkap}`.trim();
+    if (
+      (fromFull && trimmed.toLowerCase() === fromFull.toLowerCase()) ||
+      (fromIdent.codeId && trimmed.startsWith(`${fromIdent.codeId} `))
+    ) {
+      return toFull || toIdent.namaLengkap;
+    }
+    if (fromIdent.codeId && trimmed === fromIdent.codeId) {
+      return toIdent.codeId || toIdent.namaLengkap;
+    }
+    if (
+      fromIdent.namaLengkap &&
+      trimmed.toLowerCase() === fromIdent.namaLengkap.trim().toLowerCase()
+    ) {
+      return toIdent.namaLengkap;
+    }
+    return val;
+  };
+
+  const donasiOrderMatchesIdentitas = (d: DonasiOrder, ident: IdentitasItem): boolean => {
+    return (
+      identitasLabelMatches(d.customerId, ident) ||
+      identitasLabelMatches(d.namaDonatur?.name, ident)
+    );
+  };
+
+  const migrateDonasiOrderIdentitas = (
+    d: DonasiOrder,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): DonasiOrder => {
+    return {
+      ...d,
+      customerId: replaceIdentitasLabel(d.customerId, fromIdent, toIdent) || d.customerId,
+      namaDonatur: d.namaDonatur
+        ? {
+            ...d.namaDonatur,
+            name: identitasLabelMatches(d.namaDonatur.name, fromIdent)
+              ? toIdent.namaLengkap
+              : d.namaDonatur.name,
+          }
+        : d.namaDonatur,
+    };
+  };
+
+  const dharmaPatronMatchesIdentitas = (
+    dp: DharmaPatronRutinItem,
+    ident: IdentitasItem
+  ): boolean => {
+    return (
+      Boolean(
+        ident.codeId && (dp.identitasId === ident.codeId || dp.noDonatur === ident.codeId)
+      ) ||
+      Boolean(dp.identitasId && dp.identitasId === ident.id) ||
+      identitasLabelMatches(dp.namaDonatur, ident)
+    );
+  };
+
+  const migrateDharmaPatronIdentitas = (
+    dp: DharmaPatronRutinItem,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): DharmaPatronRutinItem => {
+    const matchedCodeOrId =
+      dp.identitasId === fromIdent.codeId || dp.identitasId === fromIdent.id;
+    return {
+      ...dp,
+      identitasId: matchedCodeOrId ? toIdent.codeId || toIdent.id : dp.identitasId,
+      namaDonatur: identitasLabelMatches(dp.namaDonatur, fromIdent)
+        ? toIdent.namaLengkap
+        : dp.namaDonatur,
+      panggilan:
+        toIdent.namaPanggilan &&
+        fromIdent.namaPanggilan &&
+        dp.panggilan === fromIdent.namaPanggilan
+          ? toIdent.namaPanggilan
+          : dp.panggilan,
+      pelimpahanJasa: Array.isArray(dp.pelimpahanJasa)
+        ? dp.pelimpahanJasa.map((p) =>
+            identitasLabelMatches(p, fromIdent)
+              ? replaceIdentitasLabel(p, fromIdent, toIdent)
+              : p
+          )
+        : dp.pelimpahanJasa,
+    };
+  };
+
+  const ajarOrderMatchesIdentitas = (
+    a: TransaksiAjarItem,
+    ident: IdentitasItem
+  ): boolean => {
+    return (
+      identitasLabelMatches(a.customerId, ident) ||
+      (a.recipients || []).some((r) => identitasLabelMatches(r, ident)) ||
+      (a.otherRecipients || []).some((r) => identitasLabelMatches(r, ident))
+    );
+  };
+
+  const migrateAjarOrderIdentitas = (
+    a: TransaksiAjarItem,
+    fromIdent: IdentitasItem,
+    toIdent: IdentitasItem
+  ): TransaksiAjarItem => {
+    return {
+      ...a,
+      customerId: replaceIdentitasLabel(a.customerId, fromIdent, toIdent) || a.customerId,
+      recipients: (a.recipients || []).map((r) =>
+        identitasLabelMatches(r, fromIdent)
+          ? replaceIdentitasLabel(r, fromIdent, toIdent)
+          : r
+      ),
+      ...(Array.isArray(a.otherRecipients)
+        ? {
+            otherRecipients: a.otherRecipients.map((r) =>
+              identitasLabelMatches(r, fromIdent)
+                ? replaceIdentitasLabel(r, fromIdent, toIdent)
+                : r
+            ),
+          }
+        : {}),
+    };
+  };
+
   // Helper to build merged IdentitasItem when no custom override is passed
   const buildDefaultMergedIdentitas = (primary: IdentitasItem, secondary: IdentitasItem): IdentitasItem => ({
     ...secondary,
@@ -3833,7 +4337,10 @@ export default function App() {
     secondary: IdentitasItem,
     mergedItem: IdentitasItem,
     projectsSnapshot: ProjectItem[],
-    salurSnapshot: SalurOrder[]
+    salurSnapshot: SalurOrder[],
+    donasiSnapshot: DonasiOrder[],
+    dharmaPatronSnapshot: DharmaPatronRutinItem[],
+    ajarSnapshot: TransaksiAjarItem[]
   ): MergeTransferredData => {
     const trackedFields: Array<{ key: keyof IdentitasItem; label: string }> = [
       { key: 'namaLengkap', label: 'Nama Lengkap' },
@@ -3867,6 +4374,15 @@ export default function App() {
     const salurOrdersUpdated = salurSnapshot.filter((s) =>
       salurMatchesIdentitas(s, secondary)
     ).length;
+    const donasiOrdersUpdated = donasiSnapshot.filter((d) =>
+      donasiOrderMatchesIdentitas(d, secondary)
+    ).length;
+    const dharmaPatronUpdated = dharmaPatronSnapshot.filter((dp) =>
+      dharmaPatronMatchesIdentitas(dp, secondary)
+    ).length;
+    const ajarOrdersUpdated = ajarSnapshot.filter((a) =>
+      ajarOrderMatchesIdentitas(a, secondary)
+    ).length;
 
     return {
       fieldsEnriched: fieldsList.length,
@@ -3874,17 +4390,28 @@ export default function App() {
       addressesMoved,
       projectsUpdated,
       salurOrdersUpdated,
+      donasiOrdersUpdated,
+      dharmaPatronUpdated,
+      ajarOrdersUpdated,
       totalDataPointsMoved:
-        fieldsList.length + addressesMoved + projectsUpdated + salurOrdersUpdated,
+        fieldsList.length +
+        addressesMoved +
+        projectsUpdated +
+        salurOrdersUpdated +
+        donasiOrdersUpdated +
+        dharmaPatronUpdated +
+        ajarOrdersUpdated,
     };
   };
 
-  // Merge duplicates handler: supports Smart Merge custom field overrides and primary swapping
+  // Merge duplicates handler: supports Smart Merge custom field overrides, primary swapping & rollback snapshots
   const handleMergePair = (
     pair: DuplicatePair,
     customMergedItem?: IdentitasItem,
     primaryItemId?: string
   ) => {
+    if (!requirePermission('mergeDuplicates', 'menggabungkan profil duplikat')) return;
+
     const useSecondAsPrimary = primaryItemId === pair.item2.id;
     const primary = useSecondAsPrimary ? pair.item2 : pair.item1;
     const secondary = useSecondAsPrimary ? pair.item1 : pair.item2;
@@ -3902,8 +4429,25 @@ export default function App() {
       secondary,
       mergedItem,
       projects,
-      salurOrders
+      salurOrders,
+      donasiOrders,
+      dharmaPatronList,
+      transaksiAjarList
     );
+
+    const rollbackSnapshot: MergeRollbackSnapshot = {
+      primaryBefore: primary,
+      secondaryBefore: secondary,
+      projectsBefore: projects.filter((p) => projectMatchesIdentitas(p, secondary)),
+      salurOrdersBefore: salurOrders.filter((s) => salurMatchesIdentitas(s, secondary)),
+      donasiOrdersBefore: donasiOrders.filter((d) => donasiOrderMatchesIdentitas(d, secondary)),
+      dharmaPatronBefore: dharmaPatronList.filter((dp) =>
+        dharmaPatronMatchesIdentitas(dp, secondary)
+      ),
+      transaksiAjarBefore: transaksiAjarList.filter((a) =>
+        ajarOrderMatchesIdentitas(a, secondary)
+      ),
+    };
 
     // 1. Update identity list
     setIdentitasList((prev) =>
@@ -3912,7 +4456,7 @@ export default function App() {
         .map((it) => (it.id === primary.id ? mergedItem : it))
     );
 
-    // 2. Update projects referencing secondary
+    // 2. Migrate Projects, S-SALUR, Donasi, Dharma Patron Rutin & A-AJAR referencing secondary
     setProjects((prev) =>
       prev.map((p) =>
         projectMatchesIdentitas(p, secondary)
@@ -3921,7 +4465,6 @@ export default function App() {
       )
     );
 
-    // 3. Update salur orders referencing secondary
     setSalurOrders((prev) =>
       prev.map((s) =>
         salurMatchesIdentitas(s, secondary)
@@ -3930,7 +4473,31 @@ export default function App() {
       )
     );
 
-    // 4. Record audit change log + dispatch Central Audit Event
+    setDonasiOrders((prev) =>
+      prev.map((d) =>
+        donasiOrderMatchesIdentitas(d, secondary)
+          ? migrateDonasiOrderIdentitas(d, secondary, mergedItem)
+          : d
+      )
+    );
+
+    setDharmaPatronList((prev) =>
+      prev.map((dp) =>
+        dharmaPatronMatchesIdentitas(dp, secondary)
+          ? migrateDharmaPatronIdentitas(dp, secondary, mergedItem)
+          : dp
+      )
+    );
+
+    setTransaksiAjarList((prev) =>
+      prev.map((a) =>
+        ajarOrderMatchesIdentitas(a, secondary)
+          ? migrateAjarOrderIdentitas(a, secondary, mergedItem)
+          : a
+      )
+    );
+
+    // 3. Record audit change log + dispatch Central Audit Event
     const now = new Date();
     const timestampFormatted = now.toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -3950,7 +4517,7 @@ export default function App() {
       ? `Smart Merge Terkurasi — ${similarityInfo}: ${pair.reason}`
       : `Merge Duplicates (${pair.reason})`;
 
-    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Identitas');
 
     const sessionRecord: MergeSessionRecord = {
       id: `mrec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -3966,6 +4533,7 @@ export default function App() {
       reason: pair.reason,
       method: customMergedItem ? 'curated' : 'quick',
       transferredData,
+      rollbackSnapshot,
     };
 
     const mergeLog: IdentitasChangeLog = {
@@ -3999,10 +4567,12 @@ export default function App() {
 
   // Merge multiple duplicate pairs (defaults to all active pairs)
   const handleMergeAll = (targetPairs?: DuplicatePair[]) => {
+    if (!requirePermission('mergeDuplicates', 'menggabungkan profil duplikat secara massal')) return;
+
     const pairsToProcess = targetPairs && targetPairs.length > 0 ? targetPairs : duplicatePairs;
     if (pairsToProcess.length === 0) return;
 
-    const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Identitas');
     const now = new Date();
     const batchId = `batch-${Date.now()}`;
     const timestampFormatted = now.toLocaleDateString('id-ID', {
@@ -4033,8 +4603,25 @@ export default function App() {
         secondary,
         mergedItem,
         projects,
-        salurOrders
+        salurOrders,
+        donasiOrders,
+        dharmaPatronList,
+        transaksiAjarList
       );
+
+      const rollbackSnapshot: MergeRollbackSnapshot = {
+        primaryBefore: primary,
+        secondaryBefore: secondary,
+        projectsBefore: projects.filter((p) => projectMatchesIdentitas(p, secondary)),
+        salurOrdersBefore: salurOrders.filter((s) => salurMatchesIdentitas(s, secondary)),
+        donasiOrdersBefore: donasiOrders.filter((d) => donasiOrderMatchesIdentitas(d, secondary)),
+        dharmaPatronBefore: dharmaPatronList.filter((dp) =>
+          dharmaPatronMatchesIdentitas(dp, secondary)
+        ),
+        transaksiAjarBefore: transaksiAjarList.filter((a) =>
+          ajarOrderMatchesIdentitas(a, secondary)
+        ),
+      };
 
       removedIds.add(secondary.id);
       replacements.set(primary.id, mergedItem);
@@ -4059,6 +4646,7 @@ export default function App() {
         reason: pair.reason,
         method: 'batch',
         transferredData,
+        rollbackSnapshot,
       };
       batchSessionRecords.push(sessionRec);
 
@@ -4114,6 +4702,39 @@ export default function App() {
           return updated;
         })
       );
+      setDonasiOrders((prev) =>
+        prev.map((d) => {
+          let updated = d;
+          for (const m of migrations) {
+            if (donasiOrderMatchesIdentitas(updated, m.fromIdent)) {
+              updated = migrateDonasiOrderIdentitas(updated, m.fromIdent, m.toIdent);
+            }
+          }
+          return updated;
+        })
+      );
+      setDharmaPatronList((prev) =>
+        prev.map((dp) => {
+          let updated = dp;
+          for (const m of migrations) {
+            if (dharmaPatronMatchesIdentitas(updated, m.fromIdent)) {
+              updated = migrateDharmaPatronIdentitas(updated, m.fromIdent, m.toIdent);
+            }
+          }
+          return updated;
+        })
+      );
+      setTransaksiAjarList((prev) =>
+        prev.map((a) => {
+          let updated = a;
+          for (const m of migrations) {
+            if (ajarOrderMatchesIdentitas(updated, m.fromIdent)) {
+              updated = migrateAjarOrderIdentitas(updated, m.fromIdent, m.toIdent);
+            }
+          }
+          return updated;
+        })
+      );
     }
 
     setChangeLogs((prev) => [...createdLogs, ...prev]);
@@ -4129,6 +4750,142 @@ export default function App() {
     });
 
     showToast(`${removedIds.size} pasangan data duplikat berhasil digabungkan`);
+  };
+
+  // Undo / Rollback Merge handler: restores exact pre-merge snapshots across all modules & logs Undo Merge
+  const handleUndoMerge = (mergeRecordId: string) => {
+    if (!requirePermission('undoMerge', 'membatalkan / rollback penggabungan profil')) return;
+
+    const record =
+      mergeSessionRecords.find((r) => r.id === mergeRecordId) ||
+      centralAuditLogs.find((l) => l.metadata?.mergeRecordId === mergeRecordId)?.metadata
+        ?.mergeSessionRecord;
+
+    if (!record) {
+      showToast('Catatan sesi merge tidak ditemukan.');
+      return;
+    }
+    if (record.isRolledBack) {
+      showToast('Sesi merge ini sudah pernah di-rollback sebelumnya.');
+      return;
+    }
+    const snap = record.rollbackSnapshot;
+    if (!snap) {
+      showToast('Snapshot pra-merge tidak tersedia untuk sesi lama ini.');
+      return;
+    }
+
+    // 1. Restore Primary & Secondary IdentitasItem
+    setIdentitasList((prev) => {
+      const updated = prev.map((it) =>
+        it.id === snap.primaryBefore.id ? snap.primaryBefore : it
+      );
+      if (!updated.some((it) => it.id === snap.secondaryBefore.id)) {
+        return [snap.secondaryBefore, ...updated];
+      }
+      return updated.map((it) =>
+        it.id === snap.secondaryBefore.id ? snap.secondaryBefore : it
+      );
+    });
+
+    // 2. Restore cross-module records to exact pre-merge state
+    if (snap.projectsBefore.length > 0) {
+      const projMap = new Map(snap.projectsBefore.map((p) => [p.id, p]));
+      setProjects((prev) => prev.map((p) => projMap.get(p.id) || p));
+    }
+    if (snap.salurOrdersBefore.length > 0) {
+      const salurMap = new Map(snap.salurOrdersBefore.map((s) => [s.id, s]));
+      setSalurOrders((prev) => prev.map((s) => salurMap.get(s.id) || s));
+    }
+    if (snap.donasiOrdersBefore.length > 0) {
+      const donasiMap = new Map(snap.donasiOrdersBefore.map((d) => [d.id, d]));
+      setDonasiOrders((prev) => prev.map((d) => donasiMap.get(d.id) || d));
+    }
+    if (snap.dharmaPatronBefore.length > 0) {
+      const dpMap = new Map(snap.dharmaPatronBefore.map((dp) => [dp.id, dp]));
+      setDharmaPatronList((prev) => prev.map((dp) => dpMap.get(dp.id) || dp));
+    }
+    if (snap.transaksiAjarBefore.length > 0) {
+      const ajarMap = new Map(snap.transaksiAjarBefore.map((a) => [a.id, a]));
+      setTransaksiAjarList((prev) => prev.map((a) => ajarMap.get(a.id) || a));
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Identitas');
+    const timestampFormatted = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    // 3. Mark session record as rolled back and strip heavy snapshot payload
+    setMergeSessionRecords((prev) =>
+      prev.map((r) =>
+        r.id === mergeRecordId
+          ? {
+              ...r,
+              isRolledBack: true,
+              rolledBackAt: nowIso,
+              rolledBackBy: actorName,
+              rollbackSnapshot: undefined,
+            }
+          : r
+      )
+    );
+
+    // 4. Mark original central audit log entry as rolled back
+    setCentralAuditLogs((prev) =>
+      prev.map((entry) => {
+        if (entry.metadata?.mergeRecordId !== mergeRecordId) return entry;
+        return {
+          ...entry,
+          metadata: {
+            ...entry.metadata,
+            isRolledBack: true,
+            rolledBackAt: nowIso,
+            rolledBackBy: actorName,
+            mergeSessionRecord: entry.metadata.mergeSessionRecord
+              ? {
+                  ...entry.metadata.mergeSessionRecord,
+                  isRolledBack: true,
+                  rolledBackAt: nowIso,
+                  rolledBackBy: actorName,
+                  rollbackSnapshot: undefined,
+                }
+              : undefined,
+          },
+        };
+      })
+    );
+
+    // 5. Log Rollback in IdentitasChangeLog & dispatch Undo Merge Central Audit Event
+    const undoChangeLog: IdentitasChangeLog = {
+      id: `log-undo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      identitasId: snap.primaryBefore.id,
+      codeId: snap.primaryBefore.codeId || '',
+      namaLengkap: `${snap.primaryBefore.namaLengkap} & ${snap.secondaryBefore.namaLengkap}`,
+      timestamp: timestampFormatted,
+      isoTimestamp: nowIso,
+      author: actorName,
+      field: 'Rollback Merge Identitas',
+      oldValue: `Digabung (Sesi ${record.id})`,
+      newValue: `Dipulihkan: ${snap.primaryBefore.namaLengkap} & ${snap.secondaryBefore.namaLengkap}`,
+      alasan: `Pembatalan penggabungan profil dan pemulihan relasi modul oleh ${actorName}`,
+      actionType: 'Rollback Merge',
+      metadata: {
+        targetMergeRecordId: record.id,
+      },
+    };
+    setChangeLogs((prev) => [undoChangeLog, ...prev]);
+    dispatchUndoMergeAuditEvent(record, actorName);
+
+    showToast(
+      `Rollback berhasil: profil "${snap.primaryBefore.namaLengkap}" dan "${snap.secondaryBefore.namaLengkap}" beserta transaksinya telah dipulihkan`
+    );
   };
 
   const handleResetMergeSession = () => {
@@ -4170,6 +4927,7 @@ export default function App() {
   };
 
   const handleDeleteOrganisasi = (id: string) => {
+    if (!requirePermission('deleteData', 'menghapus data organisasi')) return;
     setOrganisasiList((prev) => prev.filter((it) => it.id !== id));
     showToast('Organisasi berhasil dihapus');
   };
@@ -4758,8 +5516,8 @@ export default function App() {
     volunteerAJarList,
   ]);
 
-  // Filter projects based on search query, divisi, and status
-  const filteredProjects = projects.filter((item) => {
+  // Filter projects based on search query, divisi, and status (RBAC division-scoped)
+  const filteredProjects = scopedProjects.filter((item) => {
     // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -4916,7 +5674,7 @@ export default function App() {
       <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex items-center justify-center p-6 font-['Plus_Jakarta_Sans',sans-serif]">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-700 border-t-[#05828e] animate-spin motion-reduce:animate-none" />
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Memulihkan sesi anggota...</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Memuat data akun anggota...</p>
         </div>
       </div>
     );
@@ -4934,9 +5692,9 @@ export default function App() {
         onRegisterSuccess={(createdAccount, updatedList) => {
           setKaryawanList(updatedList);
           setLogoutNotice(null);
-          showToast(`Akun "${createdAccount.emailLogin}" berhasil didaftarkan ke Firestore. Silakan login.`);
+          showToast(`Akun "${createdAccount.emailLogin}" berhasil didaftarkan. Silakan login.`);
         }}
-        onLoginSuccess={(user, rememberMe) => {
+        onLoginSuccess={(user, rememberMe, authMethod) => {
           clearLegacyAuthLocalStorage();
           skipAutoRestoreRef.current = false;
           if (rememberMe) {
@@ -4944,6 +5702,20 @@ export default function App() {
           } else {
             clearRememberedMemberRef();
           }
+
+          const sessId = activeSessionIdRef.current || getOrCreateDeviceSessionId();
+          activeSessionIdRef.current = sessId;
+          const resolvedMethod: LoginAuthMethod = authMethod || 'member_credentials';
+          const loginEntry = createLoginActivityEntry({
+            user,
+            sessionId: sessId,
+            authMethod: resolvedMethod,
+          });
+          const nextLogs = upsertLoginSessionRecord(loginActivityLogsRef.current, loginEntry);
+          setLoginActivityLogs(nextLogs);
+          saveLocalLoginActivityLogs(nextLogs);
+          saveCollectionToCloud('login_activity_logs', nextLogs, 0).catch(() => {});
+
           setJustLoggedIn(true);
           setAuthenticatedUser(user);
           setCurrentDivisi(user.divisi || 'MAD');
@@ -5000,33 +5772,23 @@ export default function App() {
         onOpenAuditLog={(alertId) => {
           setLiveAuditAlerts((prev) => prev.filter((a) => a.id !== alertId));
           setActiveAuditToast(null);
-          setCurrentView('auditLog');
+          handleNavigateView('auditLog');
         }}
       />
 
       {/* Left Menu Bar / Sidebar */}
       <Sidebar
         currentView={currentView}
-        onSelectView={(view) => {
-          if (view === 'table') {
-            setEditingProject(null);
-            setTodoProject(null);
-          }
-          if (view === 'identitas') {
-            setEditingIdentitas(null);
-          }
-          if (view === 'organisasi') {
-            setEditingOrganisasi(null);
-          }
-          setCurrentView(view);
-        }}
-        projects={projects}
+        onSelectView={handleNavigateView}
+        projects={scopedProjects}
         identitasCount={identitasList.length}
         organisasiCount={organisasiList.length}
         isMobileOpen={isMobileSidebarOpen}
         onMobileClose={() => setIsMobileSidebarOpen(false)}
         currentUser={authenticatedUser}
+        rbacConfig={rbacConfig}
         onLogout={handleLogout}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
         animateEntrance={justLoggedIn}
       />
 
@@ -5042,11 +5804,12 @@ export default function App() {
           <Header
             title={getHeaderTitle()}
             currentView={currentView}
-            onSelectView={(view) => setCurrentView(view)}
+            onSelectView={handleNavigateView}
             syncStatus={syncStatus}
             onManualSync={forceManualSync}
             currentUser={authenticatedUser}
             onLogout={handleLogout}
+            onOpenChangePassword={() => setIsChangePasswordOpen(true)}
             theme={theme}
             onToggleTheme={toggleTheme}
             onBackToTable={
@@ -5230,7 +5993,9 @@ export default function App() {
               karyawanList={karyawanList}
               onUpdateCurrentUser={handleUpdateCurrentUser}
               onLogout={handleLogout}
-              projects={projects}
+              projects={scopedProjects}
+              dharmaPatronList={dharmaPatronList}
+              isDivisionProjectScoped={isDivisionProjectScoped}
               identitasList={identitasList}
               organisasiList={organisasiList}
               todoTasks={projectTodos}
@@ -5249,7 +6014,7 @@ export default function App() {
               posPengeluaranList={posPengeluaranList}
               jenisProyekList={jenisProyekList}
               volunteerSSebarList={volunteerSSebarList}
-              onNavigateView={(view) => setCurrentView(view)}
+              onNavigateView={handleNavigateView}
               onOpenProjectReport={(proj) => {
                 setReportingProject(proj);
                 setCurrentView('report');
@@ -5281,10 +6046,22 @@ export default function App() {
           {/* View 1: Main Proyek SAPA Table */}
           {currentView === 'table' && (
             <>
+              {isDivisionProjectScoped && (
+                <div className="mt-3 sm:mt-4 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-teal-50/70 dark:bg-teal-950/30 px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-teal-900 dark:text-teal-200">
+                  <span>
+                    <strong>Filter Divisi Aktif (RBAC):</strong> Menampilkan daftar proyek khusus Divisi{' '}
+                    <span className="font-mono font-bold">{authenticatedUser.divisi}</span>.
+                  </span>
+                  <span className="font-mono text-[11px] font-semibold tabular-nums text-[#008d91] dark:text-teal-300 shrink-0">
+                    {scopedProjects.length} proyek
+                  </span>
+                </div>
+              )}
+
               {/* Summary KPI Cards Section Above Project Table */}
               <div className="mt-3 sm:mt-4">
                 <ProjectTableSummaryCards
-                  projects={projects}
+                  projects={scopedProjects}
                   salurOrders={salurOrders}
                   salurProducts={salurItems}
                   donasiOrders={donasiOrders}
@@ -5309,7 +6086,7 @@ export default function App() {
               <div className="mt-3 sm:mt-4">
                 <ProjectLocationMap
                   projects={filteredProjects}
-                  totalProjectsCount={projects.length}
+                  totalProjectsCount={scopedProjects.length}
                   isDark={theme === 'dark'}
                   activeSearchQuery={searchQuery}
                   currentUser={authenticatedUser}
@@ -5358,7 +6135,7 @@ export default function App() {
                     setPersiapanFilterEnd('');
                   }}
                   filteredCount={filteredProjects.length}
-                  totalCount={projects.length}
+                  totalCount={scopedProjects.length}
                 />
               </div>
 
@@ -5396,7 +6173,7 @@ export default function App() {
           {currentView === 'todoList' && (
             <div className="mt-4 sm:mt-6">
               <TodoListDashboard
-                projects={projects}
+                projects={scopedProjects}
                 projectTodos={projectTodos}
                 karyawanList={karyawanList}
                 onToggleComplete={handleToggleTodoComplete}
@@ -5418,7 +6195,7 @@ export default function App() {
             <div className="mt-4 sm:mt-6">
               <FormTodoList
                 project={todoProject}
-                projects={projects}
+                projects={scopedProjects}
                 karyawanList={karyawanList}
                 identitasList={identitasList}
                 organisasiList={organisasiList}
@@ -5439,7 +6216,7 @@ export default function App() {
           {currentView === 'calendarTodoList' && (
             <div className="mt-4 sm:mt-6">
               <CalendarTodoList
-                projects={projects}
+                projects={scopedProjects}
                 projectTodos={projectTodos}
                 karyawanList={karyawanList}
                 divisiOptions={divisiNames}
@@ -5490,7 +6267,7 @@ export default function App() {
           {currentView === 'timelineProyekSapa' && (
             <div className="mt-4 sm:mt-6">
               <ProyekSapaTimelineView
-                projects={projects}
+                projects={scopedProjects}
                 divisiOptions={divisiNames}
                 onNavigateView={(view) => setCurrentView(view)}
                 onAddProject={() => {
@@ -5544,7 +6321,7 @@ export default function App() {
           {currentView === 'report' && (
             <div className="mt-4 sm:mt-6">
               <ReportProyek
-                project={reportingProject || projects[0]}
+                project={reportingProject || scopedProjects[0]}
                 onBack={() => {
                   setCurrentView('table');
                 }}
@@ -5925,6 +6702,14 @@ export default function App() {
                 onSaveItem={handleSaveKaryawanItem}
                 onDeleteItem={handleDeleteKaryawanItem}
                 onShowToast={(msg) => showToast(msg)}
+                rbacConfig={rbacConfig}
+                onUpdateRbacConfig={handleUpdateRbacConfig}
+                currentUser={authenticatedUser}
+                divisiList={divisiNames}
+                canManageRoles={hasPermission(authenticatedUser, 'manageAccountsAndRoles', rbacConfig)}
+                loginActivityLogs={loginActivityLogs}
+                currentSessionId={activeSessionIdRef.current}
+                onRevokeSession={handleRevokeSession}
               />
             </div>
           )}
@@ -5940,6 +6725,7 @@ export default function App() {
                 onUpdateStatus={handleUpdateCutiStatus}
                 onNavigateToKaryawan={() => setCurrentView('karyawan')}
                 onShowToast={(msg) => showToast(msg)}
+                currentUserName={formatAuditActorName(authenticatedUser, 'Admin UMM')}
               />
             </div>
           )}
@@ -7028,6 +7814,7 @@ export default function App() {
                 onAddNew={() => setCurrentView('formTransaksiDonasi')}
                 onNavigateToReportPelimpahanJasa={() => setCurrentView('reportNamaPelimpahanJasaDonasi')}
                 onShowToast={(msg) => showToast(msg)}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Keuangan')}
               />
             </div>
           )}
@@ -7396,6 +8183,7 @@ export default function App() {
                 onUpdateMutasiItems={(updated) => setMutasiItems(updated)}
                 onUpdateItems={handleUpdateTransaksiAjar}
                 onShowToast={(msg) => showToast(msg)}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Edukasi')}
                 onAddNew={() => {
                   setEditingTransaksiAjar(null);
                   setCurrentView('formTransaksiAjar');
@@ -7639,6 +8427,7 @@ export default function App() {
                 duplicateCount={totalDuplicateRecordsCount}
                 onOpenMergeDuplicates={() => setCurrentView('mergeDuplicates')}
                 onAddNew={() => {
+                  if (!requirePermission('editIdentitas', 'menambah profil identitas baru')) return;
                   setEditingIdentitas(null);
                   setCurrentView('formIdentitas');
                 }}
@@ -7647,6 +8436,7 @@ export default function App() {
                   setCurrentView('editIdentitas');
                 }}
                 onDeleteItem={(id) => {
+                  if (!requirePermission('deleteData', 'menghapus data identitas')) return;
                   setIdentitasList((prev) => prev.filter((it) => it.id !== id));
                   showToast('Identitas berhasil dihapus');
                 }}
@@ -7670,6 +8460,10 @@ export default function App() {
                 changeLogs={changeLogs}
                 centralAuditLogs={centralAuditLogs}
                 suspiciousFlags={anomalyReport?.flags || []}
+                onOpenExistingProfile={(item) => {
+                  setEditingIdentitas(item);
+                  setCurrentView('editIdentitas');
+                }}
                 onCancel={() => {
                   if (returnViewAfterAdd) {
                     setCurrentView(returnViewAfterAdd);
@@ -7680,7 +8474,8 @@ export default function App() {
                   setEditingIdentitas(null);
                 }}
                 onSave={(savedItem) => {
-                  const actorName = authenticatedUser?.namaLengkap || 'Admin Identitas';
+                  if (!requirePermission('editIdentitas', 'menyimpan perubahan identitas')) return;
+                  const actorName = formatAuditActorName(authenticatedUser, 'Admin Identitas');
                   const nowIso = new Date().toISOString();
                   const nowFormatted = new Date().toLocaleString('id-ID', {
                     day: '2-digit',
@@ -7817,13 +8612,17 @@ export default function App() {
                   setCurrentView('identitas');
                   setEditingIdentitas(null);
                 }}
-                onSave={handleSaveEditIdentitas}
+                onSave={(updatedItem, logs) => {
+                  if (!requirePermission('editIdentitas', 'menyimpan perubahan identitas')) return;
+                  handleSaveEditIdentitas(updatedItem, logs);
+                }}
                 onShowToast={(msg) => showToast(msg)}
                 onOpenAddModal={() => {
+                  if (!requirePermission('editIdentitas', 'menambah profil identitas baru')) return;
                   setEditingIdentitas(null);
                   setCurrentView('formIdentitas');
                 }}
-                onNavigateToCentralAudit={() => setCurrentView('auditLog')}
+                onNavigateToCentralAudit={() => handleNavigateView('auditLog')}
               />
             </div>
           )}
@@ -7834,24 +8633,33 @@ export default function App() {
               <CentralAuditLogView
                 logs={centralAuditLogs}
                 anomalyReport={anomalyReport}
+                canUndoMerge={hasPermission(authenticatedUser, 'undoMerge', rbacConfig)}
+                canClearLogs={hasPermission(authenticatedUser, 'deleteData', rbacConfig)}
+                canManageAnomalies={hasPermission(authenticatedUser, 'manageAnomalies', rbacConfig)}
+                canExportCsv={hasPermission(authenticatedUser, 'exportAuditCsv', rbacConfig)}
+                onUndoMerge={handleUndoMerge}
                 onTriggerJobScan={() => {
+                  if (!requirePermission('manageAnomalies', 'menjalankan pemindaian anomali')) return;
                   const rep = auditAnomalyWorker.runScan();
                   setAnomalyReport(rep);
                   showToast('Pemeriksaan background job anomali selesai dijalankan');
                 }}
                 onUpdateAnomalyStatus={(flagId, status, notes) => {
+                  if (!requirePermission('manageAnomalies', 'memperbarui status investigasi anomali')) return;
                   saveAnomalyStatusOverride(flagId, status, notes);
                   const rep = auditAnomalyWorker.runScan();
                   setAnomalyReport(rep);
                   showToast(`Status peringatan anomali diperbarui menjadi: ${status}`);
                 }}
                 onSimulateAnomaly={(codeId, name, field) => {
+                  if (!requirePermission('manageAnomalies', 'menjalankan simulasi anomali audit')) return;
                   simulateSuspiciousIdentitasUpdates(codeId, name, field);
                   const rep = auditAnomalyWorker.runScan();
                   setAnomalyReport(rep);
                   showToast('Simulasi 4x perubahan field identitas berhasil dikirim! Background job telah mendeteksi anomali.');
                 }}
                 onClearLogs={() => {
+                  if (!requirePermission('deleteData', 'menghapus semua riwayat audit log')) return;
                   setCentralAuditLogs([]);
                   saveCentralAuditLogs([]);
                   showToast('Semua riwayat audit log telah dibersihkan');
@@ -7866,9 +8674,9 @@ export default function App() {
                     setCurrentView('identitas');
                   }
                 }}
-                onNavigateToSalur={() => setCurrentView('transaksiSalur')}
-                onNavigateToDonasi={() => setCurrentView('transaksiDonasi')}
-                onNavigateToAjar={() => setCurrentView('transaksiAjar')}
+                onNavigateToSalur={() => handleNavigateView('transaksiSalur')}
+                onNavigateToDonasi={() => handleNavigateView('transaksiDonasi')}
+                onNavigateToAjar={() => handleNavigateView('transaksiAjar')}
               />
             </div>
           )}
@@ -7884,8 +8692,11 @@ export default function App() {
                 dismissedCount={dismissedPairIds.length}
                 sessionRecords={mergeSessionRecords}
                 sessionStartedAt={mergeSessionStartedAt}
-                adminName={authenticatedUser?.namaLengkap || 'Admin Identitas YPPLN'}
+                adminName={formatAuditActorName(authenticatedUser, 'Admin Identitas YPPLN')}
                 adminEmail={authenticatedUser?.email || '-'}
+                canMerge={hasPermission(authenticatedUser, 'mergeDuplicates', rbacConfig)}
+                canUndoMerge={hasPermission(authenticatedUser, 'undoMerge', rbacConfig)}
+                onUndoMerge={handleUndoMerge}
                 onChangeThreshold={setSmartMergeThreshold}
                 onResetDismissedPairs={handleResetDismissedPairs}
                 onResetSession={handleResetMergeSession}
@@ -8450,6 +9261,29 @@ export default function App() {
         onClose={() => setIsDownloadAllDataOpen(false)}
         allData={allApplicationData}
         onShowToast={(msg) => showToast(msg)}
+      />
+
+      {/* Modal Ganti Password Akun */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+        currentUser={authenticatedUser}
+        accounts={karyawanList}
+        onPasswordChanged={(updatedUser, updatedList) => {
+          setKaryawanList(updatedList);
+          setAuthenticatedUser(updatedUser);
+          dispatchAuditEvent({
+            module: 'IDENTITAS',
+            recordId: updatedUser.kodeKaryawan || updatedUser.id,
+            recordTitle: updatedUser.namaLengkap,
+            actionType: 'Ubah',
+            field: 'Keamanan Akun · Password',
+            oldValue: '••••••••',
+            newValue: 'Password diperbarui (Salted SHA-256)',
+            author: formatAuditActorName(updatedUser),
+          });
+          showToast('Password akun Anda berhasil diperbarui dan disinkronkan.');
+        }}
       />
     </div>
   );

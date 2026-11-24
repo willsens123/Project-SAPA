@@ -66,6 +66,13 @@ export const LokasiStokItemSalurView: React.FC<LokasiStokItemSalurViewProps> = (
     setLocations(getStoredLokasiStokSalur());
   };
 
+  // Refresh automatically when cloud sync updates Stok S-SALUR storage
+  React.useEffect(() => {
+    const handleCloudUpdate = () => setLocations(getStoredLokasiStokSalur());
+    window.addEventListener('stok_salur_updated', handleCloudUpdate);
+    return () => window.removeEventListener('stok_salur_updated', handleCloudUpdate);
+  }, []);
+
   // Open modal for adding
   const handleOpenAddModal = () => {
     setEditingItem(null);

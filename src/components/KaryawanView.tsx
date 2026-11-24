@@ -18,14 +18,32 @@ import {
   UserCheck,
   UserMinus,
   ArrowRight,
+  Lock,
+  Laptop,
 } from 'lucide-react';
-import { KaryawanItem } from '../types';
+import { KaryawanItem, LoginActivityRecord, RbacPolicyConfig, UserRole } from '../types';
+import {
+  ALL_ROLES,
+  ROLE_METADATA,
+  createDefaultRbacConfig,
+  resolveEffectiveRole,
+} from '../utils/rbacManager';
+import { RbacPermissionPanel } from './RbacPermissionPanel';
+import { LoginActivitySessionPanel } from './LoginActivitySessionPanel';
 
 interface KaryawanViewProps {
   items: KaryawanItem[];
   onSaveItem: (item: KaryawanItem) => void;
   onDeleteItem: (id: string) => void;
   onShowToast?: (message: string) => void;
+  rbacConfig?: RbacPolicyConfig;
+  onUpdateRbacConfig?: (next: RbacPolicyConfig) => void;
+  currentUser?: KaryawanItem | null;
+  divisiList?: string[];
+  canManageRoles?: boolean;
+  loginActivityLogs?: LoginActivityRecord[];
+  currentSessionId?: string;
+  onRevokeSession?: (record: LoginActivityRecord) => void;
 }
 
 const AVATAR_COLOR_OPTIONS = [
@@ -45,9 +63,27 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
   onSaveItem,
   onDeleteItem,
   onShowToast = (_msg: string) => {},
+  rbacConfig,
+  onUpdateRbacConfig,
+  currentUser,
+  divisiList,
+  canManageRoles = true,
+  loginActivityLogs = [],
+  currentSessionId = '',
+  onRevokeSession,
 }) => {
-  // Tabs: "Aktif" dan "Tidak Aktif"
-  const [activeTab, setActiveTab] = useState<'aktif' | 'tidak_aktif'>('aktif');
+  const effectiveRbacConfig = useMemo(
+    () => rbacConfig || createDefaultRbacConfig(),
+    [rbacConfig]
+  );
+
+  // Tabs: "Aktif", "Tidak Aktif", "Hak Akses Role & Divisi", dan "Aktivitas Login & Sesi"
+  const [activeTab, setActiveTab] = useState<'aktif' | 'tidak_aktif' | 'hak_akses' | 'aktivitas_login'>('aktif');
+
+  const activeSessionCount = useMemo(
+    () => loginActivityLogs.filter((l) => l.status === 'active').length,
+    [loginActivityLogs]
+  );
 
   // Privacy toggle (masks / reveals emails & passwords)
   const [hideSensitive, setHideSensitive] = useState(false);
@@ -82,6 +118,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
     namaLengkap: string;
     namaPanggilan: string;
     divisi: string;
+    role: UserRole;
     emailLogin: string;
     password: string;
     avatarBg: string;
@@ -94,6 +131,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
     namaLengkap: '',
     namaPanggilan: '',
     divisi: 'UMM',
+    role: 'admin_operasional',
     emailLogin: '',
     password: '',
     avatarBg: 'bg-[#14b8a6]',
@@ -126,11 +164,14 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
   // Unique divisions present
   const availableDivisions = useMemo(() => {
     const set = new Set<string>(DEFAULT_DIVISI_OPTIONS);
+    (divisiList || []).forEach((d) => {
+      if (d) set.add(d.toUpperCase());
+    });
     items.forEach((it) => {
       if (it.divisi) set.add(it.divisi.toUpperCase());
     });
     return Array.from(set);
-  }, [items]);
+  }, [items, divisiList]);
 
   // Filtered items (Tab, Search, Divisi)
   // "Semua yang berhenti menjadi Karyawan akan masuk ke Tidak Aktif."
@@ -252,8 +293,9 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
         namaLengkap: item.namaLengkap,
         namaPanggilan: item.namaPanggilan || '',
         divisi: item.divisi,
+        role: resolveEffectiveRole(item),
         emailLogin: item.emailLogin,
-        password: item.password,
+        password: '',
         avatarBg: item.avatarBg || 'bg-[#14b8a6]',
         avatarInitial: item.avatarInitial || item.namaLengkap[0]?.toUpperCase() || 'K',
         aktif: item.aktif ?? true,
@@ -280,6 +322,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
         namaLengkap: '',
         namaPanggilan: '',
         divisi: 'UMM',
+        role: 'admin_operasional',
         emailLogin: '',
         password: 'password123',
         avatarBg: 'bg-[#14b8a6]',
@@ -304,8 +347,12 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
       onShowToast('Email Login wajib diisi');
       return;
     }
-    if (!formData.password.trim()) {
-      onShowToast('Password wajib diisi');
+    if (!editingItem && (!formData.password.trim() || formData.password.trim().length < 4)) {
+      onShowToast('Password wajib diisi minimal 4 karakter');
+      return;
+    }
+    if (editingItem && formData.password.trim() && formData.password.trim().length < 4) {
+      onShowToast('Password baru minimal 4 karakter');
       return;
     }
 
@@ -323,8 +370,9 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
         namaLengkap: formData.namaLengkap.trim(),
         namaPanggilan: formData.namaPanggilan.trim(),
         divisi: formData.divisi.trim().toUpperCase(),
+        role: formData.role,
         emailLogin: formData.emailLogin.trim(),
-        password: formData.password.trim(),
+        password: formData.password.trim() || editingItem.password,
         avatarBg: formData.avatarBg,
         avatarInitial: initial,
         aktif: effectiveAktif,
@@ -340,6 +388,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
         namaLengkap: formData.namaLengkap.trim(),
         namaPanggilan: formData.namaPanggilan.trim(),
         divisi: formData.divisi.trim().toUpperCase(),
+        role: formData.role,
         emailLogin: formData.emailLogin.trim(),
         password: formData.password.trim(),
         avatarBg: formData.avatarBg,
@@ -363,28 +412,28 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-3xl p-5 sm:p-8 shadow-xs border border-slate-100 min-h-[580px] flex flex-col justify-between transition-all font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="w-full bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 shadow-xs border border-slate-100 dark:border-slate-800 min-h-[580px] flex flex-col justify-between transition-all font-['Plus_Jakarta_Sans',sans-serif]">
       <div>
-        {/* Top Header: Tabs "Aktif" & "Tidak Aktif" + Toolbar Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          {/* Tabs: "Aktif" & "Tidak Aktif" */}
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-fit">
+        {/* Top Header: Tabs "Aktif", "Tidak Aktif", "Hak Akses Role & Divisi" + Toolbar Action Buttons */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+          {/* Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl w-fit">
             <button
               type="button"
               onClick={() => setActiveTab('aktif')}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'aktif'
                   ? 'bg-[#008d91] text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
               }`}
             >
               <UserCheck className="w-4 h-4" />
               <span>Aktif</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold font-mono tabular-nums ${
                   activeTab === 'aktif'
                     ? 'bg-white/20 text-white'
-                    : 'bg-slate-200 text-slate-700'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                 }`}
               >
                 {countAktif}
@@ -397,24 +446,60 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'tidak_aktif'
                   ? 'bg-rose-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
               }`}
             >
               <UserMinus className="w-4 h-4" />
               <span>Tidak Aktif</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold font-mono tabular-nums ${
                   activeTab === 'tidak_aktif'
                     ? 'bg-white/20 text-white'
-                    : 'bg-slate-200 text-slate-700'
+                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                 }`}
               >
                 {countTidakAktif}
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('hak_akses')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'hak_akses'
+                  ? 'bg-slate-900 dark:bg-teal-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Hak Akses Role &amp; Divisi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('aktivitas_login')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === 'aktivitas_login'
+                  ? 'bg-slate-900 dark:bg-teal-600 text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60'
+              }`}
+            >
+              <Laptop className="w-4 h-4" />
+              <span>Aktivitas Login &amp; Sesi</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-bold font-mono tabular-nums ${
+                  activeTab === 'aktivitas_login'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                }`}
+              >
+                {activeSessionCount}
+              </span>
+            </button>
           </div>
 
-          {/* Toolbar Right Side */}
+          {/* Toolbar Right Side (shown only on employee list tabs) */}
+          {activeTab !== 'hak_akses' && activeTab !== 'aktivitas_login' && (
           <div className="flex items-center justify-end gap-3">
             {/* Privacy Toggle Button */}
             <button
@@ -532,25 +617,46 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
             </div>
 
             {/* + Add Button matching screenshot */}
-            <button
-              type="button"
-              onClick={() => openFormModal()}
-              className="bg-[#008d91] hover:bg-[#007b7f] text-white px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Add</span>
-            </button>
+            {canManageRoles && (
+              <button
+                type="button"
+                onClick={() => openFormModal()}
+                className="bg-[#008d91] hover:bg-[#007b7f] text-white px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Add</span>
+              </button>
+            )}
           </div>
+          )}
         </div>
 
-        {/* Table Section */}
+        {/* Conditional Body: RBAC Panel, Login Activity Sessions, OR Employee Table */}
+        {activeTab === 'hak_akses' ? (
+          <RbacPermissionPanel
+            rbacConfig={effectiveRbacConfig}
+            onUpdateRbacConfig={(next) => onUpdateRbacConfig?.(next)}
+            members={items}
+            divisiList={availableDivisions}
+            canEdit={canManageRoles && Boolean(onUpdateRbacConfig)}
+            currentUserName={currentUser?.namaLengkap || 'Super Admin'}
+            onShowToast={onShowToast}
+          />
+        ) : activeTab === 'aktivitas_login' ? (
+          <LoginActivitySessionPanel
+            records={loginActivityLogs}
+            currentSessionId={currentSessionId}
+            canManageSessions={canManageRoles}
+            onRevokeSession={(rec) => onRevokeSession?.(rec)}
+          />
+        ) : (
         <div className="overflow-x-auto -mx-5 sm:mx-0">
           <table className="w-full text-left border-collapse min-w-[760px]">
             {/* Table Header: Dynamically adapts according to Tab "Aktif" or "Tidak Aktif" */}
             <thead>
-              <tr className="border-b border-slate-100 text-slate-700 text-sm sm:text-[15px] font-semibold">
-                <th className="py-4 px-4 sm:px-6 w-[30%]">Nama</th>
-                <th className="py-4 px-4 sm:px-6 w-[15%]">Divisi</th>
+              <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-sm sm:text-[15px] font-semibold">
+                <th className="py-4 px-4 sm:px-6 w-[28%]">Nama</th>
+                <th className="py-4 px-4 sm:px-6 w-[17%]">Divisi &amp; Role</th>
                 {activeTab === 'aktif' ? (
                   /* Pada Aktif tambahkan kolom tanggal bergabung */
                   <th className="py-4 px-4 sm:px-6 w-[20%]">Tanggal Bergabung</th>
@@ -561,13 +667,13 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                   </th>
                 )}
                 <th className="py-4 px-4 sm:px-6 w-[18%]">Email Login</th>
-                <th className="py-4 px-4 sm:px-6 w-[13%]">Email Login</th>
+                <th className="py-4 px-4 sm:px-6 w-[13%]">Password</th>
                 <th className="py-4 px-3 w-[4%] text-center"></th>
               </tr>
             </thead>
 
             {/* Table Body */}
-            <tbody className="divide-y divide-slate-50 text-sm">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/70 text-sm">
               {filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
@@ -579,6 +685,8 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
               ) : (
                 filteredItems.map((item) => {
                   const displayedPassword = '••••••••••';
+                  const itemRole = resolveEffectiveRole(item);
+                  const roleMeta = ROLE_METADATA[itemRole];
 
                   // Masked email when privacy mode is on
                   const displayedEmail = hideSensitive
@@ -588,7 +696,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group"
                     >
                       {/* Col 1: Avatar + Name (ID + Full Name) & Subtitle (Panggilan) */}
                       <td className="py-4 px-4 sm:px-6">
@@ -604,12 +712,12 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
 
                           {/* Full Name & Nickname */}
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base leading-snug">
                               {item.kodeKaryawan ? `${item.kodeKaryawan} ` : ''}
                               {item.namaLengkap}
                             </span>
                             {item.namaPanggilan && (
-                              <span className="text-xs sm:text-sm text-slate-600 font-normal mt-0.5">
+                              <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-normal mt-0.5">
                                 {item.namaPanggilan}
                               </span>
                             )}
@@ -617,11 +725,18 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                         </div>
                       </td>
 
-                      {/* Col 2: Divisi */}
+                      {/* Col 2: Divisi & Role */}
                       <td className="py-4 px-4 sm:px-6">
-                        <span className="text-slate-700 font-normal text-sm sm:text-base">
-                          {item.divisi}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-slate-800 dark:text-slate-200 font-semibold font-mono text-xs sm:text-sm">
+                            {item.divisi}
+                          </span>
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold ${roleMeta.badgeClass}`}
+                          >
+                            {roleMeta.shortLabel}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Col 3: Tanggal Bergabung (Tab Aktif) OR Tanggal Bergabung - Tanggal Berhenti (Tab Tidak Aktif) */}
@@ -659,7 +774,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
 
                       {/* Col 4: Email Login */}
                       <td className="py-4 px-4 sm:px-6">
-                        <span className="text-slate-700 font-normal text-sm sm:text-base select-all">
+                        <span className="text-slate-700 dark:text-slate-200 font-normal text-sm sm:text-base select-all">
                           {displayedEmail}
                         </span>
                       </td>
@@ -754,6 +869,7 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Modal: Tambah / Edit Karyawan */}
@@ -879,6 +995,39 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                 </div>
               </div>
 
+              {/* Role & Hak Akses */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#008d91]" />
+                    <span>Role &amp; Hak Akses Sistem</span>
+                  </span>
+                  {!canManageRoles && (
+                    <span className="text-[10px] font-semibold text-amber-600 flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      Hanya Super Admin
+                    </span>
+                  )}
+                </label>
+                <select
+                  value={formData.role}
+                  disabled={!canManageRoles}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value as UserRole })
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#008d91]/20 focus:border-[#008d91] disabled:bg-slate-100 disabled:text-slate-500"
+                >
+                  {ALL_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_METADATA[r].label}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                  {ROLE_METADATA[formData.role].description}
+                </p>
+              </div>
+
               {/* Tanggal Bergabung & Tanggal Berhenti */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -943,13 +1092,18 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
               {/* Password Login */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Password Login <span className="text-red-500">*</span>
+                  {editingItem ? 'Password Baru (Opsional)' : 'Password Login'}{' '}
+                  {!editingItem && <span className="text-red-500">*</span>}
                 </label>
                 <div className="relative">
                   <input
                     type={showFormPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Masukkan password untuk login"
+                    required={!editingItem}
+                    placeholder={
+                      editingItem
+                        ? 'Kosongkan jika tidak ingin mengubah password'
+                        : 'Masukkan password (min. 4 karakter)'
+                    }
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
@@ -970,7 +1124,9 @@ export const KaryawanView: React.FC<KaryawanViewProps> = ({
                   </button>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Password ini digunakan untuk autentikasi karyawan masuk ke dalam sistem.
+                  {editingItem
+                    ? 'Password lama tersimpan aman dalam bentuk hash SHA-256. Isi hanya jika ingin reset password.'
+                    : 'Password akan otomatis di-hash (salted SHA-256) saat disimpan ke cloud.'}
                 </p>
               </div>
 

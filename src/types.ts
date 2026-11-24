@@ -1,4 +1,7 @@
 import { IdentitasItem } from './identitasData';
+import type { SalurOrder } from './salurData';
+import type { DonasiOrder } from './donasiData';
+import type { TransaksiAjarItem } from './transaksiAjarData';
 
 export interface ProjectItem {
   id: string;
@@ -283,19 +286,80 @@ export interface TemplatePMItem {
   baseRatePercent?: number;
 }
 
+export type UserRole =
+  | 'super_admin'
+  | 'kepala_divisi'
+  | 'admin_operasional'
+  | 'finance_audit'
+  | 'viewer';
+
+export type PermissionKey =
+  | 'viewHome'
+  | 'viewIdentitas'
+  | 'editIdentitas'
+  | 'mergeDuplicates'
+  | 'undoMerge'
+  | 'deleteData'
+  | 'viewAuditLog'
+  | 'manageAnomalies'
+  | 'exportAuditCsv'
+  | 'viewFinance'
+  | 'manageProjects'
+  | 'manageAccountsAndRoles';
+
+export interface DivisionAccessRule {
+  divisiKode: string;
+  label: string;
+  allowedModules: PermissionKey[];
+  restrictToOwnDivisionProjects?: boolean;
+}
+
+export interface RbacPolicyConfig {
+  id: string;
+  updatedAt: string;
+  updatedBy?: string;
+  rolePermissions: Record<UserRole, Record<PermissionKey, boolean>>;
+  divisionRules: Record<string, DivisionAccessRule>;
+}
+
 export interface KaryawanItem {
   id: string;
   kodeKaryawan: string;
   namaLengkap: string;
   namaPanggilan?: string;
   divisi: string;
+  role?: UserRole;
+  customPermissions?: Partial<Record<PermissionKey, boolean>>;
   emailLogin: string;
+  linkedGoogleEmail?: string;
   password: string;
   avatarInitial?: string;
   avatarBg?: string;
   aktif?: boolean;
   tanggalBergabung?: string;
   tanggalBerhenti?: string;
+}
+
+export type LoginAuthMethod = 'google_firebase' | 'member_credentials' | 'session_restore';
+
+export interface LoginActivityRecord {
+  id: string;
+  sessionId: string;
+  userId: string;
+  kodeKaryawan: string;
+  namaLengkap: string;
+  role: UserRole;
+  divisi: string;
+  authMethod: LoginAuthMethod;
+  firebaseUid?: string;
+  firebaseEmail?: string;
+  deviceLabel: string;
+  userAgentShort: string;
+  loginAt: string; // ISO
+  lastActiveAt: string; // ISO
+  logoutAt?: string; // ISO
+  status: 'active' | 'logged_out' | 'revoked';
+  revokedBy?: string;
 }
 
 export interface JenisGroupFunnelingItem {
@@ -610,6 +674,7 @@ export interface CentralAuditLogMetadata {
   codeId?: string;
   details?: string;
   mergeRecordId?: string;
+  targetMergeRecordId?: string;
   mergeSessionRecord?: MergeSessionRecord;
   secondaryId?: string;
   secondaryCodeId?: string;
@@ -620,6 +685,9 @@ export interface CentralAuditLogMetadata {
   transferredTotal?: number;
   batchGroupId?: string;
   isAnomaly?: boolean;
+  isRolledBack?: boolean;
+  rolledBackAt?: string;
+  rolledBackBy?: string;
   [key: string]: any;
 }
 
@@ -630,7 +698,16 @@ export interface CentralAuditLogEntry {
   module: AuditModule;
   recordId: string;
   recordTitle: string;
-  actionType: 'Tambah' | 'Ubah' | 'Hapus' | 'Status Bayar' | 'Pengiriman' | 'Resi' | 'Merge' | string;
+  actionType:
+    | 'Tambah'
+    | 'Ubah'
+    | 'Hapus'
+    | 'Status Bayar'
+    | 'Pengiriman'
+    | 'Resi'
+    | 'Merge'
+    | 'Undo Merge'
+    | string;
   field: string;
   oldValue: string;
   newValue: string;
@@ -699,7 +776,20 @@ export interface MergeTransferredData {
   addressesMoved: number;
   projectsUpdated: number;
   salurOrdersUpdated: number;
+  donasiOrdersUpdated?: number;
+  dharmaPatronUpdated?: number;
+  ajarOrdersUpdated?: number;
   totalDataPointsMoved: number;
+}
+
+export interface MergeRollbackSnapshot {
+  primaryBefore: IdentitasItem;
+  secondaryBefore: IdentitasItem;
+  projectsBefore: ProjectItem[];
+  salurOrdersBefore: SalurOrder[];
+  donasiOrdersBefore: DonasiOrder[];
+  dharmaPatronBefore: DharmaPatronRutinItem[];
+  transaksiAjarBefore: TransaksiAjarItem[];
 }
 
 export interface MergeSessionRecord {
@@ -716,6 +806,10 @@ export interface MergeSessionRecord {
   reason: string;
   method: 'quick' | 'curated' | 'batch';
   transferredData: MergeTransferredData;
+  rollbackSnapshot?: MergeRollbackSnapshot;
+  isRolledBack?: boolean;
+  rolledBackAt?: string;
+  rolledBackBy?: string;
 }
 
 export interface JenisPanggilanItem {

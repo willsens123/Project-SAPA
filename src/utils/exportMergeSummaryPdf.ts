@@ -66,7 +66,11 @@ export function generateMergeSummaryPdf({
       acc.addressesMoved += r.transferredData.addressesMoved;
       acc.projectsUpdated += r.transferredData.projectsUpdated;
       acc.salurOrdersUpdated += r.transferredData.salurOrdersUpdated;
+      acc.donasiOrdersUpdated += r.transferredData.donasiOrdersUpdated ?? 0;
+      acc.dharmaPatronUpdated += r.transferredData.dharmaPatronUpdated ?? 0;
+      acc.ajarOrdersUpdated += r.transferredData.ajarOrdersUpdated ?? 0;
       acc.totalDataPointsMoved += r.transferredData.totalDataPointsMoved;
+      if (r.isRolledBack) acc.rolledBackCount += 1;
       if (r.matchType === 'fuzzy') acc.fuzzyCount += 1;
       else acc.exactCount += 1;
       return acc;
@@ -77,7 +81,11 @@ export function generateMergeSummaryPdf({
       addressesMoved: 0,
       projectsUpdated: 0,
       salurOrdersUpdated: 0,
+      donasiOrdersUpdated: 0,
+      dharmaPatronUpdated: 0,
+      ajarOrdersUpdated: 0,
       totalDataPointsMoved: 0,
+      rolledBackCount: 0,
       fuzzyCount: 0,
       exactCount: 0,
     }
@@ -175,11 +183,20 @@ export function generateMergeSummaryPdf({
   const boxWidth = (contentWidth - boxGap * 3) / 4;
   const boxHeight = 20;
 
+  const totalCrossRefs =
+    totals.projectsUpdated +
+    totals.salurOrdersUpdated +
+    totals.donasiOrdersUpdated +
+    totals.dharmaPatronUpdated +
+    totals.ajarOrdersUpdated;
+
   const kpiBoxes = [
     {
       label: 'Profil Digabungkan',
       value: `${totals.mergedProfiles} Profil`,
-      sub: `${totals.exactCount} Eksak · ${totals.fuzzyCount} Fuzzy`,
+      sub: `${totals.exactCount} Eksak · ${totals.fuzzyCount} Fuzzy${
+        totals.rolledBackCount > 0 ? ` · ${totals.rolledBackCount} Batal` : ''
+      }`,
     },
     {
       label: 'Total Data Dipindahkan',
@@ -193,8 +210,10 @@ export function generateMergeSummaryPdf({
     },
     {
       label: 'Relasi Dialihkan',
-      value: `${totals.projectsUpdated + totals.salurOrdersUpdated} Ref`,
-      sub: `${totals.projectsUpdated} Proyek · ${totals.salurOrdersUpdated} Salur`,
+      value: `${totalCrossRefs} Ref`,
+      sub: `${totals.projectsUpdated} Prj · ${totals.salurOrdersUpdated} Slr · ${
+        totals.donasiOrdersUpdated + totals.dharmaPatronUpdated + totals.ajarOrdersUpdated
+      } Don/DPR/Ajr`,
     },
   ];
 
@@ -296,10 +315,20 @@ export function generateMergeSummaryPdf({
       if (rec.transferredData.salurOrdersUpdated > 0) {
         movedParts.push(`${rec.transferredData.salurOrdersUpdated} Salur`);
       }
+      if ((rec.transferredData.donasiOrdersUpdated ?? 0) > 0) {
+        movedParts.push(`${rec.transferredData.donasiOrdersUpdated} Donasi`);
+      }
+      if ((rec.transferredData.dharmaPatronUpdated ?? 0) > 0) {
+        movedParts.push(`${rec.transferredData.dharmaPatronUpdated} Patron`);
+      }
+      if ((rec.transferredData.ajarOrdersUpdated ?? 0) > 0) {
+        movedParts.push(`${rec.transferredData.ajarOrdersUpdated} Ajar`);
+      }
+      const rollbackNote = rec.isRolledBack ? ' [DIBATALKAN / ROLLBACK]' : '';
       const movedText =
-        movedParts.length > 0
+        (movedParts.length > 0
           ? movedParts.join('; ')
-          : 'Konsolidasi profil (tidak ada field baru)';
+          : 'Konsolidasi profil (tidak ada field baru)') + rollbackNote;
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.2);

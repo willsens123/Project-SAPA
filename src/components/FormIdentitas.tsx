@@ -9,6 +9,9 @@ import {
   Calendar,
   Check,
   History,
+  AlertTriangle,
+  ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
 import { IdentitasItem, AlamatIdentitas } from '../identitasData';
 import {
@@ -26,6 +29,11 @@ import { AddJenisPanggilanModal } from './AddJenisPanggilanModal';
 import { AddMasterItemModal } from './AddMasterItemModal';
 import { IdentitasAuditDetailModal } from './IdentitasAuditDetailModal';
 import { formatDatePickerValue } from '../utils/datePickerHelper';
+import {
+  DuplicateCandidateMatch,
+  findCandidateDuplicates,
+  normalizePhone,
+} from '../utils/duplicateDetector';
 
 interface FormIdentitasProps {
   initialData?: IdentitasItem | null;
@@ -36,6 +44,7 @@ interface FormIdentitasProps {
   suspiciousFlags?: SuspiciousAuditFlag[];
   onSave: (data: IdentitasItem) => void;
   onCancel: () => void;
+  onOpenExistingProfile?: (item: IdentitasItem) => void;
   onShowToast?: (msg: string) => void;
   jenisPanggilanList?: JenisPanggilanItem[];
   triyanaList?: TriyanaItem[];
@@ -223,6 +232,7 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
   suspiciousFlags = [],
   onSave,
   onCancel,
+  onOpenExistingProfile,
   onShowToast = (_msg: string) => {},
   jenisPanggilanList = [],
   triyanaList = [],
@@ -397,6 +407,47 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
   const [isAddPekerjaanOpen, setIsAddPekerjaanOpen] = useState(false);
   const [isAddMengenalYpplnOpen, setIsAddMengenalYpplnOpen] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+  const [pendingSaveItem, setPendingSaveItem] = useState<IdentitasItem | null>(null);
+  const [dismissedLiveWarning, setDismissedLiveWarning] = useState(false);
+
+  const primaryInputPhone = phoneList.find((p) => p.trim().length > 0) || '';
+  const primaryInputEmail = emailList.find((em) => em.trim().length > 0) || '';
+
+  const liveDuplicateMatches: DuplicateCandidateMatch[] = useMemo(() => {
+    if (initialData) return [];
+    const hasEnoughSignals =
+      namaLengkap.trim().length >= 3 ||
+      normalizePhone(primaryInputPhone).length >= 8 ||
+      primaryInputEmail.includes('@') ||
+      nomorIdentitas.replace(/[\s\-.]/g, '').length >= 6;
+    if (!hasEnoughSignals) return [];
+
+    return findCandidateDuplicates(
+      {
+        nomorIdentitas: nomorIdentitas.trim(),
+        namaLengkap: namaLengkap.trim(),
+        namaPanggilan: namaPanggilan.trim(),
+        nomorHandPhone: primaryInputPhone.trim(),
+        email: primaryInputEmail.trim(),
+        kota: kotaKabupaten.trim(),
+      },
+      identitasList,
+      { minSimilarity: 80, includeExact: true, includeFuzzy: true, limit: 4 }
+    );
+  }, [
+    initialData,
+    identitasList,
+    nomorIdentitas,
+    namaLengkap,
+    namaPanggilan,
+    primaryInputPhone,
+    primaryInputEmail,
+    kotaKabupaten,
+  ]);
+
+  useEffect(() => {
+    setDismissedLiveWarning(false);
+  }, [namaLengkap, primaryInputPhone, primaryInputEmail, nomorIdentitas]);
 
   const entryAuditCount = useMemo(() => {
     if (!initialData) return 0;
@@ -557,6 +608,11 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
       followUpList: [followUpCat, followUpDur],
       picUmumList: [picUmumUser, picUmumDept],
     };
+
+    if (!initialData && liveDuplicateMatches.length > 0) {
+      setPendingSaveItem(finalItem);
+      return;
+    }
 
     onSave(finalItem);
   };
@@ -953,6 +1009,85 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Live Smart Duplicate Detection Panel (for New Profile Creation) */}
+        {!initialData && liveDuplicateMatches.length > 0 && !dismissedLiveWarning && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30 p-4 space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Potensi Profil Duplikat Terdeteksi ({liveDuplicateMatches.length})
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Sistem menemukan profil dengan kemiripan &gt; 80%. Anda tetap bisa menyimpan jika memang profil berbeda, atau buka profil yang sudah ada untuk diperbarui.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDismissedLiveWarning(true)}
+                title="Sembunyikan peringatan ini"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              {liveDuplicateMatches.map((match) => (
+                <div
+                  key={match.existingItem.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5"
+                >
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-mono tabular-nums font-semibold text-[#05828e] dark:text-teal-400">
+                        {match.existingItem.codeId}
+                      </span>
+                      <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {match.existingItem.namaLengkap}
+                      </span>
+                      <span className="text-slate-400">·</span>
+                      <span
+                        className={`font-mono tabular-nums font-semibold ${
+                          match.matchType === 'exact'
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-amber-600 dark:text-amber-400'
+                        }`}
+                      >
+                        {match.similarityScore}% {match.matchType === 'exact' ? 'Persis' : 'Mirip'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {match.reason}
+                      {match.existingItem.nomorHandPhone && match.existingItem.nomorHandPhone !== '-'
+                        ? ` · HP: ${match.existingItem.nomorHandPhone}`
+                        : ''}
+                      {match.existingItem.email && match.existingItem.email !== '-'
+                        ? ` · ${match.existingItem.email}`
+                        : ''}
+                    </p>
+                  </div>
+
+                  {onOpenExistingProfile && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenExistingProfile(match.existingItem)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/50 hover:border-teal-300 text-xs font-medium text-[#05828e] dark:text-teal-300 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+                    >
+                      <span>Buka & Edit Profil Ini</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 13. Line */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-6 items-center">
@@ -1505,6 +1640,86 @@ export const FormIdentitas: React.FC<FormIdentitasProps> = ({
           onShowToast={onShowToast}
           onRestoreFieldValue={handleRestoreFieldToForm}
         />
+      )}
+
+      {/* Non-blocking Confirmation Modal when saving profile with >=80% duplicate matches */}
+      {pendingSaveItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-[1px] p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Konfirmasi Simpan Profil Baru
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Ditemukan {liveDuplicateMatches.length} profil yang mirip (&gt; 80%) dengan{' '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
+                    {pendingSaveItem.namaLengkap}
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 space-y-2 max-h-60 overflow-y-auto bg-slate-50/60 dark:bg-slate-950/40">
+              {liveDuplicateMatches.map((m) => (
+                <div
+                  key={m.existingItem.id}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <span className="font-mono text-[#05828e] dark:text-teal-400 mr-1.5">
+                        {m.existingItem.codeId}
+                      </span>
+                      {m.existingItem.namaLengkap}
+                    </div>
+                    <div className="text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                      {m.reason} · <span className="font-mono font-semibold">{m.similarityScore}%</span>
+                    </div>
+                  </div>
+                  {onOpenExistingProfile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = m.existingItem;
+                        setPendingSaveItem(null);
+                        onOpenExistingProfile(target);
+                      }}
+                      className="px-2.5 py-1 rounded-md border border-teal-200 dark:border-teal-800 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 font-medium shrink-0 cursor-pointer"
+                    >
+                      Edit yang Ada
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setPendingSaveItem(null)}
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Periksa Kembali
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const toSave = pendingSaveItem;
+                  setPendingSaveItem(null);
+                  onSave(toSave);
+                }}
+                className="px-4 py-2 rounded-lg bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold cursor-pointer"
+              >
+                Tetap Simpan sebagai Profil Baru
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

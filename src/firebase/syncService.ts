@@ -1,5 +1,6 @@
-import { doc, getDoc, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db } from './config';
+import { OperationType, handleFirestoreError } from './authAccountService';
 
 export type SyncStatus = 'connecting' | 'synced' | 'syncing' | 'offline' | 'error';
 
@@ -33,6 +34,7 @@ export async function saveCollectionToCloud<T>(
     }
 
     debounceTimers[key] = setTimeout(async () => {
+      const path = `erp_state/${key}`;
       try {
         const docRef = doc(db, 'erp_state', key);
         const payload: ErpCloudDoc<T> = {
@@ -44,7 +46,12 @@ export async function saveCollectionToCloud<T>(
         await setDoc(docRef, payload);
         resolve();
       } catch (error) {
-        console.error(`Error saving ${key} to Firestore:`, error);
+        try {
+          handleFirestoreError(error, OperationType.WRITE, path);
+        } catch (wrappedErr) {
+          reject(wrappedErr);
+          return;
+        }
         reject(error);
       }
     }, debounceMs);
@@ -61,6 +68,7 @@ export function subscribeToCloudCollection<T>(
   onUpdate: (items: T[]) => void,
   onStatusChange?: (status: SyncStatus) => void
 ): Unsubscribe {
+  const path = `erp_state/${key}`;
   const docRef = doc(db, 'erp_state', key);
   let hasReceivedSnapshot = false;
 
@@ -86,7 +94,6 @@ export function subscribeToCloudCollection<T>(
       if (!hasReceivedSnapshot) {
         hasReceivedSnapshot = true;
         try {
-          // Check local cache first
           let itemsToSeed = initialFallbackItems;
           const cached = localStorage.getItem(`erp_cloud_cache_${key}`);
           if (cached) {
@@ -109,15 +116,22 @@ export function subscribeToCloudCollection<T>(
           }
           onStatusChange?.('synced');
         } catch (seedErr) {
-          console.warn(`Failed to auto-seed ${key} to Firestore:`, seedErr);
-          onStatusChange?.('synced');
+          try {
+            handleFirestoreError(seedErr, OperationType.WRITE, path);
+          } catch {
+            // Structured error logged; keep local state operational
+          }
+          onStatusChange?.('error');
         }
       }
     },
     (error) => {
-      console.warn(`Firestore subscription error for ${key}:`, error);
+      try {
+        handleFirestoreError(error, OperationType.GET, path);
+      } catch {
+        // Structured FirestoreErrorInfo logged for diagnostics
+      }
       onStatusChange?.('offline');
-      // Fallback to local cache if offline
       const cached = localStorage.getItem(`erp_cloud_cache_${key}`);
       if (cached) {
         try {

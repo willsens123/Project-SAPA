@@ -67,6 +67,13 @@ export const JenisPerubahanStockSalurView: React.FC<JenisPerubahanStockSalurView
     setRecords(getStoredJenisPerubahanSalur());
   };
 
+  // Refresh automatically when cloud sync updates Stok S-SALUR storage
+  React.useEffect(() => {
+    const handleCloudUpdate = () => setRecords(getStoredJenisPerubahanSalur());
+    window.addEventListener('stok_salur_updated', handleCloudUpdate);
+    return () => window.removeEventListener('stok_salur_updated', handleCloudUpdate);
+  }, []);
+
   const handleOpenAdd = () => {
     setEditingRecord(null);
     setFormJenisPerubahan('');

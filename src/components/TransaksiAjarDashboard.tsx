@@ -42,6 +42,7 @@ interface TransaksiAjarDashboardProps {
   rekeningList?: RekeningItem[];
   mutasiItems?: MutasiItem[];
   onUpdateMutasiItems?: (updated: MutasiItem[]) => void;
+  currentActorName?: string;
 }
 
 export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
@@ -53,6 +54,7 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
   rekeningList = [],
   mutasiItems = [],
   onUpdateMutasiItems,
+  currentActorName,
 }) => {
   const [activeTab, setActiveTab] = useState<'Semua' | 'Belum Bayar' | 'Belum Konek Mutasi'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1227,6 +1229,7 @@ export const TransaksiAjarDashboard: React.FC<TransaksiAjarDashboardProps> = ({
           setSelectedOrderForSertifikat(null);
         }}
         onShowToast={onShowToast}
+        actorName={currentActorName}
       />
     </div>
   );

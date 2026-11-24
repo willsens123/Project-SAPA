@@ -25,6 +25,7 @@ interface ModalSertifikatAjarProps {
   item: TransaksiAjarItem | null;
   onClose: () => void;
   onShowToast: (msg: string) => void;
+  actorName?: string;
 }
 
 export const ModalSertifikatAjar: React.FC<ModalSertifikatAjarProps> = ({
@@ -32,6 +33,7 @@ export const ModalSertifikatAjar: React.FC<ModalSertifikatAjarProps> = ({
   item,
   onClose,
   onShowToast,
+  actorName,
 }) => {
   const certRef = useRef<HTMLDivElement>(null);
 
@@ -125,7 +127,7 @@ export const ModalSertifikatAjar: React.FC<ModalSertifikatAjarProps> = ({
         oldValue: 'Draft',
         newValue: certNumber,
         alasan: 'Download file PDF e-sertifikat kelulusan peserta A-AJAR',
-        author: 'Admin Edukasi',
+        author: actorName || 'Admin Edukasi',
       });
 
       onShowToast(`E-Sertifikat untuk ${activeRecipient} berhasil diunduh sebagai PDF`);

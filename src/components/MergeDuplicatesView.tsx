@@ -30,6 +30,9 @@ interface MergeDuplicatesViewProps {
   sessionStartedAt?: string;
   adminName?: string;
   adminEmail?: string;
+  canMerge?: boolean;
+  canUndoMerge?: boolean;
+  onUndoMerge?: (mergeRecordId: string) => void;
   onChangeThreshold?: (nextThreshold: number) => void;
   onResetDismissedPairs?: () => void;
   onResetSession?: () => void;
@@ -113,6 +116,9 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
   sessionStartedAt = new Date().toISOString(),
   adminName = 'Admin Identitas YPPLN',
   adminEmail = '-',
+  canMerge = true,
+  canUndoMerge = true,
+  onUndoMerge,
   onChangeThreshold,
   onResetDismissedPairs,
   onResetSession,
@@ -128,6 +134,9 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
   const [swappedPairs, setSwappedPairs] = useState<Record<string, boolean>>({});
   const [resolvingPair, setResolvingPair] = useState<DuplicatePair | null>(null);
   const [confirmMergeAllOpen, setConfirmMergeAllOpen] = useState(false);
+  const [pendingRollbackRecord, setPendingRollbackRecord] = useState<MergeSessionRecord | null>(
+    null
+  );
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -161,11 +170,17 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
   const sessionStats = useMemo(() => {
     return sessionRecords.reduce(
       (acc, r) => {
+        if (r.isRolledBack) {
+          acc.rolledBackCount += 1;
+        }
         acc.profilesMerged += 1;
         acc.fieldsEnriched += r.transferredData.fieldsEnriched;
         acc.addressesMoved += r.transferredData.addressesMoved;
         acc.projectsUpdated += r.transferredData.projectsUpdated;
         acc.salurOrdersUpdated += r.transferredData.salurOrdersUpdated;
+        acc.donasiOrdersUpdated += r.transferredData.donasiOrdersUpdated ?? 0;
+        acc.dharmaPatronUpdated += r.transferredData.dharmaPatronUpdated ?? 0;
+        acc.ajarOrdersUpdated += r.transferredData.ajarOrdersUpdated ?? 0;
         acc.totalDataMoved += r.transferredData.totalDataPointsMoved;
         if (r.matchType === 'fuzzy') acc.fuzzyMerged += 1;
         else acc.exactMerged += 1;
@@ -173,10 +188,14 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
       },
       {
         profilesMerged: 0,
+        rolledBackCount: 0,
         fieldsEnriched: 0,
         addressesMoved: 0,
         projectsUpdated: 0,
         salurOrdersUpdated: 0,
+        donasiOrdersUpdated: 0,
+        dharmaPatronUpdated: 0,
+        ajarOrdersUpdated: 0,
         totalDataMoved: 0,
         fuzzyMerged: 0,
         exactMerged: 0,
@@ -565,16 +584,22 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
 
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/70">
             <div className="text-xs text-slate-500 dark:text-slate-400">
-              Relasi Proyek &amp; Salur
+              Relasi Lintas Modul
             </div>
             <div className="text-xl font-bold text-slate-900 dark:text-slate-100 font-mono tabular-nums mt-1">
-              {sessionStats.projectsUpdated + sessionStats.salurOrdersUpdated}
+              {sessionStats.projectsUpdated +
+                sessionStats.salurOrdersUpdated +
+                sessionStats.donasiOrdersUpdated +
+                sessionStats.dharmaPatronUpdated +
+                sessionStats.ajarOrdersUpdated}
               <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1.5">
                 referensi
               </span>
             </div>
             <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums mt-1">
-              {sessionStats.projectsUpdated} Proyek · {sessionStats.salurOrdersUpdated} Salur
+              {sessionStats.projectsUpdated} Prj · {sessionStats.salurOrdersUpdated} Slr ·{' '}
+              {sessionStats.donasiOrdersUpdated} Don · {sessionStats.dharmaPatronUpdated} DPR ·{' '}
+              {sessionStats.ajarOrdersUpdated} Ajr
             </div>
           </div>
         </div>
@@ -589,7 +614,8 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                   <th className="py-2.5 pr-4 font-semibold">Profil Utama (Dipertahankan)</th>
                   <th className="py-2.5 pr-4 font-semibold">Profil Sekunder (Digabung)</th>
                   <th className="py-2.5 pr-4 font-semibold">Skor &amp; Metode</th>
-                  <th className="py-2.5 font-semibold">Rincian Data Dipindahkan</th>
+                  <th className="py-2.5 pr-4 font-semibold">Rincian Data Dipindahkan</th>
+                  {onUndoMerge && <th className="py-2.5 font-semibold text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -610,6 +636,15 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                   if (td.salurOrdersUpdated > 0) {
                     summaryParts.push(`${td.salurOrdersUpdated} salur`);
                   }
+                  if ((td.donasiOrdersUpdated ?? 0) > 0) {
+                    summaryParts.push(`${td.donasiOrdersUpdated} donasi`);
+                  }
+                  if ((td.dharmaPatronUpdated ?? 0) > 0) {
+                    summaryParts.push(`${td.dharmaPatronUpdated} patron`);
+                  }
+                  if ((td.ajarOrdersUpdated ?? 0) > 0) {
+                    summaryParts.push(`${td.ajarOrdersUpdated} ajar`);
+                  }
 
                   const methodLabel =
                     rec.method === 'curated'
@@ -618,8 +653,21 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                       ? 'Batch'
                       : 'Cepat';
 
+                  const canRollbackRow =
+                    canUndoMerge &&
+                    Boolean(onUndoMerge) &&
+                    !rec.isRolledBack &&
+                    Boolean(rec.rollbackSnapshot);
+
                   return (
-                    <tr key={rec.id} className="text-slate-700 dark:text-slate-300">
+                    <tr
+                      key={rec.id}
+                      className={
+                        rec.isRolledBack
+                          ? 'text-slate-400 dark:text-slate-500 bg-slate-50/60 dark:bg-slate-900/50'
+                          : 'text-slate-700 dark:text-slate-300'
+                      }
+                    >
                       <td className="py-3 pr-4 font-mono tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {new Date(rec.mergedAt).toLocaleTimeString('id-ID', {
                           hour: '2-digit',
@@ -631,13 +679,17 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                         <span className="font-mono tabular-nums text-slate-500 dark:text-slate-400 font-normal mr-1.5">
                           {rec.primaryCodeId}
                         </span>
-                        {rec.primaryName}
+                        <span className={rec.isRolledBack ? 'line-through opacity-75' : ''}>
+                          {rec.primaryName}
+                        </span>
                       </td>
                       <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
                         <span className="font-mono tabular-nums text-slate-400 mr-1.5">
                           {rec.secondaryCodeId}
                         </span>
-                        {rec.secondaryName}
+                        <span className={rec.isRolledBack ? 'line-through opacity-75' : ''}>
+                          {rec.secondaryName}
+                        </span>
                       </td>
                       <td className="py-3 pr-4 whitespace-nowrap font-mono tabular-nums">
                         {rec.similarityScore}%{' '}
@@ -645,7 +697,7 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                           · {rec.matchType === 'fuzzy' ? 'Fuzzy' : 'Eksak'} · {methodLabel}
                         </span>
                       </td>
-                      <td className="py-3 text-slate-600 dark:text-slate-300">
+                      <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">
                         {summaryParts.length > 0 ? (
                           <span className="font-mono tabular-nums">
                             {td.totalDataPointsMoved} item{' '}
@@ -659,6 +711,28 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                           </span>
                         )}
                       </td>
+                      {onUndoMerge && (
+                        <td className="py-3 text-right whitespace-nowrap">
+                          {rec.isRolledBack ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Dibatalkan</span>
+                            </span>
+                          ) : canRollbackRow ? (
+                            <button
+                              type="button"
+                              onClick={() => setPendingRollbackRecord(rec)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 text-[11px] font-semibold transition-colors cursor-pointer"
+                              title="Batalkan penggabungan & pulihkan kedua profil beserta transaksi"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>Rollback</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">-</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -716,7 +790,7 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
               </div>
             </div>
 
-            {filteredPairs.length > 0 && (
+            {filteredPairs.length > 0 && canMerge && (
               <button
                 id="btn-merge-all"
                 type="button"
@@ -953,21 +1027,25 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                       <Pencil className="w-3.5 h-3.5" />
                       <span>Edit</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => openResolver(pair)}
-                      className="min-h-[40px] px-4 py-2 rounded-xl border border-[#05828e] text-xs sm:text-sm font-semibold text-[#05828e] dark:text-teal-400 dark:border-teal-500/60 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer"
-                    >
-                      Tinjau Field
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onMergePair(pair, undefined, primary.id)}
-                      className="min-h-[40px] px-5 py-2 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
-                    >
-                      <GitMerge className="w-4 h-4" />
-                      <span>Smart Merge</span>
-                    </button>
+                    {canMerge && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => openResolver(pair)}
+                          className="min-h-[40px] px-4 py-2 rounded-xl border border-[#05828e] text-xs sm:text-sm font-semibold text-[#05828e] dark:text-teal-400 dark:border-teal-500/60 hover:bg-teal-50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer"
+                        >
+                          Tinjau Field
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onMergePair(pair, undefined, primary.id)}
+                          className="min-h-[40px] px-5 py-2 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <GitMerge className="w-4 h-4" />
+                          <span>Smart Merge</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1282,6 +1360,65 @@ export const MergeDuplicatesView: React.FC<MergeDuplicatesViewProps> = ({
                 className="min-h-[40px] px-5 py-2 rounded-xl bg-[#05828e] hover:bg-[#046c76] text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
               >
                 Ya, Gabungkan Semua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Rollback / Undo Merge Modal */}
+      {pendingRollbackRecord && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-xs p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-rollback-merge-title"
+        >
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl space-y-5">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div className="space-y-1.5">
+                <h3
+                  id="confirm-rollback-merge-title"
+                  className="text-base font-bold text-slate-900 dark:text-slate-100"
+                >
+                  Konfirmasi Rollback Merge Profil
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Batalkan penggabungan{' '}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {pendingRollbackRecord.secondaryCodeId} {pendingRollbackRecord.secondaryName}
+                  </span>{' '}
+                  ke{' '}
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {pendingRollbackRecord.primaryCodeId} {pendingRollbackRecord.primaryName}
+                  </span>
+                  ? Kedua profil beserta seluruh transaksi Proyek, Salur, Donasi, Patron, dan A-AJAR akan dikembalikan seperti sebelum merge.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setPendingRollbackRecord(null)}
+                className="min-h-[40px] px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetId = pendingRollbackRecord.id;
+                  setPendingRollbackRecord(null);
+                  onUndoMerge?.(targetId);
+                }}
+                className="min-h-[40px] px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Ya, Pulihkan Data</span>
               </button>
             </div>
           </div>

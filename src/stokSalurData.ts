@@ -518,11 +518,36 @@ export function getStoredStokSalurItems(customSalurProducts?: SalurProduct[]): S
   return currentList;
 }
 
-export function saveStoredStokSalurItems(items: StokSalurItem[]): void {
+export const STOK_SALUR_CLOUD_PUSH_EVENT = 'sapa_stok_salur_local_mutation';
+
+export type StokSalurCloudDocKey =
+  | 'stok_salur_items'
+  | 'gudang_salur_data'
+  | 'stock_in_out_salur'
+  | 'lokasi_stok_salur'
+  | 'jenis_perubahan_salur';
+
+function emitStokSalurCloudPush(key: StokSalurCloudDocKey, items: unknown[]): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent(STOK_SALUR_CLOUD_PUSH_EVENT, {
+        detail: { key, items },
+      })
+    );
+  }
+}
+
+export function saveStoredStokSalurItems(
+  items: StokSalurItem[],
+  options?: { skipCloudPush?: boolean }
+): void {
   try {
     localStorage.setItem(STOK_SALUR_STORAGE_KEY, JSON.stringify(items));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('stok_salur_updated'));
+    }
+    if (!options?.skipCloudPush) {
+      emitStokSalurCloudPush('stok_salur_items', items);
     }
   } catch (e) {
     console.error('Error saving StokSalurItems:', e);
@@ -1063,7 +1088,7 @@ export function getStoredGudangSalurData(): GudangLocationData[] {
             );
             if (rakTemplate) {
               kb.containers.unshift(rakTemplate);
-              saveStoredGudangSalurData(parsed);
+              saveStoredGudangSalurData(parsed, { skipCloudPush: true });
             }
           }
         }
@@ -1076,11 +1101,17 @@ export function getStoredGudangSalurData(): GudangLocationData[] {
   return INITIAL_GUDANG_SALUR_DATA;
 }
 
-export function saveStoredGudangSalurData(data: GudangLocationData[]): void {
+export function saveStoredGudangSalurData(
+  data: GudangLocationData[],
+  options?: { skipCloudPush?: boolean }
+): void {
   try {
     localStorage.setItem(GUDANG_SALUR_STORAGE_KEY, JSON.stringify(data));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('stok_salur_updated'));
+    }
+    if (!options?.skipCloudPush) {
+      emitStokSalurCloudPush('gudang_salur_data', data);
     }
   } catch (e) {
     console.error('Error saving GudangSalurData:', e);
@@ -1193,9 +1224,18 @@ export function getStoredLokasiStokSalur(): LokasiStokItemSalur[] {
   return INITIAL_LOKASI_STOK_SALUR;
 }
 
-export function saveStoredLokasiStokSalur(items: LokasiStokItemSalur[]): void {
+export function saveStoredLokasiStokSalur(
+  items: LokasiStokItemSalur[],
+  options?: { skipCloudPush?: boolean }
+): void {
   try {
     localStorage.setItem(LOKASI_STOK_SALUR_STORAGE_KEY, JSON.stringify(items));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('stok_salur_updated'));
+    }
+    if (!options?.skipCloudPush) {
+      emitStokSalurCloudPush('lokasi_stok_salur', items);
+    }
   } catch (e) {
     console.error('Error saving LokasiStokSalur:', e);
   }
@@ -1430,12 +1470,18 @@ export function isMatchingSalurItem(a?: string, b?: string): boolean {
   return nA === nB || nA.includes(nB) || nB.includes(nA);
 }
 
-export function saveStoredStockInOutSalur(items: StockInOutSalurRecord[]): void {
+export function saveStoredStockInOutSalur(
+  items: StockInOutSalurRecord[],
+  options?: { skipCloudPush?: boolean }
+): void {
   try {
     localStorage.setItem(STOCK_IN_OUT_SALUR_STORAGE_KEY, JSON.stringify(items));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('stock_in_out_updated'));
       window.dispatchEvent(new Event('stok_salur_updated'));
+    }
+    if (!options?.skipCloudPush) {
+      emitStokSalurCloudPush('stock_in_out_salur', items);
     }
   } catch (e) {
     console.error('Error saving StockInOutSalur:', e);
@@ -2200,7 +2246,7 @@ export function getStoredJenisPerubahanSalur(): JenisPerubahanStockSalur[] {
               keterangan: 'Pemasukan stok dari hasil cetak baru percetakan',
             },
           ];
-          saveStoredJenisPerubahanSalur(updated);
+          saveStoredJenisPerubahanSalur(updated, { skipCloudPush: true });
           return updated;
         }
         return parsed;
@@ -2212,11 +2258,46 @@ export function getStoredJenisPerubahanSalur(): JenisPerubahanStockSalur[] {
   return INITIAL_JENIS_PERUBAHAN_SALUR;
 }
 
-export function saveStoredJenisPerubahanSalur(items: JenisPerubahanStockSalur[]): void {
+export function saveStoredJenisPerubahanSalur(
+  items: JenisPerubahanStockSalur[],
+  options?: { skipCloudPush?: boolean }
+): void {
   try {
     localStorage.setItem(JENIS_PERUBAHAN_SALUR_STORAGE_KEY, JSON.stringify(items));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('stok_salur_updated'));
+    }
+    if (!options?.skipCloudPush) {
+      emitStokSalurCloudPush('jenis_perubahan_salur', items);
+    }
   } catch (e) {
     console.error('Error saving JenisPerubahanSalur:', e);
+  }
+}
+
+export function applyCloudStokSalurSnapshot(
+  key: StokSalurCloudDocKey,
+  cloudItems: unknown[]
+): void {
+  if (!Array.isArray(cloudItems)) return;
+  switch (key) {
+    case 'stok_salur_items':
+      saveStoredStokSalurItems(cloudItems as StokSalurItem[], { skipCloudPush: true });
+      break;
+    case 'gudang_salur_data':
+      saveStoredGudangSalurData(cloudItems as GudangLocationData[], { skipCloudPush: true });
+      break;
+    case 'stock_in_out_salur':
+      saveStoredStockInOutSalur(cloudItems as StockInOutSalurRecord[], { skipCloudPush: true });
+      break;
+    case 'lokasi_stok_salur':
+      saveStoredLokasiStokSalur(cloudItems as LokasiStokItemSalur[], { skipCloudPush: true });
+      break;
+    case 'jenis_perubahan_salur':
+      saveStoredJenisPerubahanSalur(cloudItems as JenisPerubahanStockSalur[], {
+        skipCloudPush: true,
+      });
+      break;
   }
 }
 

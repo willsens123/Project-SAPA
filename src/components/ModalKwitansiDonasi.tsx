@@ -27,6 +27,7 @@ interface ModalKwitansiDonasiProps {
   order: DonasiOrder | null;
   onClose: () => void;
   onShowToast: (msg: string) => void;
+  actorName?: string;
 }
 
 export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
@@ -34,6 +35,7 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
   order,
   onClose,
   onShowToast,
+  actorName,
 }) => {
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +123,7 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
         oldValue: 'Draft',
         newValue: kwitansiNumber,
         alasan: 'Download file PDF e-kwitansi tanda terima donasi',
-        author: 'Admin Keuangan',
+        author: actorName || 'Admin Keuangan',
       });
 
       onShowToast(`E-Kwitansi ${kwitansiNumber} berhasil diunduh sebagai PDF`);
