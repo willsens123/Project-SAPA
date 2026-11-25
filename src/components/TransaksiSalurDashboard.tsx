@@ -33,6 +33,7 @@ import {
   syncStockInOutFromSalurOrder,
   updateStockInOutPrintDate,
   removeStockInOutForOrder,
+  clearResiOnStockInOutForOrder,
 } from '../stokSalurData';
 import { calculateOrderBadges } from '../utils/orderBadgeHelper';
 import { formatDisplayKodeTransaksi } from '../utils/kodeTransaksiHelper';
@@ -129,8 +130,8 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
       if (o.id === orderId) {
         const updatedOrder: SalurOrder = {
           ...o,
-          stockOutContainer: o.stockOutContainer || 'Rak',
-          stockOutLokasi: o.stockOutLokasi || 'Kantor Bandung',
+          stockOutContainer: o.stockOutContainer || 'AUTO',
+          stockOutLokasi: o.stockOutLokasi,
           ekspedisi: {
             ...o.ekspedisi,
             name: hasResi ? (o.ekspedisi?.name || 'TIKI ONS') : '',
@@ -154,7 +155,7 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
         onResiSaved(targetOrderToSync, trimmed);
       }
     } else if (!hasResi) {
-      removeStockInOutForOrder(orderId);
+      clearResiOnStockInOutForOrder(orderId);
     }
 
     onShowToast(
@@ -974,8 +975,9 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActiveDropdownOrderId(null);
+                                removeStockInOutForOrder(order.id);
                                 onUpdateOrders(orders.filter((o) => o.id !== order.id));
-                                onShowToast(`Pesanan ${order.orderNumber} berhasil dihapus`);
+                                onShowToast(`Pesanan ${order.orderNumber} dihapus & stok gudang dikembalikan`);
                               }}
                               className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 text-left transition-colors cursor-pointer"
                             >

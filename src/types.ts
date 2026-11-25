@@ -522,6 +522,19 @@ export interface JenisPerubahanDharmaPatronItem {
   createdAt?: string;
 }
 
+export interface PatronWhatsappBillingLog {
+  id: string;
+  billedAt: string; // ISO timestamp
+  billedBy: string; // Admin name & division
+  phone: string;
+  nominalTagihan: number;
+  bulanPiutang: string;
+  tone: 'ramah' | 'pengingat' | 'tegas';
+  rekeningLabel?: string;
+  messagePreview: string;
+  channel: 'whatsapp_open' | 'manual_mark';
+}
+
 export interface DharmaPatronRutinItem {
   id: string;
   noDonatur: string; // e.g. "00031"
@@ -554,6 +567,12 @@ export interface DharmaPatronRutinItem {
   bulanDiputihkan?: string[];
   statusAktif?: 'Aktif' | 'Tidak Aktif';
   tanggalBerhenti?: string;
+  lastWhatsappBilledAt?: string;
+  lastWhatsappBilledBy?: string;
+  lastWhatsappBilledPhone?: string;
+  lastWhatsappBilledAmount?: number;
+  lastWhatsappBilledBulan?: string;
+  whatsappBillingHistory?: PatronWhatsappBillingLog[];
   createdAt?: string;
 }
 

@@ -23,6 +23,7 @@ import {
   Layers,
   ArrowDownLeft,
   ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
 import { MutasiItem, MutasiLinkedTransaction, RekeningItem, PengeluaranItem } from '../types';
 import { SalurOrder } from '../salurData';
@@ -31,6 +32,12 @@ import { DonasiOrder } from '../donasiData';
 import { BANK_ACCOUNTS } from '../mutasiData';
 import { ImportMutasiModal } from './ImportMutasiModal';
 import { ModalHubungkanMutasi } from './ModalHubungkanMutasi';
+import {
+  MutasiBatchSuggestionEntry,
+  MutasiMatchSuggestion,
+  buildLinkedTransactionFromSuggestion,
+  findBatchMutasiSuggestions,
+} from '../utils/mutasiAutoMatcher';
 
 interface MutasiTableProps {
   items: MutasiItem[];
@@ -81,6 +88,8 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
   // Direct modal connect state for streamlined reconciliation
   const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
   const [selectedMutasiForConnect, setSelectedMutasiForConnect] = useState<MutasiItem | null>(null);
+  const [showAutoMatchPanel, setShowAutoMatchPanel] = useState<boolean>(false);
+  const [dismissedAutoMatchIds, setDismissedAutoMatchIds] = useState<string[]>([]);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -463,6 +472,43 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
     if (onShowToast) {
       onShowToast(`Mutasi berhasil direkonsiliasi dengan transaksi "${link.kode}"`);
     }
+  };
+
+  // Auto-match suggestions scoped to current bank filter
+  const autoMatchSuggestions = useMemo<MutasiBatchSuggestionEntry[]>(() => {
+    const bankItems = items.filter((m) => isMatchBank(m, selectedBankFilter));
+    const entries = findBatchMutasiSuggestions(
+      bankItems,
+      {
+        salurOrders,
+        transaksiAjarList,
+        donasiOrders,
+        pengeluaranList,
+      },
+      { minScore: 60 }
+    );
+    return entries.filter((e) => !dismissedAutoMatchIds.includes(e.mutasi.id));
+  }, [
+    items,
+    selectedBankFilter,
+    salurOrders,
+    transaksiAjarList,
+    donasiOrders,
+    pengeluaranList,
+    dismissedAutoMatchIds,
+  ]);
+
+  const topSuggestionByMutasiId = useMemo(() => {
+    const map = new Map<string, MutasiMatchSuggestion>();
+    autoMatchSuggestions.forEach((entry) => {
+      map.set(entry.mutasi.id, entry.topSuggestion);
+    });
+    return map;
+  }, [autoMatchSuggestions]);
+
+  const handleConfirmAutoMatch = (mutasiId: string, suggestion: MutasiMatchSuggestion) => {
+    const link = buildLinkedTransactionFromSuggestion(suggestion);
+    handleSaveLink(mutasiId, link);
   };
 
   // Safe Add button handler
@@ -1034,6 +1080,34 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
             </div>
           </div>
 
+          {/* Auto-Match Suggestion Review Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAutoMatchPanel((prev) => !prev)}
+            className={`px-3.5 py-1.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+              showAutoMatchPanel
+                ? 'bg-[#00899B] text-white border-[#00899B] shadow-xs'
+                : autoMatchSuggestions.length > 0
+                ? 'bg-teal-50 hover:bg-teal-100 text-[#00899B] border-teal-200'
+                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Lihat saran pencocokan mutasi bank otomatis untuk dikonfirmasi admin"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Saran Otomatis</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                showAutoMatchPanel
+                  ? 'bg-white/20 text-white'
+                  : autoMatchSuggestions.length > 0
+                  ? 'bg-[#00899B] text-white'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {autoMatchSuggestions.length}
+            </span>
+          </button>
+
           {/* Dedicated 'Export to CSV' button specifically for reconciled transactions of the current bank account view */}
           <button
             type="button"
@@ -1061,6 +1135,129 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
           )}
         </div>
       </div>
+
+      {/* ================= COLLAPSIBLE AUTO-MATCH REVIEW PANEL ================= */}
+      {showAutoMatchPanel && (
+        <div className="mb-4 rounded-2xl border border-teal-200 bg-teal-50/50 p-4 space-y-3 animate-in fade-in duration-150">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#00899B] text-white flex items-center justify-center">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                  Saran Pencocokan Mutasi Otomatis ({autoMatchSuggestions.length})
+                </h4>
+                <p className="text-[11px] text-slate-600">
+                  Sistem menghitung skor kecocokan berdasarkan nominal, kode referensi, nama pengirim, dan tanggal. Periksa lalu klik Konfirmasi &amp; Hubungkan.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAutoMatchPanel(false)}
+              className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              title="Tutup panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {autoMatchSuggestions.length === 0 ? (
+            <div className="rounded-xl bg-white border border-slate-200/80 p-5 text-center text-xs text-slate-500">
+              Tidak ada saran pencocokan otomatis baru (minimal skor 60%) untuk mutasi yang belum terhubung pada filter rekening ini.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+              {autoMatchSuggestions.map(({ mutasi, topSuggestion }) => (
+                <div
+                  key={mutasi.id}
+                  className="rounded-xl border border-slate-200 bg-white p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 flex-1 items-center">
+                    {/* Left: Bank Mutation */}
+                    <div className="md:col-span-5 min-w-0">
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                        <span className="font-semibold text-slate-700">{mutasi.date}</span>
+                        <span>·</span>
+                        <span className="font-semibold text-[#00899B]">{mutasi.bankAccount}</span>
+                        <span>·</span>
+                        <span className="font-mono font-bold text-slate-800">
+                          Rp {formatAmount(mutasi.amount)} ({mutasi.type})
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 truncate mt-0.5" title={mutasi.keteranganBank}>
+                        {mutasi.keteranganBank}
+                      </p>
+                    </div>
+
+                    {/* Middle: Score */}
+                    <div className="md:col-span-2 flex md:flex-col items-start md:items-center gap-1">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
+                          topSuggestion.score >= 80
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}
+                      >
+                        {topSuggestion.score}% Cocok
+                      </span>
+                      <span className="text-[10px] text-slate-500 text-center leading-tight">
+                        {topSuggestion.reasons.slice(0, 2).join(' · ')}
+                      </span>
+                    </div>
+
+                    {/* Right: Suggested Transaction */}
+                    <div className="md:col-span-5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[#00899B] border border-teal-200 font-bold uppercase text-[10px]">
+                          {topSuggestion.sourceType}
+                        </span>
+                        <span className="font-bold text-slate-800 truncate">
+                          {topSuggestion.kode}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 truncate mt-0.5">
+                        {topSuggestion.displayName} · <strong className="font-mono">Rp {formatAmount(topSuggestion.nominal)}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Admin Confirmation Actions */}
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmAutoMatch(mutasi.id, topSuggestion)}
+                      className="px-3 py-1.5 rounded-lg bg-[#00899B] hover:bg-[#007b8c] text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Konfirmasi &amp; Hubungkan</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMutasiForConnect(mutasi);
+                        setIsConnectModalOpen(true);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 cursor-pointer"
+                    >
+                      Pilih Lain
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDismissedAutoMatchIds((prev) => [...prev, mutasi.id])}
+                      className="px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title="Lewati saran ini"
+                    >
+                      Lewati
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ================= MAIN MUTASI TABLE ================= */}
       <div className="overflow-x-auto w-full flex-1">
@@ -1182,18 +1379,36 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
                           <span>Terhubung ({item.linkedTransactions?.length})</span>
                         </span>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedMutasiForConnect(item);
-                            setIsConnectModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer group/btn"
-                          title="Klik untuk merekonsiliasi mutasi ini"
-                        >
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          <span className="group-hover/btn:underline">+ Hubungkan</span>
-                        </button>
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMutasiForConnect(item);
+                              setIsConnectModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer group/btn"
+                            title="Klik untuk merekonsiliasi mutasi ini"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                            <span className="group-hover/btn:underline">+ Hubungkan</span>
+                          </button>
+                          {topSuggestionByMutasiId.has(item.id) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const sug = topSuggestionByMutasiId.get(item.id)!;
+                                handleConfirmAutoMatch(item.id, sug);
+                              }}
+                              title={`Saran otomatis (${topSuggestionByMutasiId.get(item.id)!.score}%): ${topSuggestionByMutasiId.get(item.id)!.kode} — Klik untuk konfirmasi & hubungkan`}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 hover:bg-teal-100 text-[#00899B] border border-teal-200 transition-colors cursor-pointer"
+                            >
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>
+                                Konfirmasi {topSuggestionByMutasiId.get(item.id)!.score}%
+                              </span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -1343,6 +1558,7 @@ export const MutasiTable: React.FC<MutasiTableProps> = ({
           setSelectedMutasiForConnect(null);
         }}
         mutasi={selectedMutasiForConnect}
+        allMutasiItems={items}
         salurOrders={salurOrders}
         transaksiAjarList={transaksiAjarList}
         donasiOrders={donasiOrders}

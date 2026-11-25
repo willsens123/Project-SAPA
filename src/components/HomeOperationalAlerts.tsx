@@ -5,15 +5,20 @@ import {
   CheckCircle2,
   CreditCard,
   ListTodo,
+  MessageCircle,
   Package,
   Warehouse,
 } from 'lucide-react';
 import {
   AppView,
   DharmaPatronRutinItem,
+  OrganisasiItem,
+  PatronWhatsappBillingLog,
   ProjectItem,
+  RekeningItem,
   TodoTaskItem,
 } from '../types';
+import { IdentitasItem } from '../identitasData';
 import { SalurProduct } from '../salurData';
 import { getStoredStokSalurItems } from '../stokSalurData';
 import { formatIsoDateIndo, parseFinancialDateToIso } from '../utils/financialDateFilter';
@@ -22,12 +27,23 @@ import {
   SEED_REFERENCE_DATE_ISO,
   toLocalIsoDate,
 } from '../utils/projectDeadlineUtils';
+import { getPatronBillingStatus } from '../utils/patronWhatsappHelper';
+import { ModalTagihanWhatsappPatron } from './ModalTagihanWhatsappPatron';
 
 interface HomeOperationalAlertsProps {
   projects: ProjectItem[];
   todoTasks: Record<string, TodoTaskItem[]>;
   dharmaPatronList: DharmaPatronRutinItem[];
   salurItems: SalurProduct[];
+  identitasList?: IdentitasItem[];
+  organisasiList?: OrganisasiItem[];
+  rekeningList?: RekeningItem[];
+  currentAdminName?: string;
+  onRecordWhatsappBilling?: (
+    patron: DharmaPatronRutinItem,
+    entry: PatronWhatsappBillingLog
+  ) => void;
+  onShowToast?: (msg: string) => void;
   onNavigateView: (view: AppView) => void;
   onOpenProjectTodos?: (project: ProjectItem) => void;
 }
@@ -61,12 +77,20 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
   todoTasks,
   dharmaPatronList,
   salurItems,
+  identitasList = [],
+  organisasiList = [],
+  rekeningList = [],
+  currentAdminName,
+  onRecordWhatsappBilling,
+  onShowToast,
   onNavigateView,
   onOpenProjectTodos,
 }) => {
   const [reminderTab, setReminderTab] = useState<'todo' | 'patron'>('todo');
   const [stockThreshold, setStockThreshold] = useState<number>(LOW_STOCK_THRESHOLD);
   const [stokSyncTick, setStokSyncTick] = useState(0);
+  const [whatsappTargetPatrons, setWhatsappTargetPatrons] = useState<DharmaPatronRutinItem[]>([]);
+  const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
 
   React.useEffect(() => {
     const handleStokUpdated = () => setStokSyncTick((prev) => prev + 1);
@@ -358,6 +382,7 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
           ) : (
             patronPiutangItems.slice(0, 8).map((patron) => {
               const amount = Math.abs(Number(patron.piutang || patron.donasiPerbulan || 0));
+              const billingStatus = getPatronBillingStatus(patron);
               return (
                 <div
                   key={patron.id}
@@ -371,6 +396,15 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
                       <span className="text-xs font-bold text-rose-600 dark:text-rose-400 font-mono tabular-nums">
                         -Rp{amount.toLocaleString('id-ID')}
                       </span>
+                      {billingStatus.isBilledThisMonth && (
+                        <span
+                          title={`Sudah ditagih ${billingStatus.fullDateLabel} oleh ${billingStatus.lastBilledBy || 'Admin'}`}
+                          className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400"
+                        >
+                          <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          <span>Sudah Ditagih ({billingStatus.compactDateLabel})</span>
+                        </span>
+                      )}
                     </div>
                     <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono tabular-nums">
                       <span>ID {patron.noDonatur}</span>
@@ -383,13 +417,35 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onNavigateView('listDharmaPatronRutin')}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    Tindak Lanjut
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWhatsappTargetPatrons([patron]);
+                        setIsWhatsappModalOpen(true);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap ${
+                        billingStatus.isBilledThisMonth
+                          ? 'border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      }`}
+                      title={
+                        billingStatus.isBilledThisMonth
+                          ? `Terakhir ditagih ${billingStatus.fullDateLabel} oleh ${billingStatus.lastBilledBy || 'Admin'}`
+                          : 'Buat pesan tagihan WhatsApp'
+                      }
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>{billingStatus.isBilledThisMonth ? 'Tagih Lagi' : 'Tagih WA'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateView('listDharmaPatronRutin')}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      Tindak Lanjut
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -543,6 +599,21 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
           </button>
         </div>
       </div>
+
+      <ModalTagihanWhatsappPatron
+        isOpen={isWhatsappModalOpen}
+        onClose={() => {
+          setIsWhatsappModalOpen(false);
+          setWhatsappTargetPatrons([]);
+        }}
+        patrons={whatsappTargetPatrons}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        rekeningList={rekeningList}
+        currentAdminName={currentAdminName}
+        onRecordBilling={onRecordWhatsappBilling}
+        onShowToast={onShowToast}
+      />
     </section>
   );
 };

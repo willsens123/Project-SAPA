@@ -1510,23 +1510,22 @@ export function applyStockMovement(
     let gModified = false;
     let newContainers = [...g.containers];
 
-    // Handle Source Deductions
+    // Handle Source Deductions (deduct once from the best matching container)
     if (
       record.jenisPerubahan !== 'Cetak Baru' &&
       srcGudang !== '-' &&
       srcGudang.toLowerCase() !== 'percetakan' &&
-      g.namaLokasi.toLowerCase() === srcGudang.toLowerCase()
+      (srcGudang === '-' || g.namaLokasi.toLowerCase() === srcGudang.toLowerCase())
     ) {
+      let deductedInGudang = false;
       newContainers = newContainers.map((c) => {
-        if (
-          srcCont !== '-' &&
-          (c.namaContainer.toLowerCase() === srcCont.toLowerCase() ||
-            srcCont.toLowerCase() === 'rak' ||
-            c.namaContainer.toLowerCase().includes(srcCont.toLowerCase()))
-        ) {
+        if (deductedInGudang) return c;
+        const isExactCont = c.namaContainer.toLowerCase() === srcCont.toLowerCase();
+        if (srcCont !== '-' && isExactCont) {
           const newItems = c.items.map((it) => {
             if (isMatchingSalurItem(it.namaItem, itemName)) {
               gModified = true;
+              deductedInGudang = true;
               return { ...it, stok: Math.max(0, it.stok - qty) };
             }
             return it;
@@ -1536,6 +1535,31 @@ export function applyStockMovement(
         }
         return c;
       });
+
+      // Fallback when source was generic 'Rak' or partial match and exact name wasn't present
+      if (!deductedInGudang && srcCont !== '-') {
+        newContainers = newContainers.map((c) => {
+          if (deductedInGudang) return c;
+          const isFallbackCont =
+            srcCont.toLowerCase() === 'rak' ||
+            c.namaContainer.toLowerCase().includes(srcCont.toLowerCase());
+          if (!isFallbackCont) return c;
+          const hasMatchingStock = c.items.some(
+            (it) => isMatchingSalurItem(it.namaItem, itemName) && it.stok > 0
+          );
+          if (!hasMatchingStock) return c;
+          const newItems = c.items.map((it) => {
+            if (!deductedInGudang && isMatchingSalurItem(it.namaItem, itemName)) {
+              gModified = true;
+              deductedInGudang = true;
+              return { ...it, stok: Math.max(0, it.stok - qty) };
+            }
+            return it;
+          });
+          const newContStok = newItems.reduce((acc, curr) => acc + curr.stok, 0);
+          return { ...c, items: newItems, stok: newContStok };
+        });
+      }
     }
 
     // Handle Destination Additions
@@ -1648,7 +1672,7 @@ export function applyStockMovement(
       let itModified = false;
       let newConts = [...(it.containers || [])];
 
-      // Reduce from source
+      // Reduce from source (exact container + location first, then single fallback)
       if (
         record.jenisPerubahan !== 'Cetak Baru' &&
         srcGudang !== '-' &&
@@ -1656,16 +1680,13 @@ export function applyStockMovement(
       ) {
         let deducted = false;
         newConts = newConts.map((c) => {
-          const matchCont =
-            srcCont === '-' ||
-            srcCont.toLowerCase() === 'rak' ||
-            c.namaContainer.toLowerCase() === srcCont.toLowerCase() ||
-            c.namaContainer.toLowerCase().includes(srcCont.toLowerCase());
+          if (deducted) return c;
+          const matchContExact = c.namaContainer.toLowerCase() === srcCont.toLowerCase();
           const matchLoc =
             srcGudang === '-' ||
             c.lokasiGudang.toLowerCase() === srcGudang.toLowerCase();
 
-          if (!deducted && matchCont && matchLoc) {
+          if (matchContExact && matchLoc) {
             deducted = true;
             itModified = true;
             return { ...c, stok: Math.max(0, c.stok - qty) };
@@ -1673,16 +1694,44 @@ export function applyStockMovement(
           return c;
         });
 
-        // If no container matched by name/loc, deduct from first container with positive stock
-        if (!deducted && newConts.length > 0) {
+        // Partial match fallback
+        if (!deducted && srcCont !== '-') {
           newConts = newConts.map((c) => {
-            if (!deducted && c.stok > 0) {
+            if (deducted) return c;
+            const matchContPartial = c.namaContainer.toLowerCase().includes(srcCont.toLowerCase());
+            const matchLoc =
+              srcGudang === '-' ||
+              c.lokasiGudang.toLowerCase() === srcGudang.toLowerCase();
+            if (matchContPartial && matchLoc) {
               deducted = true;
               itModified = true;
               return { ...c, stok: Math.max(0, c.stok - qty) };
             }
             return c;
           });
+        }
+
+        // Fallback: deduct from highest-stock container ONCE (preferring matching location)
+        if (!deducted && newConts.length > 0) {
+          let bestIdx = newConts.findIndex(
+            (c) => c.lokasiGudang.toLowerCase() === srcGudang.toLowerCase() && c.stok > 0
+          );
+          if (bestIdx === -1) {
+            let maxStok = -1;
+            newConts.forEach((c, idx) => {
+              if (c.stok > maxStok) {
+                maxStok = c.stok;
+                bestIdx = idx;
+              }
+            });
+          }
+          if (bestIdx !== -1 && newConts[bestIdx].stok > 0) {
+            newConts = newConts.map((c, idx) =>
+              idx === bestIdx ? { ...c, stok: Math.max(0, c.stok - qty) } : c
+            );
+            deducted = true;
+            itModified = true;
+          }
         }
 
         if (!itModified && it.stok > 0) {
@@ -1763,20 +1812,17 @@ export function rollbackStockMovement(
     let gModified = false;
     let newContainers = [...g.containers];
 
-    // Restore to source
+    // Restore to source (restore ONCE to matching container)
     if (
       record.jenisPerubahan !== 'Cetak Baru' &&
       srcGudang !== '-' &&
       srcGudang.toLowerCase() !== 'percetakan' &&
       g.namaLokasi.toLowerCase() === srcGudang.toLowerCase()
     ) {
+      let restoredInGudang = false;
       newContainers = newContainers.map((c) => {
-        if (
-          srcCont !== '-' &&
-          (c.namaContainer.toLowerCase() === srcCont.toLowerCase() ||
-            srcCont.toLowerCase() === 'rak' ||
-            c.namaContainer.toLowerCase().includes(srcCont.toLowerCase()))
-        ) {
+        if (restoredInGudang) return c;
+        if (srcCont !== '-' && c.namaContainer.toLowerCase() === srcCont.toLowerCase()) {
           const itemExists = c.items.some((it) => isMatchingSalurItem(it.namaItem, itemName));
           let newItems = [...c.items];
           if (itemExists) {
@@ -1797,6 +1843,7 @@ export function rollbackStockMovement(
             });
           }
           gModified = true;
+          restoredInGudang = true;
           return {
             ...c,
             stok: c.stok + qty,
@@ -1866,7 +1913,7 @@ export function rollbackStockMovement(
       let itModified = false;
       let newConts = [...(it.containers || [])];
 
-      // Restore to source
+      // Restore to source (exact match first, then single fallback)
       if (
         record.jenisPerubahan !== 'Cetak Baru' &&
         srcGudang !== '-' &&
@@ -1874,10 +1921,9 @@ export function rollbackStockMovement(
       ) {
         let restored = false;
         newConts = newConts.map((c) => {
+          if (restored) return c;
           if (
-            (c.namaContainer.toLowerCase() === srcCont.toLowerCase() ||
-              srcCont.toLowerCase() === 'rak' ||
-              c.namaContainer.toLowerCase().includes(srcCont.toLowerCase())) &&
+            c.namaContainer.toLowerCase() === srcCont.toLowerCase() &&
             (c.lokasiGudang.toLowerCase() === srcGudang.toLowerCase() || srcGudang === '-')
           ) {
             restored = true;
@@ -1887,8 +1933,23 @@ export function rollbackStockMovement(
           return c;
         });
 
+        if (!restored) {
+          newConts = newConts.map((c) => {
+            if (restored) return c;
+            if (
+              c.namaContainer.toLowerCase().includes(srcCont.toLowerCase()) &&
+              (c.lokasiGudang.toLowerCase() === srcGudang.toLowerCase() || srcGudang === '-')
+            ) {
+              restored = true;
+              itModified = true;
+              return { ...c, stok: c.stok + qty };
+            }
+            return c;
+          });
+        }
+
         if (!restored && newConts.length > 0) {
-          newConts[0].stok += qty;
+          newConts[0] = { ...newConts[0], stok: newConts[0].stok + qty };
           itModified = true;
         }
       }
@@ -1986,18 +2047,254 @@ export function removeStockInOutForOrder(orderId: string): void {
   saveStoredStockInOutSalur(updated);
 }
 
+export function clearResiOnStockInOutForOrder(orderId: string): void {
+  const current = getStoredStockInOutSalur();
+  let changed = false;
+  const updated = current.map((r) => {
+    if (r.orderId === orderId && r.noResi) {
+      changed = true;
+      return {
+        ...r,
+        noResi: undefined,
+        keterangan: `Penjualan ${r.orderNumber ? `No. Pesanan ${r.orderNumber}` : ''}`.trim(),
+      };
+    }
+    return r;
+  });
+  if (changed) {
+    saveStoredStockInOutSalur(updated);
+  }
+}
+
+export function resolveAutoSourceContainerForItem(
+  itemTitle: string,
+  productId?: string
+): { container: string; lokasi: string; availableInContainer: number } {
+  const items = getStoredStokSalurItems();
+  const matchedItem = items.find(
+    (it) =>
+      (productId && it.productId === productId) ||
+      isMatchingSalurItem(it.namaItem, itemTitle)
+  );
+
+  if (matchedItem?.containers && matchedItem.containers.length > 0) {
+    const sorted = [...matchedItem.containers].sort(
+      (a, b) => (Number(b.stok) || 0) - (Number(a.stok) || 0)
+    );
+    return {
+      container: sorted[0].namaContainer,
+      lokasi: sorted[0].lokasiGudang,
+      availableInContainer: Number(sorted[0].stok) || 0,
+    };
+  }
+
+  const gudangs = getStoredGudangSalurData();
+  const candidates: Array<{ container: string; lokasi: string; stok: number }> = [];
+  gudangs.forEach((g) => {
+    (g.containers || []).forEach((c) => {
+      const found = (c.items || []).find(
+        (ci) =>
+          (productId && ci.itemId === productId) ||
+          isMatchingSalurItem(ci.namaItem, itemTitle)
+      );
+      if (found) {
+        candidates.push({
+          container: c.namaContainer,
+          lokasi: c.lokasiGudang || g.namaLokasi,
+          stok: Number(found.stok) || 0,
+        });
+      }
+    });
+  });
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.stok - a.stok);
+    return {
+      container: candidates[0].container,
+      lokasi: candidates[0].lokasi,
+      availableInContainer: candidates[0].stok,
+    };
+  }
+
+  return {
+    container: 'Rak',
+    lokasi: 'Kantor Bandung',
+    availableInContainer: Number(matchedItem?.stok || 0),
+  };
+}
+
+export interface SalurOrderStockSyncWarning {
+  itemTitle: string;
+  requestedQty: number;
+  availableInContainer: number;
+  container: string;
+  lokasi: string;
+}
+
+export interface SalurOrderStockSyncResult {
+  recordsCreated: StockInOutSalurRecord[];
+  warnings: SalurOrderStockSyncWarning[];
+  resolvedSummary: Array<{
+    itemTitle: string;
+    qty: number;
+    container: string;
+    lokasi: string;
+  }>;
+}
+
 /**
- * Otomatis menambahkan / memperbarui catatan Stock In/Out saat No. Resi pada Transaksi S-SALUR terisi.
- * - Tanggal stok in/out sesuai tanggal print (jika tidak ada/belum diprint, menggunakan tanggal resi diisi)
- * - Tujuan container: "-"
- * - Tujuan lokasi: "-"
- * - Jenis perubahan: "Penjualan"
- * - Berdasarkan jumlah transaksi untuk setiap item produk S-SALUR
+ * Otomatis memotong stok gudang/kontainer & mencatat Stock In/Out segera saat transaksi S-SALUR disimpan.
+ * Mendukung mode pilihan kontainer spesifik maupun mode 'AUTO' (pilih kontainer dengan stok terbanyak per item).
+ */
+export function syncStockInOutOnSalurOrderSaved(order: {
+  id: string;
+  orderNumber?: string;
+  date?: string;
+  isHadiah?: boolean;
+  printStatusBadge?: { text?: string; type?: string };
+  alamat?: { badgeDate?: string };
+  items?: Array<{
+    id?: string;
+    productId?: string;
+    title: string;
+    quantity: number;
+  }>;
+  ekspedisi?: { noResi?: string };
+  stockOutContainer?: string;
+  stockOutLokasi?: string;
+  printDate?: string;
+}): SalurOrderStockSyncResult {
+  // Jika order ini sebelumnya sudah memiliki log Stock In/Out (mis. saat edit order), rollback dulu agar tidak terpotong ganda
+  removeStockInOutForOrder(order.id);
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const now = new Date();
+  const todayFormatted = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const resi = (order.ekspedisi?.noResi || '').trim();
+  const hasResi = Boolean(resi && resi !== '-');
+
+  const printText =
+    (order.printDate || '').trim() ||
+    (order.printStatusBadge?.text || '').trim() ||
+    (order.alamat?.badgeDate || '').trim();
+  const isPrinted =
+    Boolean(printText) && !printText.toLowerCase().includes('belum') && printText !== '-';
+
+  const stockDate = isPrinted ? printText : (order.date || '').trim() || todayFormatted;
+
+  const rawChosenContainer = (order.stockOutContainer || 'AUTO').trim();
+  const isAutoContainer = !rawChosenContainer || rawChosenContainer.toUpperCase() === 'AUTO';
+  const defaultOptions = getAllSalurContainerOptions();
+
+  const orderItems =
+    order.items && order.items.length > 0
+      ? order.items
+      : [{ id: 'item-default', productId: 'book-default', title: 'Item S-SALUR', quantity: 1 }];
+
+  const currentRecords = getStoredStockInOutSalur();
+  const currentStokItems = getStoredStokSalurItems();
+  const newRecords: StockInOutSalurRecord[] = [];
+  const warnings: SalurOrderStockSyncWarning[] = [];
+  const resolvedSummary: Array<{
+    itemTitle: string;
+    qty: number;
+    container: string;
+    lokasi: string;
+  }> = [];
+
+  orderItems.forEach((it, idx) => {
+    const qty = Math.max(1, Number(it.quantity) || 1);
+    const title = it.title?.trim() || 'Item S-SALUR';
+
+    let chosenContainer = rawChosenContainer;
+    let chosenLokasi = (order.stockOutLokasi || '').trim();
+    let availableInContainer = 0;
+
+    if (isAutoContainer) {
+      const autoRes = resolveAutoSourceContainerForItem(title, it.productId);
+      chosenContainer = autoRes.container;
+      chosenLokasi = autoRes.lokasi;
+      availableInContainer = autoRes.availableInContainer;
+    } else {
+      if (!chosenLokasi) {
+        const matchOpt = defaultOptions.find(
+          (opt) => opt.container.toLowerCase() === chosenContainer.toLowerCase()
+        );
+        chosenLokasi = matchOpt ? matchOpt.lokasi : 'Kantor Bandung';
+      }
+      const matchedItem = currentStokItems.find(
+        (si) =>
+          (it.productId && si.productId === it.productId) ||
+          isMatchingSalurItem(si.namaItem, title)
+      );
+      const matchedCont = matchedItem?.containers?.find(
+        (c) =>
+          c.namaContainer.toLowerCase() === chosenContainer.toLowerCase() &&
+          c.lokasiGudang.toLowerCase() === chosenLokasi.toLowerCase()
+      );
+      availableInContainer = matchedCont
+        ? Number(matchedCont.stok) || 0
+        : matchedItem?.containers && matchedItem.containers.length > 0
+        ? 0
+        : Number(matchedItem?.stok || 0);
+    }
+
+    if (availableInContainer < qty) {
+      warnings.push({
+        itemTitle: title,
+        requestedQty: qty,
+        availableInContainer,
+        container: chosenContainer,
+        lokasi: chosenLokasi,
+      });
+    }
+
+    const prefixLabel = order.isHadiah ? '[Hadiah] Penjualan' : 'Penjualan';
+    const newRec: StockInOutSalurRecord = {
+      id: `stock-io-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+      tanggal: stockDate,
+      sumberContainer: chosenContainer,
+      sumberLokasi: chosenLokasi,
+      namaItem: title,
+      jumlah: qty,
+      tujuanContainer: '-',
+      tujuanLokasi: '-',
+      jenisPerubahan: 'Penjualan',
+      keterangan: `${prefixLabel} ${order.orderNumber ? `No. Pesanan ${order.orderNumber}` : ''}${
+        hasResi ? ` - Resi: ${resi}` : ''
+      }`.trim(),
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      noResi: hasResi ? resi : undefined,
+    };
+
+    newRecords.push(newRec);
+    resolvedSummary.push({
+      itemTitle: title,
+      qty,
+      container: chosenContainer,
+      lokasi: chosenLokasi,
+    });
+    applyStockMovement(newRec);
+  });
+
+  saveStoredStockInOutSalur([...newRecords, ...currentRecords]);
+  return {
+    recordsCreated: newRecords,
+    warnings,
+    resolvedSummary,
+  };
+}
+
+/**
+ * Memperbarui catatan Stock In/Out saat No. Resi pada Transaksi S-SALUR diisi/diubah.
+ * Jika mutasi stok sudah tercatat saat transaksi dibuat, hanya memperbarui noResi & tanggal tanpa memotong stok ulang.
  */
 export function syncStockInOutFromSalurOrder(
   order: {
     id: string;
     orderNumber?: string;
+    isHadiah?: boolean;
     printStatusBadge?: { text?: string; type?: string };
     alamat?: { badgeDate?: string };
     items?: Array<{
@@ -2019,8 +2316,6 @@ export function syncStockInOutFromSalurOrder(
     return;
   }
 
-  // 1. Tentukan tanggal mutasi:
-  // Tanggal stok in/out sesuai tanggal print alamat jika ada, fallback ke printStatusBadge, atau tanggal resi diisi
   const printText =
     (order.printDate || '').trim() ||
     (order.printStatusBadge?.text || '').trim() ||
@@ -2042,38 +2337,39 @@ export function syncStockInOutFromSalurOrder(
     stockDate = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   }
 
-  // Tentukan container dan lokasi asal stock out (default "Rak", atau sesuai pilihan user pada print alamat)
   const defaultOption = getAllSalurContainerOptions();
-  const chosenContainer = (order.stockOutContainer || 'Rak').trim();
-  let chosenLokasi = (order.stockOutLokasi || '').trim();
-  if (!chosenLokasi) {
+  const explicitContainer =
+    order.stockOutContainer && order.stockOutContainer.toUpperCase() !== 'AUTO'
+      ? order.stockOutContainer.trim()
+      : '';
+  let explicitLokasi = (order.stockOutLokasi || '').trim();
+  if (explicitContainer && !explicitLokasi) {
     const matchOpt = defaultOption.find(
-      (opt) => opt.container.toLowerCase() === chosenContainer.toLowerCase()
+      (opt) => opt.container.toLowerCase() === explicitContainer.toLowerCase()
     );
-    chosenLokasi = matchOpt ? matchOpt.lokasi : 'Kantor Bandung';
+    explicitLokasi = matchOpt ? matchOpt.lokasi : 'Kantor Bandung';
   }
 
-  // 2. Cek apakah sudah pernah tercatat sebelumnya untuk order ini (cocokkan secara ketat dengan orderId unik)
   const currentRecords = getStoredStockInOutSalur();
   const existingForOrder = currentRecords.filter((r) => r.orderId === order.id);
 
   if (existingForOrder.length > 0) {
-    // Perbarui nomor resi & tanggal jika ada perubahan
     let isChanged = false;
     const updatedRecords = currentRecords.map((r) => {
       if (r.orderId === order.id) {
         isChanged = true;
-        const contChanged = r.sumberContainer !== chosenContainer || r.sumberLokasi !== chosenLokasi;
+        const nextCont = explicitContainer || r.sumberContainer;
+        const nextLok = explicitContainer ? explicitLokasi || r.sumberLokasi : r.sumberLokasi;
+        const contChanged = r.sumberContainer !== nextCont || r.sumberLokasi !== nextLok;
         if (contChanged) {
-          // Rollback mutasi lama dan terapkan mutasi baru pada container yang baru dipilih
           rollbackStockMovement(r);
         }
 
         const updatedRec: StockInOutSalurRecord = {
           ...r,
           tanggal: isPrinted ? printText : r.tanggal || stockDate,
-          sumberContainer: chosenContainer,
-          sumberLokasi: chosenLokasi,
+          sumberContainer: nextCont,
+          sumberLokasi: nextLok,
           noResi: resi,
           tujuanContainer: '-',
           tujuanLokasi: '-',
@@ -2095,40 +2391,12 @@ export function syncStockInOutFromSalurOrder(
     return;
   }
 
-  // 3. Tambahkan catatan mutasi baru untuk setiap item dalam order
-  const orderItems =
-    order.items && order.items.length > 0
-      ? order.items
-      : [{ id: 'item-default', productId: 'book-default', title: 'Item S-SALUR', quantity: 1 }];
-
-  const newRecords: StockInOutSalurRecord[] = [];
-
-  orderItems.forEach((it, idx) => {
-    const qty = Number(it.quantity) || 1;
-    const title = it.title?.trim() || 'Item S-SALUR';
-
-    const newRec: StockInOutSalurRecord = {
-      id: `stock-io-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
-      tanggal: stockDate,
-      sumberContainer: chosenContainer,
-      sumberLokasi: chosenLokasi,
-      namaItem: title,
-      jumlah: qty,
-      tujuanContainer: '-',
-      tujuanLokasi: '-',
-      jenisPerubahan: 'Penjualan',
-      keterangan: `Penjualan ${order.orderNumber ? `No. Pesanan ${order.orderNumber}` : ''} - Resi: ${resi}`.trim(),
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      noResi: resi,
-    };
-
-    newRecords.push(newRec);
-    applyStockMovement(newRec);
+  // Fallback untuk pesanan lama yang belum dipotong saat dibuat
+  syncStockInOutOnSalurOrderSaved({
+    ...order,
+    date: stockDate,
+    ekspedisi: { ...order.ekspedisi, noResi: resi },
   });
-
-  const updatedRecords = [...newRecords, ...currentRecords];
-  saveStoredStockInOutSalur(updatedRecords);
 }
 
 /**

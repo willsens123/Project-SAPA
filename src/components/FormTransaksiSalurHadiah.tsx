@@ -16,6 +16,8 @@ import {
   Phone,
   Gift,
   PlusCircle,
+  AlertTriangle,
+  Boxes,
 } from 'lucide-react';
 import {
   INITIAL_BOOKS,
@@ -32,6 +34,12 @@ import { IdentitasItem, INITIAL_IDENTITAS } from '../identitasData';
 import { formatDatePickerValue } from '../utils/datePickerHelper';
 import { OrganisasiItem, ProjectItem } from '../types';
 import { INITIAL_ORGANISASI } from '../organisasiData';
+import {
+  AUTO_CONTAINER_VALUE,
+  decodeContainerChoice,
+  getSelectableSalurContainerOptions,
+  inspectSalurOrderStock,
+} from '../utils/salurStockDeduction';
 
 export interface FormTransaksiSalurHadiahProps {
   project: ProjectItem | null;
@@ -166,6 +174,29 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
   // Catalog modal to add more books
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState<boolean>(false);
   const [bookSearchQuery, setBookSearchQuery] = useState<string>('');
+
+  // Stock container selection & live stock inspection
+  const [selectedStockChoice, setSelectedStockChoice] = useState<string>(AUTO_CONTAINER_VALUE);
+  const [stockRefreshTick, setStockRefreshTick] = useState(0);
+  useEffect(() => {
+    const refresh = () => setStockRefreshTick((t) => t + 1);
+    window.addEventListener('stok_salur_updated', refresh);
+    window.addEventListener('stock_in_out_updated', refresh);
+    return () => {
+      window.removeEventListener('stok_salur_updated', refresh);
+      window.removeEventListener('stock_in_out_updated', refresh);
+    };
+  }, []);
+
+  const containerOptions = useMemo(() => {
+    void stockRefreshTick;
+    return getSelectableSalurContainerOptions();
+  }, [stockRefreshTick]);
+
+  const stockInspection = useMemo(() => {
+    void stockRefreshTick;
+    return inspectSalurOrderStock(transactionItems, selectedStockChoice, INITIAL_BOOKS);
+  }, [transactionItems, selectedStockChoice, stockRefreshTick]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -303,6 +334,8 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
 
     const recipientText = `${selectedRecipient.code} ${selectedRecipient.name}`;
 
+    const decodedStockChoice = decodeContainerChoice(selectedStockChoice);
+
     const newOrder: Partial<SalurOrder> = {
       orderNumber,
       via: cleanVia,
@@ -314,6 +347,8 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
       paymentStatus: 'Paid',
       shippingStatus: sendNow ? 'Sudah Dikirim' : 'Belum dikirim',
       statusBadges: ['Paid', 'Hadiah'],
+      stockOutContainer: decodedStockChoice.container,
+      stockOutLokasi: decodedStockChoice.lokasi || undefined,
       items: transactionItems,
       alamat: {
         recipientName: selectedAddr.recipientName,
@@ -610,79 +645,138 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
           </div>
         </div>
 
+        {/* 4b. Sumber Kontainer / Gudang Stok */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+          <label className="md:col-span-3 text-sm text-slate-700 font-normal pt-2">
+            Sumber Kontainer Stok
+          </label>
+          <div className="md:col-span-9 flex flex-col gap-1.5 max-w-md">
+            <div className="relative">
+              <Boxes className="w-4 h-4 text-[#008d91] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                id="select-hadiah-stock-container"
+                value={selectedStockChoice}
+                onChange={(e) => setSelectedStockChoice(e.target.value)}
+                className="w-full appearance-none bg-white border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-xs sm:text-sm text-slate-700 focus:outline-none focus:border-[#008d91] focus:ring-1 focus:ring-[#008d91] cursor-pointer"
+              >
+                {containerOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#008d91] text-white flex items-center justify-center">
+                <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+              </div>
+            </div>
+            <span className="text-[11px] text-slate-500">
+              Stok gudang otomatis terpotong dan dicatat ke Stock In-Out saat disimpan.
+            </span>
+          </div>
+        </div>
+
         {/* 5. Transaksi (Selected Items Horizontal Row matching Image) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
           <label className="md:col-span-3 text-sm text-slate-700 font-normal pt-2">
             Transaksi
           </label>
-          <div className="md:col-span-9 flex flex-wrap items-center gap-3">
-            {transactionItems.length === 0 ? (
-              <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400 flex items-center gap-2">
-                <span>Belum ada buku dipilih.</span>
-                <button
-                  type="button"
-                  onClick={() => setIsAddBookModalOpen(true)}
-                  className="text-[#008d91] font-semibold hover:underline"
-                >
-                  + Tambah Buku
-                </button>
-              </div>
-            ) : (
-              transactionItems.map((item) => (
-                <div
-                  key={item.id}
-                  id={`item-hadiah-${item.id}`}
-                  className="bg-[#f0f4f8] rounded-2xl p-2.5 border border-slate-200/70 flex items-center gap-3 shadow-2xs"
-                >
-                  <BookCover coverKey={item.coverKey} size="md" />
-
-                  <div className="flex flex-col min-w-[120px] max-w-[160px]">
-                    <span className="text-xs font-semibold text-slate-800 leading-tight truncate">
-                      {item.title}
-                    </span>
-                    <span className="text-[11px] text-slate-500 mt-0.5">
-                      Rp{item.price.toLocaleString('id-ID')}
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-1">Stok: 100</span>
-                  </div>
-
-                  {/* Quantity Stepper: - 1 + and remove x */}
-                  <div className="flex items-center gap-1.5 ml-2">
-                    {/* Minus button */}
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(item.id, -1)}
-                      className="w-5 h-5 rounded-full bg-[#008d91] hover:bg-[#05828e] text-white flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      <Minus className="w-3 h-3 stroke-[2.5]" />
-                    </button>
-
-                    {/* Quantity Display Box */}
-                    <div className="w-7 h-5 rounded bg-white border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center">
-                      {item.quantity}
-                    </div>
-
-                    {/* Plus button */}
-                    <button
-                      type="button"
-                      onClick={() => handleQuantityChange(item.id, 1)}
-                      className="w-5 h-5 rounded-full bg-[#008d91] hover:bg-[#05828e] text-white flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3 stroke-[2.5]" />
-                    </button>
-
-                    {/* Remove cross */}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveItem(item.id)}
-                      title="Hapus"
-                      className="ml-1 text-[#008d91] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
-                    >
-                      <X className="w-4 h-4 stroke-[2.5]" />
-                    </button>
-                  </div>
+          <div className="md:col-span-9 flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {transactionItems.length === 0 ? (
+                <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400 flex items-center gap-2">
+                  <span>Belum ada buku dipilih.</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddBookModalOpen(true)}
+                    className="text-[#008d91] font-semibold hover:underline"
+                  >
+                    + Tambah Buku
+                  </button>
                 </div>
-              ))
+              ) : (
+                transactionItems.map((item, idx) => {
+                  const itemInsp = stockInspection.perItem[idx];
+                  return (
+                    <div
+                      key={item.id}
+                      id={`item-hadiah-${item.id}`}
+                      className={`rounded-2xl p-2.5 border flex items-center gap-3 shadow-2xs ${
+                        itemInsp?.isInsufficient
+                          ? 'bg-amber-50/70 border-amber-300'
+                          : 'bg-[#f0f4f8] border-slate-200/70'
+                      }`}
+                    >
+                      <BookCover coverKey={item.coverKey} size="md" />
+
+                      <div className="flex flex-col min-w-[120px] max-w-[195px]">
+                        <span className="text-xs font-semibold text-slate-800 leading-tight truncate">
+                          {item.title}
+                        </span>
+                        <span className="text-[11px] text-slate-500 mt-0.5">
+                          Rp{item.price.toLocaleString('id-ID')}
+                        </span>
+                        {itemInsp && (
+                          <span
+                            className={`text-[10px] mt-1 font-medium ${
+                              itemInsp.isInsufficient ? 'text-amber-700' : 'text-slate-500'
+                            }`}
+                          >
+                            {itemInsp.isInsufficient
+                              ? `Stok kurang: tersedia ${itemInsp.containerStock}, diminta ${itemInsp.requestedQty} (${itemInsp.targetContainer})`
+                              : `Stok: ${itemInsp.containerStock} pcs · ${itemInsp.targetContainer}`}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Quantity Stepper: - 1 + and remove x */}
+                      <div className="flex items-center gap-1.5 ml-2">
+                        <button
+                          type="button"
+                          onClick={() => handleQuantityChange(item.id, -1)}
+                          className="w-5 h-5 rounded-full bg-[#008d91] hover:bg-[#05828e] text-white flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3 stroke-[2.5]" />
+                        </button>
+
+                        <div className="w-7 h-5 rounded bg-white border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center">
+                          {item.quantity}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleQuantityChange(item.id, 1)}
+                          className="w-5 h-5 rounded-full bg-[#008d91] hover:bg-[#05828e] text-white flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3 stroke-[2.5]" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id)}
+                          title="Hapus"
+                          className="ml-1 text-[#008d91] hover:text-red-500 transition-colors p-0.5 cursor-pointer"
+                        >
+                          <X className="w-4 h-4 stroke-[2.5]" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {stockInspection.hasInsufficientStock && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 flex items-start gap-2.5 text-xs text-amber-800 max-w-2xl">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-semibold">
+                    Peringatan: Stok di kontainer terpilih tidak mencukupi untuk {stockInspection.warnings.length} item.
+                  </span>
+                  <span className="text-[11px] text-amber-700">
+                    Transaksi hadiah tetap dapat disimpan dan mutasi keluar akan dicatat otomatis ke Stock In-Out.
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </div>

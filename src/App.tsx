@@ -39,6 +39,7 @@ import { FormStockInOutSalurView } from './components/FormStockInOutSalurView';
 import { NamaPercetakanStockSalurView } from './components/NamaPercetakanStockSalurView';
 import {
   syncStockInOutFromSalurOrder,
+  syncStockInOutOnSalurOrderSaved,
   getStoredStokSalurItems,
   saveStoredStokSalurItems,
   StokSalurItem,
@@ -215,6 +216,7 @@ import {
 } from './dharmaPatronRutinData';
 import {
   DharmaPatronRutinItem,
+  PatronWhatsappBillingLog,
   JenisPerubahanDharmaPatronItem,
   VolunteerSSebarItem,
   VolunteerAJarItem,
@@ -2002,6 +2004,52 @@ export default function App() {
     setIsAddEditDharmaPatronOpen(false);
     setEditingDharmaPatronItem(null);
     setCurrentView('listDharmaPatronRutin');
+  };
+
+  const handleRecordPatronWhatsappBilling = (
+    patron: DharmaPatronRutinItem,
+    entry: PatronWhatsappBillingLog
+  ) => {
+    const actorName = formatAuditActorName(authenticatedUser, 'Admin Donasi');
+    const enrichedEntry: PatronWhatsappBillingLog = {
+      ...entry,
+      billedBy: entry.billedBy || actorName,
+    };
+
+    setDharmaPatronList((prev) => {
+      const updated = prev.map((item) => {
+        if (item.id !== patron.id) return item;
+        const existingHistory = Array.isArray(item.whatsappBillingHistory)
+          ? item.whatsappBillingHistory
+          : [];
+        const nextHistory = [enrichedEntry, ...existingHistory].slice(0, 25);
+        return {
+          ...item,
+          lastWhatsappBilledAt: enrichedEntry.billedAt,
+          lastWhatsappBilledBy: enrichedEntry.billedBy,
+          lastWhatsappBilledPhone: enrichedEntry.phone,
+          lastWhatsappBilledAmount: enrichedEntry.nominalTagihan,
+          lastWhatsappBilledBulan: enrichedEntry.bulanPiutang,
+          whatsappBillingHistory: nextHistory,
+        };
+      });
+      saveDharmaPatronToStorage(updated);
+      return updated;
+    });
+
+    dispatchAuditEvent({
+      module: 'DONASI',
+      recordId: patron.noDonatur || patron.id,
+      recordTitle: patron.namaDonatur,
+      actionType: 'Tagih WA',
+      field: 'Status Tagihan WhatsApp Piutang',
+      oldValue: patron.lastWhatsappBilledAt ? 'Sudah Ditagih Sebelumnya' : 'Belum Ditagih',
+      newValue: `Sudah Ditagih · Rp${Number(enrichedEntry.nominalTagihan || 0).toLocaleString('id-ID')} (${enrichedEntry.bulanPiutang})`,
+      alasan: `Penagihan piutang Dharma Patron via ${
+        enrichedEntry.channel === 'whatsapp_open' ? 'WhatsApp' : 'pencatatan manual'
+      } ke ${enrichedEntry.phone || '-'}`,
+      author: actorName,
+    });
   };
 
   const handleDeleteDharmaPatron = (id: string) => {
@@ -5995,6 +6043,9 @@ export default function App() {
               onLogout={handleLogout}
               projects={scopedProjects}
               dharmaPatronList={dharmaPatronList}
+              rekeningList={rekeningList}
+              currentAdminName={formatAuditActorName(authenticatedUser, 'Admin Donasi')}
+              onRecordWhatsappBilling={handleRecordPatronWhatsappBilling}
               isDivisionProjectScoped={isDivisionProjectScoped}
               identitasList={identitasList}
               organisasiList={organisasiList}
@@ -6915,6 +6966,8 @@ export default function App() {
                 organisasiList={organisasiList}
                 donasiOrders={donasiOrders}
                 mutasiItems={mutasiItems}
+                rekeningList={rekeningList}
+                currentAdminName={formatAuditActorName(authenticatedUser, 'Admin Donasi')}
                 onAddClick={() => {
                   setEditingDharmaPatronItem(null);
                   setCurrentView('formListDharmaPatronRutin');
@@ -6926,6 +6979,7 @@ export default function App() {
                 onDeleteItem={handleDeleteDharmaPatron}
                 onDuplicateItem={handleDuplicateDharmaPatron}
                 onSaveDonasi={handleSaveDharmaPatron}
+                onRecordWhatsappBilling={handleRecordPatronWhatsappBilling}
                 jenisOptions={jenisPerubahanList.map((j) => j.nama)}
                 onNavigateToJenisTable={() => setCurrentView('jenisPerubahanDharmaPatron')}
                 onShowToast={(msg) => showToast(msg)}
@@ -7378,6 +7432,7 @@ export default function App() {
                 promoList={loadPromoSalur()}
                 viaList={viaSalurList}
                 onSave={(newOrder, sendNow) => {
+                  const isEdit = Boolean(editingSalurOrder);
                   const targetDate = newOrder.date || '14 Nov 2021';
                   const cleanVia = normalizeVia(newOrder.via);
                   const nextSeq = getUrutanTransaksiPerTahun(salurOrders, targetDate);
@@ -7387,8 +7442,10 @@ export default function App() {
                     nextSeq
                   );
                   const fullOrder: SalurOrder = {
-                    id: `order-${Date.now()}`,
-                    orderNumber: newOrder.orderNumber || gen.orderNumber,
+                    ...(editingSalurOrder || {}),
+                    id: editingSalurOrder?.id || `order-${Date.now()}`,
+                    orderNumber:
+                      editingSalurOrder?.orderNumber || newOrder.orderNumber || gen.orderNumber,
                     via: cleanVia,
                     customerId: newOrder.idPembeli || newOrder.customerId || '10001 Lilo',
                     customerCode: newOrder.idPenerima || newOrder.customerCode || '10001 Lilo',
@@ -7398,6 +7455,8 @@ export default function App() {
                     paymentStatus: newOrder.paymentStatus || 'Paid',
                     shippingStatus: newOrder.shippingStatus || (sendNow ? 'Sudah Dikirim' : 'Belum dikirim'),
                     statusBadges: newOrder.statusBadges || ['Paid', 'Paid'],
+                    stockOutContainer: newOrder.stockOutContainer || 'AUTO',
+                    stockOutLokasi: newOrder.stockOutLokasi,
                     items: newOrder.items || [],
                     alamat: newOrder.alamat || {
                       recipientName: 'Lilo',
@@ -7406,20 +7465,35 @@ export default function App() {
                       cityProvince: 'Jawa Barat, Indonesia',
                       postalCode: '12345',
                     },
-                    ekspedisi: newOrder.ekspedisi || {
-                      name: sendNow ? (newOrder.ekspedisi?.name || '') : '',
-                      noResi: '-',
-                      isShipped: !!sendNow,
-                    },
+                    ekspedisi: editingSalurOrder?.ekspedisi?.noResi && editingSalurOrder.ekspedisi.noResi !== '-'
+                      ? editingSalurOrder.ekspedisi
+                      : newOrder.ekspedisi || {
+                          name: sendNow ? (newOrder.ekspedisi?.name || '') : '',
+                          noResi: '-',
+                          isShipped: !!sendNow,
+                        },
                     totalDana: newOrder.totalDana || 'Rp100.080',
                     costBreakdown: newOrder.costBreakdown,
                     keterangan: newOrder.keterangan,
                   };
-                  handleUpdateSalurOrders([fullOrder, ...salurOrders]);
-                  if (fullOrder.ekspedisi?.noResi && fullOrder.ekspedisi.noResi !== '-') {
-                    syncStockInOutFromSalurOrder(fullOrder, fullOrder.ekspedisi.noResi);
-                  }
-                  showToast(sendNow ? 'Transaksi berhasil disimpan dan dikirim!' : 'Transaksi berhasil disimpan!');
+                  const nextOrders = isEdit
+                    ? salurOrders.map((o) => (o.id === fullOrder.id ? fullOrder : o))
+                    : [fullOrder, ...salurOrders];
+                  handleUpdateSalurOrders(nextOrders);
+                  const stockResult = syncStockInOutOnSalurOrderSaved(fullOrder);
+                  const warnMsg =
+                    stockResult.warnings.length > 0
+                      ? ` • Peringatan stok kurang: ${stockResult.warnings
+                          .map((w) => `${w.itemTitle} (${w.availableInContainer}/${w.requestedQty})`)
+                          .join(', ')}`
+                      : '';
+                  showToast(
+                    `${
+                      sendNow
+                        ? 'Transaksi berhasil disimpan, dikirim & stok dipotong!'
+                        : 'Transaksi berhasil disimpan & stok gudang otomatis dipotong!'
+                    }${warnMsg}`
+                  );
                   setEditingSalurOrder(null);
                   setCurrentView('transaksiSalur');
                 }}
@@ -7463,6 +7537,8 @@ export default function App() {
                     paymentStatus: 'Paid',
                     shippingStatus: sendNow ? 'Sudah Dikirim' : 'Belum dikirim',
                     statusBadges: ['Paid', 'Hadiah'],
+                    stockOutContainer: newOrder.stockOutContainer || 'AUTO',
+                    stockOutLokasi: newOrder.stockOutLokasi,
                     items: newOrder.items || [],
                     alamat: newOrder.alamat || {
                       recipientName: 'Lilo',
@@ -7485,8 +7561,13 @@ export default function App() {
                   };
 
                   handleUpdateSalurOrders([fullOrder, ...salurOrders]);
-                  if (fullOrder.ekspedisi?.noResi && fullOrder.ekspedisi.noResi !== '-') {
-                    syncStockInOutFromSalurOrder(fullOrder, fullOrder.ekspedisi.noResi);
+                  const hadiahStockResult = syncStockInOutOnSalurOrderSaved(fullOrder);
+                  if (hadiahStockResult.warnings.length > 0) {
+                    showToast(
+                      `Peringatan stok hadiah kurang (${hadiahStockResult.warnings
+                        .map((w) => `${w.itemTitle}: ${w.availableInContainer}/${w.requestedQty}`)
+                        .join(', ')}), tercatat otomatis ke Stock In-Out.`
+                    );
                   }
 
                   // 2. Pembayaran transaksi masuk ke pengeluaran Proyek SAPA
@@ -8463,6 +8544,7 @@ export default function App() {
                 onOpenExistingProfile={(item) => {
                   setEditingIdentitas(item);
                   setCurrentView('editIdentitas');
+                  showToast(`Membuka profil yang sudah ada: ${item.namaLengkap} (${item.codeId})`);
                 }}
                 onCancel={() => {
                   if (returnViewAfterAdd) {

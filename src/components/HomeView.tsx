@@ -46,6 +46,8 @@ import {
   PengeluaranItem,
   VolunteerSSebarItem,
   DharmaPatronRutinItem,
+  PatronWhatsappBillingLog,
+  RekeningItem,
 } from '../types';
 import { PosKeuanganItem } from '../posKeuanganData';
 import { PosPemasukanGroup } from '../posPemasukanData';
@@ -128,6 +130,12 @@ interface HomeViewProps {
   onDismissAuditAlert?: (alertId: string) => void;
   onDismissAllAuditAlerts?: () => void;
   dharmaPatronList?: DharmaPatronRutinItem[];
+  rekeningList?: RekeningItem[];
+  currentAdminName?: string;
+  onRecordWhatsappBilling?: (
+    patron: DharmaPatronRutinItem,
+    entry: PatronWhatsappBillingLog
+  ) => void;
   isDivisionProjectScoped?: boolean;
 }
 
@@ -218,6 +226,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onDismissAuditAlert,
   onDismissAllAuditAlerts,
   dharmaPatronList = [],
+  rekeningList = [],
+  currentAdminName,
+  onRecordWhatsappBilling,
   isDivisionProjectScoped = false,
 }) => {
   // Modal states
@@ -971,6 +982,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
         todoTasks={todoTasks}
         dharmaPatronList={dharmaPatronList}
         salurItems={salurItems}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        rekeningList={rekeningList}
+        currentAdminName={currentAdminName || currentUser?.namaLengkap || currentUser?.namaPanggilan}
+        onRecordWhatsappBilling={onRecordWhatsappBilling}
+        onShowToast={onShowToast}
         onNavigateView={onNavigateView}
         onOpenProjectTodos={onOpenProjectTodos}
       />

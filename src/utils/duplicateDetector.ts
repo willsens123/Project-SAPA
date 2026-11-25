@@ -12,6 +12,7 @@ export const normalizePhone = (phone?: string): string => {
   const digits = phone.replace(/\D/g, '');
   if (!digits) return '';
   if (digits.startsWith('62')) return '0' + digits.slice(2);
+  if (digits.startsWith('8') && digits.length >= 9) return '0' + digits;
   return digits;
 };
 
@@ -286,8 +287,79 @@ export interface DuplicateCandidateMatch {
   fieldScores: DuplicateFieldScore[];
 }
 
+export type IdentitasDuplicateCandidate = Partial<IdentitasItem> & {
+  extraPhones?: string[];
+};
+
+const collectCandidatePhones = (item: IdentitasDuplicateCandidate): string[] => {
+  const seen = new Set<string>();
+  const rawList: string[] = [];
+  const pushPhone = (val?: string) => {
+    if (!isMeaningfulValue(val)) return;
+    const trimmed = String(val).trim();
+    const norm = normalizePhone(trimmed);
+    if (norm.length < 8 || seen.has(norm)) return;
+    seen.add(norm);
+    rawList.push(trimmed);
+  };
+  pushPhone(item.nomorHandPhone);
+  item.extraPhones?.forEach(pushPhone);
+  item.alamatList?.forEach((addr) => pushPhone(addr.nomorHp));
+  return rawList;
+};
+
+const comparePhonesMulti = (
+  a: IdentitasDuplicateCandidate,
+  b: IdentitasItem
+): StringComparisonResult & { matchedValA: string; matchedValB: string } => {
+  const phonesA = collectCandidatePhones(a);
+  const phonesB = collectCandidatePhones(b);
+  let best: StringComparisonResult & { matchedValA: string; matchedValB: string } = {
+    score: 0,
+    algorithm: 'Digit-Match',
+    matchedValA: a.nomorHandPhone || '',
+    matchedValB: b.nomorHandPhone || '',
+  };
+
+  for (const pa of phonesA) {
+    for (const pb of phonesB) {
+      const cmp = comparePhoneFuzzy(pa, pb);
+      if (cmp.score > best.score) {
+        best = { ...cmp, matchedValA: pa, matchedValB: pb };
+      }
+      if (best.score === 100) return best;
+    }
+  }
+  return best;
+};
+
+const compareNamesWithKtp = (
+  a: IdentitasDuplicateCandidate,
+  b: IdentitasItem
+): StringComparisonResult & { matchedValA: string; matchedValB: string } => {
+  const namesA = [a.namaLengkap, a.namaLengkapKtp].filter((v): v is string => isMeaningfulValue(v));
+  const namesB = [b.namaLengkap, b.namaLengkapKtp].filter((v): v is string => isMeaningfulValue(v));
+  let best: StringComparisonResult & { matchedValA: string; matchedValB: string } = {
+    score: 0,
+    algorithm: 'Levenshtein',
+    matchedValA: a.namaLengkap || a.namaLengkapKtp || '',
+    matchedValB: b.namaLengkap || b.namaLengkapKtp || '',
+  };
+
+  for (const na of namesA) {
+    for (const nb of namesB) {
+      const cmp = compareTextFuzzy(na, nb);
+      if (cmp.score > best.score) {
+        best = { ...cmp, matchedValA: na, matchedValB: nb };
+      }
+      if (best.score === 100) return best;
+    }
+  }
+  return best;
+};
+
 export const scoreIdentitasPair = (
-  a: Partial<IdentitasItem>,
+  a: IdentitasDuplicateCandidate,
   b: IdentitasItem,
   options: DuplicateDetectionOptions = {}
 ): {
@@ -303,16 +375,16 @@ export const scoreIdentitasPair = (
     includeFuzzy = true,
   } = options;
 
-  const aName = a.namaLengkap || '';
+  const aName = a.namaLengkap || a.namaLengkapKtp || '';
   const aNick = a.namaPanggilan || '';
-  const aPhone = a.nomorHandPhone || '';
+  const aPhone = a.nomorHandPhone || collectCandidatePhones(a)[0] || '';
   const aEmail = a.email || '';
   const aKota = a.kota || '';
   const aOrg = a.organisasi || '';
 
-  const nameCmp = compareTextFuzzy(aName, b.namaLengkap);
+  const nameCmp = compareNamesWithKtp(a, b);
   const nickCmp = compareTextFuzzy(aNick, b.namaPanggilan);
-  const phoneCmp = comparePhoneFuzzy(aPhone, b.nomorHandPhone);
+  const phoneCmp = comparePhonesMulti(a, b);
   const emailCmp = compareEmailFuzzy(aEmail, b.email);
   const cityCmp = compareTextFuzzy(aKota, b.kota);
   const orgCmp = compareTextFuzzy(aOrg, b.organisasi);
@@ -326,23 +398,23 @@ export const scoreIdentitasPair = (
     normIdA === normIdB;
 
   const fieldScores: DuplicateFieldScore[] = [];
-  if (isMeaningfulValue(aName) && isMeaningfulValue(b.namaLengkap) && nameCmp.score > 0) {
+  if (isMeaningfulValue(nameCmp.matchedValA) && isMeaningfulValue(nameCmp.matchedValB) && nameCmp.score > 0) {
     fieldScores.push({
       field: 'namaLengkap',
       label: 'Nama Lengkap',
       score: nameCmp.score,
-      value1: aName,
-      value2: b.namaLengkap,
+      value1: nameCmp.matchedValA,
+      value2: nameCmp.matchedValB,
       algorithm: nameCmp.algorithm,
     });
   }
-  if (isMeaningfulValue(aPhone) && isMeaningfulValue(b.nomorHandPhone) && phoneCmp.score > 0) {
+  if (isMeaningfulValue(phoneCmp.matchedValA) && isMeaningfulValue(phoneCmp.matchedValB) && phoneCmp.score > 0) {
     fieldScores.push({
       field: 'nomorHandPhone',
       label: 'Nomor HP',
       score: phoneCmp.score,
-      value1: aPhone,
-      value2: b.nomorHandPhone,
+      value1: phoneCmp.matchedValA,
+      value2: phoneCmp.matchedValB,
       algorithm: phoneCmp.algorithm,
     });
   }
@@ -416,7 +488,7 @@ export const scoreIdentitasPair = (
   let weightedSum = 0;
   let weightTotal = 0;
 
-  if (isMeaningfulValue(aName) && isMeaningfulValue(b.namaLengkap)) {
+  if (isMeaningfulValue(aName) && isMeaningfulValue(b.namaLengkap || b.namaLengkapKtp)) {
     weightedSum += nameCmp.score * 0.5;
     weightTotal += 0.5;
   }
@@ -476,7 +548,7 @@ export const scoreIdentitasPair = (
 };
 
 export const findCandidateDuplicates = (
-  candidate: Partial<IdentitasItem>,
+  candidate: IdentitasDuplicateCandidate,
   existingList: IdentitasItem[],
   options: DuplicateDetectionOptions & { excludeId?: string; limit?: number } = {}
 ): DuplicateCandidateMatch[] => {
@@ -484,8 +556,9 @@ export const findCandidateDuplicates = (
   const normIdLen = (candidate.nomorIdentitas || '').replace(/[\s\-.]/g, '').length;
   const hasMeaningfulInput =
     isMeaningfulValue(candidate.namaLengkap) ||
+    isMeaningfulValue(candidate.namaLengkapKtp) ||
     isMeaningfulValue(candidate.email) ||
-    normalizePhone(candidate.nomorHandPhone).length >= 8 ||
+    collectCandidatePhones(candidate).length > 0 ||
     normIdLen >= 6;
 
   if (!hasMeaningfulInput) return [];

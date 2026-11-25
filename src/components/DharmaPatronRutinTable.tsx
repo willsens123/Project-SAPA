@@ -16,12 +16,20 @@ import {
   DollarSign,
   Check,
   MessageSquare,
+  MessageCircle,
   FolderPlus,
   FolderInput,
   FileText,
+  CheckCircle2,
 } from 'lucide-react';
 import { FunnelingActionBar } from './FunnelingActionBar';
-import { DharmaPatronRutinItem, OrganisasiItem, MutasiItem } from '../types';
+import {
+  DharmaPatronRutinItem,
+  OrganisasiItem,
+  MutasiItem,
+  RekeningItem,
+  PatronWhatsappBillingLog,
+} from '../types';
 import { IdentitasItem } from '../identitasData';
 import { DHARMA_PATRON_YEAR_STATS, YearPatronStat } from '../dharmaPatronRutinData';
 import { EditDonasiBulanModal } from './EditDonasiBulanModal';
@@ -32,7 +40,9 @@ import {
   getDharmaPatronWithRealtimePiutang,
   getPatronProportionsMap,
 } from '../utils/dharmaPatronPiutangHelper';
+import { getPatronBillingStatus } from '../utils/patronWhatsappHelper';
 import { ModalSummaryPembayaranPatron } from './ModalSummaryPembayaranPatron';
+import { ModalTagihanWhatsappPatron } from './ModalTagihanWhatsappPatron';
 import {
   DharmaPatronProportionChart,
   PatronTableRowProgressBar,
@@ -44,11 +54,17 @@ interface DharmaPatronRutinTableProps {
   organisasiList?: OrganisasiItem[];
   donasiOrders?: DonasiOrder[];
   mutasiItems?: MutasiItem[];
+  rekeningList?: RekeningItem[];
+  currentAdminName?: string;
   onAddClick: () => void;
   onEditItem: (item: DharmaPatronRutinItem) => void;
   onDeleteItem: (id: string) => void;
   onDuplicateItem?: (item: DharmaPatronRutinItem) => void;
   onSaveDonasi?: (updatedItem: DharmaPatronRutinItem) => void;
+  onRecordWhatsappBilling?: (
+    patron: DharmaPatronRutinItem,
+    entry: PatronWhatsappBillingLog
+  ) => void;
   jenisOptions?: string[];
   onNavigateToJenisTable?: () => void;
   onShowToast?: (message: string) => void;
@@ -65,11 +81,14 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
   organisasiList = [],
   donasiOrders,
   mutasiItems = [],
+  rekeningList = [],
+  currentAdminName,
   onAddClick,
   onEditItem,
   onDeleteItem,
   onDuplicateItem,
   onSaveDonasi,
+  onRecordWhatsappBilling,
   jenisOptions,
   onNavigateToJenisTable,
   onShowToast,
@@ -85,6 +104,7 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
   const [selectedAfiliasi, setSelectedAfiliasi] = useState('ALL');
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [proportionFilter, setProportionFilter] = useState<'ALL' | 'LUNAS' | 'PIUTANG' | 'DIPUTIHKAN'>('ALL');
+  const [billingStatusFilter, setBillingStatusFilter] = useState<'ALL' | 'BELUM_DITAGIH' | 'SUDAH_DITAGIH'>('ALL');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [selectedPatronIds, setSelectedPatronIds] = useState<string[]>([]);
 
@@ -99,6 +119,10 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
   // Summary Pembayaran Modal state
   const [selectedSummaryPatron, setSelectedSummaryPatron] = useState<DharmaPatronRutinItem | null>(null);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+
+  // WhatsApp Billing Modal state
+  const [whatsappBillingPatrons, setWhatsappBillingPatrons] = useState<DharmaPatronRutinItem[]>([]);
+  const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
 
   const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -159,7 +183,8 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
     selectedGroupJarkom !== 'ALL' ||
     selectedAfiliasi !== 'ALL' ||
     selectedYear !== null ||
-    proportionFilter !== 'ALL';
+    proportionFilter !== 'ALL' ||
+    billingStatusFilter !== 'ALL';
 
   // Helper to get connected Identitas or Organisasi live in real time
   const getConnectedEntity = (item: DharmaPatronRutinItem) => {
@@ -224,6 +249,12 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
     } else if (proportionFilter === 'DIPUTIHKAN') {
       const prop = proportionMap.get(item.id);
       if (!prop || prop.totalDiputihkanMonths === 0) return false;
+    }
+
+    if (billingStatusFilter === 'SUDAH_DITAGIH') {
+      if (!getPatronBillingStatus(item).isBilledThisMonth) return false;
+    } else if (billingStatusFilter === 'BELUM_DITAGIH') {
+      if (item.piutang >= 0 || getPatronBillingStatus(item).isBilledThisMonth) return false;
     }
 
     if (!searchQuery.trim()) return true;
@@ -302,6 +333,20 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
     if (onKirimPM) {
       onKirimPM(targets);
     }
+  };
+
+  const overduePatrons = useMemo(
+    () => realtimeItems.filter((it) => it.piutang < 0),
+    [realtimeItems]
+  );
+
+  const handleOpenWhatsappBilling = (targets: DharmaPatronRutinItem[]) => {
+    if (targets.length === 0) {
+      onShowToast?.('Tidak ada data donatur piutang yang dipilih untuk ditagih.');
+      return;
+    }
+    setWhatsappBillingPatrons(targets);
+    setIsWhatsappModalOpen(true);
   };
 
   return (
@@ -413,6 +458,7 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
                       setSelectedAfiliasi('ALL');
                       setSelectedYear(null);
                       setProportionFilter('ALL');
+                      setBillingStatusFilter('ALL');
                     }}
                     className="text-xs text-[#008d91] hover:underline"
                   >
@@ -451,6 +497,23 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-slate-500 text-xs mb-1 font-medium">Status Tagihan WA</label>
+                  <select
+                    value={billingStatusFilter}
+                    onChange={(e) =>
+                      setBillingStatusFilter(
+                        e.target.value as 'ALL' | 'BELUM_DITAGIH' | 'SUDAH_DITAGIH'
+                      )
+                    }
+                    className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-700 outline-none focus:border-[#008d91] text-xs"
+                  >
+                    <option value="ALL">Semua Status</option>
+                    <option value="BELUM_DITAGIH">Piutang Belum Ditagih Bulan Ini</option>
+                    <option value="SUDAH_DITAGIH">Sudah Ditagih Bulan Ini</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -486,7 +549,33 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
               <MessageSquare className="w-3.5 h-3.5 text-[#008d91]" />
               <span>Kirim PM</span>
             </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleOpenWhatsappBilling(
+                  realtimeItems.filter((it) => selectedPatronIds.includes(it.id))
+                )
+              }
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              title="Buat pesan tagihan WhatsApp untuk donatur terpilih"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Tagih WA ({selectedPatronIds.length})</span>
+            </button>
           </div>
+        )}
+
+        {/* Quick WhatsApp Billing for Overdue Patrons */}
+        {selectedPatronIds.length === 0 && overduePatrons.length > 0 && (
+          <button
+            type="button"
+            onClick={() => handleOpenWhatsappBilling(overduePatrons)}
+            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3.5 py-2 rounded-xl font-semibold text-xs shadow-2xs transition-colors cursor-pointer"
+            title="Generator pesan tagihan WhatsApp untuk semua donatur yang berpiutang"
+          >
+            <MessageCircle className="w-4 h-4 text-emerald-600" />
+            <span>Tagih WA Piutang ({overduePatrons.length})</span>
+          </button>
         )}
 
         {/* Add Button matching Image: teal pill with + Add */}
@@ -762,7 +851,7 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
                       )}
                     </td>
 
-                    {/* 11. Bulan Piutang */}
+                    {/* 11. Bulan Piutang & Status Tagihan WA */}
                     <td
                       className="py-4 px-3 sm:px-4 text-slate-700 text-xs sm:text-sm font-normal whitespace-nowrap"
                       title={
@@ -771,9 +860,76 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
                           : 'Semua komitmen bulanan lunas atau diputihkan'
                       }
                     >
-                      <span className={item.bulanPiutang && item.bulanPiutang !== '-' ? 'text-rose-600 font-semibold' : 'text-slate-600'}>
-                        {item.bulanPiutang || '-'}
-                      </span>
+                      {(() => {
+                        const billingStatus = getPatronBillingStatus(item);
+                        return (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={
+                                  item.bulanPiutang && item.bulanPiutang !== '-'
+                                    ? 'text-rose-600 font-semibold'
+                                    : 'text-slate-600'
+                                }
+                              >
+                                {item.bulanPiutang || '-'}
+                              </span>
+                              {item.piutang < 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenWhatsappBilling([item]);
+                                  }}
+                                  title={
+                                    billingStatus.isBilledThisMonth
+                                      ? `Sudah ditagih ${billingStatus.fullDateLabel} oleh ${billingStatus.lastBilledBy || 'Admin'}. Klik untuk kirim ulang atau lihat riwayat.`
+                                      : 'Buat & kirim pesan tagihan WhatsApp'
+                                  }
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-bold transition-colors cursor-pointer ${
+                                    billingStatus.isBilledThisMonth
+                                      ? 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                                  }`}
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  <span>
+                                    {billingStatus.isBilledThisMonth ? 'Tagih Lagi' : 'Tagih WA'}
+                                  </span>
+                                </button>
+                              )}
+                            </div>
+
+                            {billingStatus.hasBeenBilled && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenWhatsappBilling([item]);
+                                }}
+                                title={`Terakhir ditagih: ${billingStatus.fullDateLabel} oleh ${
+                                  billingStatus.lastBilledBy || 'Admin'
+                                } (${billingStatus.historyCount}x riwayat)`}
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold w-fit cursor-pointer hover:underline ${
+                                  billingStatus.isBilledThisMonth
+                                    ? 'text-emerald-700'
+                                    : 'text-slate-400'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                                <span>
+                                  {billingStatus.isBilledThisMonth
+                                    ? `Sudah Ditagih · ${billingStatus.compactDateLabel}`
+                                    : `Ditagih ${billingStatus.compactDateLabel}`}
+                                  {billingStatus.historyCount > 1
+                                    ? ` (${billingStatus.historyCount}x)`
+                                    : ''}
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* 12. Proporsi Lunas vs Piutang per Donatur (Progress Bar visual & persentase) */}
@@ -858,6 +1014,18 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
                           >
                             <FolderInput className="w-3.5 h-3.5 text-[#008d91]" />
                             <span>Tambah ke Existing</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              handleOpenWhatsappBilling([item]);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 font-semibold cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Tagih via WhatsApp</span>
                           </button>
 
                           <button
@@ -1004,6 +1172,22 @@ export const DharmaPatronRutinTable: React.FC<DharmaPatronRutinTableProps> = ({
         patron={selectedSummaryPatron}
         donasiOrders={effectiveDonasiOrders}
         mutasiItems={mutasiItems}
+        onShowToast={onShowToast}
+      />
+
+      {/* Pop Up Generator Pesan Tagihan WhatsApp */}
+      <ModalTagihanWhatsappPatron
+        isOpen={isWhatsappModalOpen}
+        onClose={() => {
+          setIsWhatsappModalOpen(false);
+          setWhatsappBillingPatrons([]);
+        }}
+        patrons={whatsappBillingPatrons}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        rekeningList={rekeningList}
+        currentAdminName={currentAdminName}
+        onRecordBilling={onRecordWhatsappBilling}
         onShowToast={onShowToast}
       />
     </div>

@@ -30,6 +30,7 @@ import {
   ExternalLink,
   PackageCheck,
   AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   SalurOrder,
@@ -48,9 +49,14 @@ import {
   SalurContainerOption,
   getRealtimeStockForSalurProduct,
   getRealtimeStockForSalurProductInContainer,
-  syncStockInOutFromSalurOrder,
+  syncStockInOutOnSalurOrderSaved,
   getStoredStokSalurItems,
 } from '../stokSalurData';
+import {
+  AUTO_CONTAINER_VALUE,
+  encodeContainerChoice,
+  inspectSalurOrderStock,
+} from '../utils/salurStockDeduction';
 import {
   TransaksiAjarItem,
   INITIAL_TRANSAKSI_AJAR_LIST,
@@ -108,9 +114,16 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
   onNavigateToDashboard,
   onNavigateToView,
 }) => {
-  // Available containers
+  // Available containers (termasuk mode Otomatis kontainer stok terbanyak)
   const containerOptions = useMemo<SalurContainerOption[]>(() => {
-    return getAllSalurContainerOptions();
+    return [
+      {
+        container: AUTO_CONTAINER_VALUE,
+        lokasi: '',
+        label: 'Otomatis (Kontainer Stok Terbanyak)',
+      },
+      ...getAllSalurContainerOptions(),
+    ];
   }, []);
 
   // Default project selection (prefer active or first project)
@@ -349,8 +362,22 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
   const [noResiDirect, setNoResiDirect] = useState<string>('');
   const [catatanOrder, setCatatanOrder] = useState<string>('');
 
-  // Real-time stock items
-  const masterStokItems = useMemo(() => getStoredStokSalurItems(), [cart]);
+  // Real-time stock items + auto refresh on stock updates
+  const [stockRefreshTick, setStockRefreshTick] = useState(0);
+  useEffect(() => {
+    const refresh = () => setStockRefreshTick((t) => t + 1);
+    window.addEventListener('stok_salur_updated', refresh);
+    window.addEventListener('stock_in_out_updated', refresh);
+    return () => {
+      window.removeEventListener('stok_salur_updated', refresh);
+      window.removeEventListener('stock_in_out_updated', refresh);
+    };
+  }, []);
+
+  const masterStokItems = useMemo(() => {
+    void stockRefreshTick;
+    return getStoredStokSalurItems();
+  }, [cart, stockRefreshTick]);
 
   // Categories list
   const categories = useMemo(() => {
@@ -363,19 +390,40 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
   }, [salurProducts]);
 
   // Active container for stock out
-  const activeStockOutContainer = (preset.stockOutContainer || 'Rak').trim();
+  const activeStockOutContainer = (preset.stockOutContainer || AUTO_CONTAINER_VALUE).trim();
+  const isAutoContainerMode = activeStockOutContainer.toUpperCase() === AUTO_CONTAINER_VALUE;
 
-  // Filtered products: HANYA yang ada di stock out container yang di-setting!
+  const selectedStockChoice = useMemo(
+    () => encodeContainerChoice(activeStockOutContainer, preset.stockOutLokasi),
+    [activeStockOutContainer, preset.stockOutLokasi]
+  );
+
+  const stockInspection = useMemo(() => {
+    void stockRefreshTick;
+    return inspectSalurOrderStock(
+      cart.map((c) => ({
+        id: c.product.id,
+        productId: c.product.id,
+        title: c.product.title,
+        quantity: c.quantity,
+      })),
+      selectedStockChoice,
+      salurProducts
+    );
+  }, [cart, selectedStockChoice, salurProducts, stockRefreshTick]);
+
+  // Filtered products: pada mode AUTO tampilkan semua produk, pada container spesifik tampilkan yang ada di container tsb
   const filteredProducts = useMemo(() => {
     return salurProducts.filter((p) => {
-      // 1. Cek stok di container yang di-setting
-      const stockInContainer = getRealtimeStockForSalurProductInContainer(
-        p,
-        activeStockOutContainer,
-        masterStokItems
-      );
-      if (stockInContainer <= 0) {
-        return false;
+      if (!isAutoContainerMode) {
+        const stockInContainer = getRealtimeStockForSalurProductInContainer(
+          p,
+          activeStockOutContainer,
+          masterStokItems
+        );
+        if (stockInContainer <= 0) {
+          return false;
+        }
       }
 
       // 2. Kategori filter
@@ -393,27 +441,34 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
 
       return matchCat && matchSearch;
     });
-  }, [salurProducts, activeStockOutContainer, masterStokItems, selectedCategory, productSearch]);
+  }, [salurProducts, activeStockOutContainer, isAutoContainerMode, masterStokItems, selectedCategory, productSearch]);
 
-  // Cart operations
+  // Cart operations (peringatkan jika stok kurang, namun tetap perbolehkan input)
   const addToCart = (product: SalurProduct) => {
-    const available = getRealtimeStockForSalurProductInContainer(
-      product,
-      activeStockOutContainer,
-      masterStokItems
-    );
+    const available = isAutoContainerMode
+      ? getRealtimeStockForSalurProduct(product, masterStokItems)
+      : getRealtimeStockForSalurProductInContainer(
+          product,
+          activeStockOutContainer,
+          masterStokItems
+        );
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
-        if (existing.quantity >= available) {
-          onShowToast(`Stok "${product.title}" di container ${activeStockOutContainer} maksimal ${available}`);
-          return prev;
+        const nextQty = existing.quantity + 1;
+        if (nextQty > available) {
+          onShowToast(
+            `Peringatan: Stok "${product.title}" (${available}) kurang dari jumlah dipilih (${nextQty})`
+          );
         }
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: nextQty }
             : item
         );
+      }
+      if (available <= 0) {
+        onShowToast(`Peringatan: Stok "${product.title}" kosong (0)`);
       }
       return [...prev, { product, quantity: 1 }];
     });
@@ -426,14 +481,17 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
           if (item.product.id === productId) {
             const nextQty = item.quantity + delta;
             if (delta > 0) {
-              const available = getRealtimeStockForSalurProductInContainer(
-                item.product,
-                activeStockOutContainer,
-                masterStokItems
-              );
+              const available = isAutoContainerMode
+                ? getRealtimeStockForSalurProduct(item.product, masterStokItems)
+                : getRealtimeStockForSalurProductInContainer(
+                    item.product,
+                    activeStockOutContainer,
+                    masterStokItems
+                  );
               if (nextQty > available) {
-                onShowToast(`Stok "${item.product.title}" di container ${activeStockOutContainer} maksimal ${available}`);
-                return item;
+                onShowToast(
+                  `Peringatan: Stok "${item.product.title}" (${available}) kurang dari ${nextQty}`
+                );
               }
             }
             return nextQty > 0 ? { ...item, quantity: nextQty } : null;
@@ -559,10 +617,8 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
     // Save order into parent state & localStorage
     onSaveOrder(newOrder, hasResi);
 
-    // If resi is filled, trigger instant stock out in real time from the selected container
-    if (hasResi) {
-      syncStockInOutFromSalurOrder(newOrder, resiValue, todayFormatted);
-    }
+    // Potong stok gudang otomatis & catat Stock In-Out segera saat transaksi POS disimpan
+    const stockSyncRes = syncStockInOutOnSalurOrderSaved(newOrder);
 
     // Add to recent POS orders list for this session
     setRecentPosOrders((prev) => [newOrder, ...prev]);
@@ -575,8 +631,15 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
       }));
     }
 
+    const warningNote =
+      stockSyncRes.warnings.length > 0
+        ? ` • Peringatan stok kurang: ${stockSyncRes.warnings
+            .map((w) => `${w.itemTitle} (${w.availableInContainer}/${w.requestedQty})`)
+            .join(', ')}`
+        : '';
+
     onShowToast(
-      `✓ Transaksi POS ${orderNumber} untuk ${selectedBuyer.namaPembeli} berhasil disimpan! (Total: Rp${grandTotal.toLocaleString('id-ID')})`
+      `✓ Transaksi POS ${orderNumber} untuk ${selectedBuyer.namaPembeli} berhasil disimpan & stok dipotong! (Total: Rp${grandTotal.toLocaleString('id-ID')})${warningNote}`
     );
 
     // Reset cart and input fields
@@ -714,7 +777,7 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
                 setPreset((prev) => ({
                   ...prev,
                   stockOutContainer: e.target.value,
-                  stockOutLokasi: opt ? opt.lokasi : 'Kantor Bandung',
+                  stockOutLokasi: opt ? opt.lokasi : '',
                 }));
               }}
               className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-700 focus:outline-none focus:border-[#008d91]"
@@ -726,7 +789,9 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
               ))}
             </select>
             <span className="text-[10px] text-slate-400">
-              Lokasi: {preset.stockOutLokasi}
+              {isAutoContainerMode
+                ? 'Pilih otomatis kontainer stok terbanyak per item'
+                : `Lokasi: ${preset.stockOutLokasi || 'Kantor Bandung'}`}
             </span>
           </div>
 
@@ -1329,9 +1394,11 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
               <div className="flex items-center gap-2 text-teal-900">
                 <Boxes className="w-4 h-4 text-[#008d91] shrink-0" />
                 <span>
-                  Menampilkan Item dari Container:{' '}
-                  <strong className="font-bold text-[#008d91]">{activeStockOutContainer}</strong>{' '}
-                  <span className="text-slate-500">({filteredProducts.length} item dengan stok)</span>
+                  Sumber Potong Stok:{' '}
+                  <strong className="font-bold text-[#008d91]">
+                    {isAutoContainerMode ? 'Otomatis (Stok Terbanyak)' : activeStockOutContainer}
+                  </strong>{' '}
+                  <span className="text-slate-500">({filteredProducts.length} item)</span>
                 </span>
               </div>
               <button
@@ -1351,7 +1418,7 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
                   Tidak ada item S-SALUR dengan stok di container "{activeStockOutContainer}"
                 </p>
                 <p className="text-xs text-slate-500 max-w-md">
-                  Sesuai pengaturan, hanya item yang dialokasikan di container "{activeStockOutContainer}" yang dimunculkan di kasir. Silakan pilih container lain atau tambah stok di menu Stok S-SALUR.
+                  Sesuai pengaturan, hanya item yang dialokasikan di container "{activeStockOutContainer}" yang dimunculkan di kasir. Silakan pilih container lain atau mode Otomatis.
                 </p>
                 <button
                   type="button"
@@ -1364,11 +1431,13 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredProducts.map((p) => {
-                  const containerStock = getRealtimeStockForSalurProductInContainer(
-                    p,
-                    activeStockOutContainer,
-                    masterStokItems
-                  );
+                  const containerStock = isAutoContainerMode
+                    ? getRealtimeStockForSalurProduct(p, masterStokItems)
+                    : getRealtimeStockForSalurProductInContainer(
+                        p,
+                        activeStockOutContainer,
+                        masterStokItems
+                      );
                   const cartQty = cart.find((it) => it.product.id === p.id)?.quantity || 0;
 
                   return (
@@ -1476,62 +1545,89 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
               </div>
             ) : (
               <div className="flex flex-col gap-2.5 max-h-64 overflow-y-auto pr-1">
-                {cart.map((item) => (
-                  <div
-                    key={item.product.id}
-                    className="p-2.5 rounded-2xl border border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <BookCover
-                        coverKey={item.product.coverKey}
-                        size="sm"
-                        className="rounded-lg shadow-2xs shrink-0"
-                      />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-semibold text-slate-800 truncate">
-                          {item.product.title}
-                        </span>
-                        <span className="text-[11px] text-slate-500">
-                          Rp{item.product.price.toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full px-1.5 py-0.5">
-                        <button
-                          type="button"
-                          onClick={() => updateCartQty(item.product.id, -1)}
-                          className="w-4 h-4 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 cursor-pointer"
-                        >
-                          <Minus className="w-2.5 h-2.5" />
-                        </button>
-                        <span className="text-xs font-bold w-4 text-center text-slate-800">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQty(item.product.id, 1)}
-                          className="w-4 h-4 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 cursor-pointer"
-                        >
-                          <Plus className="w-2.5 h-2.5" />
-                        </button>
+                {cart.map((item, idx) => {
+                  const itemInsp = stockInspection.perItem[idx];
+                  return (
+                    <div
+                      key={item.product.id}
+                      className={`p-2.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                        itemInsp?.isInsufficient
+                          ? 'border-amber-300 bg-amber-50/70'
+                          : 'border-slate-100 bg-slate-50/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <BookCover
+                          coverKey={item.product.coverKey}
+                          size="sm"
+                          className="rounded-lg shadow-2xs shrink-0"
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-semibold text-slate-800 truncate">
+                            {item.product.title}
+                          </span>
+                          <span className="text-[11px] text-slate-500">
+                            Rp{item.product.price.toLocaleString('id-ID')}
+                          </span>
+                          {itemInsp && (
+                            <span
+                              className={`text-[10px] font-medium ${
+                                itemInsp.isInsufficient ? 'text-amber-700' : 'text-slate-400'
+                              }`}
+                            >
+                              {itemInsp.isInsufficient
+                                ? `Stok kurang (${itemInsp.containerStock}/${itemInsp.requestedQty}) · ${itemInsp.targetContainer}`
+                                : `Stok: ${itemInsp.containerStock} · ${itemInsp.targetContainer}`}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <span className="text-xs font-bold text-slate-800 w-20 text-right">
-                        Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
-                      </span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full px-1.5 py-0.5">
+                          <button
+                            type="button"
+                            onClick={() => updateCartQty(item.product.id, -1)}
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 cursor-pointer"
+                          >
+                            <Minus className="w-2.5 h-2.5" />
+                          </button>
+                          <span className="text-xs font-bold w-4 text-center text-slate-800">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateCartQty(item.product.id, 1)}
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 cursor-pointer"
+                          >
+                            <Plus className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => removeCartItem(item.product.id)}
-                        className="text-slate-300 hover:text-red-500 p-1 cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <span className="text-xs font-bold text-slate-800 w-20 text-right">
+                          Rp{(item.product.price * item.quantity).toLocaleString('id-ID')}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => removeCartItem(item.product.id)}
+                          className="text-slate-300 hover:text-red-500 p-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+            )}
+
+            {stockInspection.hasInsufficientStock && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-3 py-2 flex items-start gap-2 text-[11px] text-amber-800">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Stok di kontainer kurang untuk {stockInspection.warnings.length} item. Transaksi tetap dapat disimpan dan dicatat otomatis ke Stock In-Out.
+                </span>
               </div>
             )}
 
@@ -1634,7 +1730,10 @@ export const PosKasirTransaksiSalur: React.FC<PosKasirTransaksiSalurProps> = ({
               </button>
 
               <p className="text-[10px] text-center text-slate-400">
-                Stok keluar otomatis dicatat dari container "{preset.stockOutContainer}".
+                Stok keluar otomatis dipotong & dicatat dari{' '}
+                {isAutoContainerMode
+                  ? 'kontainer stok terbanyak per item'
+                  : `container "${preset.stockOutContainer}"`}.
               </p>
             </div>
           </div>
