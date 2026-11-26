@@ -482,6 +482,7 @@ const VIEW_PERMISSION_MAP: Partial<Record<AppView, PermissionKey>> = {
   report: 'viewFinance',
   reportCustomerSalur: 'viewFinance',
   reportBepSalur: 'viewFinance',
+  reportPenjualanValuasiSalur: 'viewFinance',
 
   transaksiDonasi: 'viewFinance',
   formTransaksiDonasi: 'viewFinance',
@@ -516,6 +517,7 @@ const VIEW_PERMISSION_MAP: Partial<Record<AppView, PermissionKey>> = {
   formPengeluaran: 'viewFinance',
   kumpulanRekening: 'viewFinance',
   laporanKeuangan: 'viewFinance',
+  laporanProyekKeuangan: 'viewFinance',
   jurnalUmum: 'viewFinance',
   coa: 'viewFinance',
 };

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Truck, Hash } from 'lucide-react';
+import { X, Truck, Hash, MessageCircle } from 'lucide-react';
 import { SalurOrder } from '../salurData';
 
 interface ModalInputNoResiProps {
   isOpen: boolean;
   order: SalurOrder | null;
   onClose: () => void;
-  onSave: (orderId: string, noResi: string) => void;
+  onSave: (orderId: string, noResi: string, openWhatsappAfterSave?: boolean) => void;
 }
 
 export const ModalInputNoResi: React.FC<ModalInputNoResiProps> = ({
@@ -16,11 +16,13 @@ export const ModalInputNoResi: React.FC<ModalInputNoResiProps> = ({
   onSave,
 }) => {
   const [noResi, setNoResi] = useState('');
+  const [sendWaAfterSave, setSendWaAfterSave] = useState(true);
 
   useEffect(() => {
     if (order) {
       const currentResi = order.ekspedisi?.noResi;
       setNoResi(currentResi && currentResi !== '-' ? currentResi : '');
+      setSendWaAfterSave(true);
     } else {
       setNoResi('');
     }
@@ -28,10 +30,12 @@ export const ModalInputNoResi: React.FC<ModalInputNoResiProps> = ({
 
   if (!isOpen || !order) return null;
 
+  const trimmedResi = noResi.trim();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = noResi.trim();
-    onSave(order.id, trimmed !== '' ? trimmed : '-');
+    const hasResi = trimmedResi !== '' && trimmedResi !== '-';
+    onSave(order.id, hasResi ? trimmedResi : '-', hasResi && sendWaAfterSave);
     onClose();
   };
 
@@ -115,9 +119,29 @@ export const ModalInputNoResi: React.FC<ModalInputNoResiProps> = ({
             </div>
           </div>
 
+          {trimmedResi !== '' && trimmedResi !== '-' && (
+            <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs cursor-pointer">
+              <input
+                type="checkbox"
+                checked={sendWaAfterSave}
+                onChange={(e) => setSendWaAfterSave(e.target.checked)}
+                className="mt-0.5 rounded border-slate-300 text-[#008d91] focus:ring-[#008d91]"
+              />
+              <div className="leading-snug">
+                <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                  <MessageCircle className="w-3.5 h-3.5 text-[#008d91]" />
+                  <span>Langsung kirim No. Resi via WhatsApp setelah simpan</span>
+                </span>
+                <span className="text-[11px] text-slate-500 block mt-0.5">
+                  Membuka pesan otomatis untuk {order.alamat?.recipientName || 'penerima'} dan mencatat ke List PM.
+                </span>
+              </div>
+            </label>
+          )}
+
           {/* Explanation note */}
           <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-[11px] text-amber-800 leading-relaxed">
-            💡 <strong>Catatan:</strong> Nomor resi tidak dibuat otomatis dan harus diinput manual. Transaksi tanpa nomor resi akan berstatus <strong>&quot;Belum dikirim&quot;</strong>. Jika nomor resi diisi dan disimpan, status otomatis menjadi <strong>&quot;Sudah Dikirim&quot;</strong>.
+            <strong>Catatan:</strong> Nomor resi tidak dibuat otomatis dan harus diinput manual. Transaksi tanpa nomor resi akan berstatus <strong>&quot;Belum dikirim&quot;</strong>. Jika nomor resi diisi dan disimpan, status otomatis menjadi <strong>&quot;Sudah Dikirim&quot;</strong>.
           </div>
 
           {/* Buttons */}
@@ -133,7 +157,9 @@ export const ModalInputNoResi: React.FC<ModalInputNoResiProps> = ({
               type="submit"
               className="px-5 py-2 text-xs font-semibold text-white bg-[#008d91] hover:bg-[#00757a] rounded-xl shadow-xs transition-colors cursor-pointer"
             >
-              Simpan No Resi
+              {trimmedResi !== '' && trimmedResi !== '-' && sendWaAfterSave
+                ? 'Simpan & Kirim Resi WA'
+                : 'Simpan No Resi'}
             </button>
           </div>
         </form>

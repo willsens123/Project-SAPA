@@ -1,4 +1,4 @@
-import { SayPaidRecord } from './types';
+import { SayPaidRecord, WhatsappDispatchLog } from './types';
 import {
   generateKodeTransaksi,
   normalizeVia,
@@ -115,6 +115,10 @@ export interface SalurOrder {
   stockOutContainer?: string;
   stockOutLokasi?: string;
   printDate?: string;
+  lastWhatsappResiSentAt?: string;
+  lastWhatsappResiSentPhone?: string;
+  lastWhatsappResiNumber?: string;
+  whatsappResiHistory?: WhatsappDispatchLog[];
 }
 
 /**

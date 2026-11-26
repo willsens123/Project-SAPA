@@ -478,13 +478,18 @@ export function mergeListPMItemsByProyekSapa(
         });
       }
 
-      // Merge recipients without exact duplicate phone/name
+      // Merge recipients without exact duplicate phone/name (allow distinct wa- reference entries)
       for (const rec of incomingRecipients) {
-        const existingIdx = existingRecipients.findIndex(
-          (r) =>
+        const isDistinctWaEntry = rec.id.startsWith('wa-');
+        const existingIdx = existingRecipients.findIndex((r) => {
+          if (isDistinctWaEntry) {
+            return r.id === rec.id;
+          }
+          return (
             (r.nomorHp && rec.nomorHp && r.nomorHp === rec.nomorHp) ||
             r.nama.toLowerCase().trim() === rec.nama.toLowerCase().trim()
-        );
+          );
+        });
         if (existingIdx >= 0) {
           existingRecipients[existingIdx] = {
             ...existingRecipients[existingIdx],
@@ -500,11 +505,18 @@ export function mergeListPMItemsByProyekSapa(
       const incomingRows = incoming.detailRows ? [...incoming.detailRows] : [];
 
       for (const inRow of incomingRows) {
-        const rowMatchIdx = existingRows.findIndex(
-          (r) =>
+        const isDistinctWaRow = inRow.id.startsWith('wa-');
+        const rowMatchIdx = existingRows.findIndex((r) => {
+          if (r.id && inRow.id && r.id === inRow.id) return true;
+          const samePerson =
             (r.nomorHp && inRow.nomorHp && r.nomorHp === inRow.nomorHp) ||
-            r.nama.toLowerCase().trim() === inRow.nama.toLowerCase().trim()
-        );
+            r.nama.toLowerCase().trim() === inRow.nama.toLowerCase().trim();
+          if (!samePerson) return false;
+          if (isDistinctWaRow && inRow.itemTitle && r.itemTitle) {
+            return r.itemTitle === inRow.itemTitle;
+          }
+          return !isDistinctWaRow;
+        });
         if (rowMatchIdx >= 0) {
           existingRows[rowMatchIdx] = {
             ...existingRows[rowMatchIdx],
@@ -515,7 +527,13 @@ export function mergeListPMItemsByProyekSapa(
         }
       }
 
-      const totalCount = existingRecipients.length;
+      const totalCount = Math.max(existingRecipients.length, existingRows.length);
+      const sentCount =
+        existingRecipients.length > 0
+          ? existingRecipients.filter((r) => r.isSent).length
+          : existingRows.filter((r) => r.status === 'done_teal' || r.status === 'done_gray').length;
+      const computedProgress =
+        totalCount > 0 ? Math.min(100, Math.round((sentCount / totalCount) * 100)) : existing.progressPercent;
 
       // Build target avatars
       const colorPalette = ['bg-[#d94819]', 'bg-[#d9659b]', 'bg-[#2295d8]', 'bg-[#0f8b8d]', 'bg-[#e05d44]'];
@@ -531,6 +549,7 @@ export function mergeListPMItemsByProyekSapa(
         ...existing,
         deadline: isKirimResi ? '-' : existing.deadline,
         deadlineColor: 'teal',
+        progressPercent: computedProgress,
         targetType: totalCount > 1 ? 'multiple' : 'single',
         targetCount: totalCount,
         targetAvatars: totalCount > 1 ? targetAvatars : existing.targetAvatars,

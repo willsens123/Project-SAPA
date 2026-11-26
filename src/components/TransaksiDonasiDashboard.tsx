@@ -15,12 +15,23 @@ import {
   CheckCircle2,
   Link2,
   Receipt,
+  MessageCircle,
 } from 'lucide-react';
 import { DonasiOrder, DonasiItem } from '../donasiData';
 import { ModalSayPaid } from './ModalSayPaid';
 import { ModalTambahkanKodeMutasi } from './ModalTambahkanKodeMutasi';
 import { ModalKwitansiDonasi } from './ModalKwitansiDonasi';
-import { SayPaidRecord, RekeningItem, MutasiItem } from '../types';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import {
+  SayPaidRecord,
+  RekeningItem,
+  MutasiItem,
+  OrganisasiItem,
+  ListPMItem,
+  WhatsappDispatchLog,
+} from '../types';
+import { IdentitasItem } from '../identitasData';
+import { formatBillingTimestamp } from '../utils/whatsappReceiptResiHelper';
 import { calculateOrderBadges } from '../utils/orderBadgeHelper';
 import {
   formatDisplayKodeTransaksi,
@@ -38,6 +49,9 @@ interface TransaksiDonasiDashboardProps {
   mutasiItems?: MutasiItem[];
   onUpdateMutasiItems?: (updated: MutasiItem[]) => void;
   currentActorName?: string;
+  identitasList?: IdentitasItem[];
+  organisasiList?: OrganisasiItem[];
+  onLogWhatsappToListPM?: (item: ListPMItem) => void;
 }
 
 export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> = ({
@@ -50,6 +64,9 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
   mutasiItems = [],
   onUpdateMutasiItems,
   currentActorName,
+  identitasList = [],
+  organisasiList = [],
+  onLogWhatsappToListPM,
 }) => {
   const [activeTab, setActiveTab] = useState<'Semua' | 'Belum Bayar' | 'Belum Konek Mutasi'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +100,51 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
   const handleOpenKwitansiModal = (order: DonasiOrder) => {
     setSelectedOrderForKwitansi(order);
     setIsKwitansiModalOpen(true);
+  };
+
+  // Modal Kirim Kwitansi via WhatsApp Otomatis state
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [selectedOrderForWa, setSelectedOrderForWa] = useState<DonasiOrder | null>(null);
+  const [waKwitansiOverride, setWaKwitansiOverride] = useState<string | undefined>(undefined);
+  const [waIncludePelimpahan, setWaIncludePelimpahan] = useState(true);
+
+  const handleOpenWaKwitansiModal = (
+    order: DonasiOrder,
+    kwitansiNumber?: string,
+    includePelimpahanJasa = true
+  ) => {
+    setSelectedOrderForWa(order);
+    setWaKwitansiOverride(kwitansiNumber);
+    setWaIncludePelimpahan(includePelimpahanJasa);
+    setIsWaModalOpen(true);
+  };
+
+  const handleWhatsappDispatchCompleted = ({
+    logEntry,
+    listPMItem,
+    donasiOrderId,
+  }: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    donasiOrderId?: string;
+  }) => {
+    if (donasiOrderId) {
+      const updated = orders.map((o) => {
+        if (o.id !== donasiOrderId) return o;
+        const prevHistory = o.whatsappSendHistory || [];
+        return {
+          ...o,
+          lastWhatsappSentAt: logEntry.sentAt,
+          lastWhatsappSentPhone: logEntry.phone,
+          lastWhatsappKwitansiNumber: logEntry.referenceNumber,
+          whatsappSendHistory: [logEntry, ...prevHistory],
+        };
+      });
+      onUpdateOrders(updated);
+    }
+    if (listPMItem && onLogWhatsappToListPM) {
+      onLogWhatsappToListPM(listPMItem);
+    }
   };
 
   const handleSaveSayPaid = (orderId: string, records: SayPaidRecord[]) => {
@@ -521,6 +583,14 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
                       <span className="font-medium text-slate-800">{order.customerId}</span>
                       <span className="text-slate-300">/</span>
                       <span className="text-slate-600">{order.date}</span>
+                      {order.lastWhatsappSentAt && (
+                        <>
+                          <span className="text-slate-300">·</span>
+                          <span className="text-emerald-700 font-semibold">
+                            Kwitansi WA Terkirim {formatBillingTimestamp(order.lastWhatsappSentAt, true)}
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {/* Paid Badges (Kiri: Say Paid, Kanan: Koneksi Kode Mutasi) */}
@@ -675,10 +745,10 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
                   {/* Footer Action Bar */}
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-5 py-3 border-t border-slate-100 mt-3 text-xs text-slate-600">
                     {/* Left Action Buttons */}
-                    <div className="flex items-center gap-4 sm:gap-6 flex-wrap self-start sm:self-auto">
+                    <div className="flex items-center gap-4 sm:gap-5 flex-wrap self-start sm:self-auto">
                       <button
                         type="button"
-                        onClick={() => onShowToast(`Membuka chat dengan donatur ${order.namaDonatur.name}`)}
+                        onClick={() => handleOpenWaKwitansiModal(order)}
                         className="hover:text-[#008d91] font-medium transition-colors cursor-pointer"
                       >
                         Chat Pembeli
@@ -709,6 +779,17 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
                       >
                         <Receipt className="w-3.5 h-3.5 stroke-[2.2]" />
                         <span>E-Kwitansi</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        id={`btn-kirim-kwitansi-wa-${order.id}`}
+                        onClick={() => handleOpenWaKwitansiModal(order)}
+                        className="hover:text-[#046c76] font-semibold text-[#05828e] transition-colors cursor-pointer flex items-center gap-1"
+                        title="Kirim Kwitansi Donasi via WhatsApp & catat ke List PM"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 stroke-[2.2]" />
+                        <span>Kirim Kwitansi WA</span>
                       </button>
 
                       <button
@@ -777,6 +858,19 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
                             >
                               <Receipt className="w-4 h-4 text-[#008d91]" />
                               <span>E-Kwitansi Resmi</span>
+                            </button>
+                            <button
+                              type="button"
+                              id={`menu-kirim-wa-${order.id}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuOrderId(null);
+                                handleOpenWaKwitansiModal(order);
+                              }}
+                              className="w-full px-3.5 py-2 text-left text-xs font-semibold text-[#05828e] hover:bg-[#05828e]/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                            >
+                              <MessageCircle className="w-4 h-4 text-[#05828e]" />
+                              <span>Kirim Kwitansi WA</span>
                             </button>
                             <button
                               type="button"
@@ -1061,6 +1155,31 @@ export const TransaksiDonasiDashboard: React.FC<TransaksiDonasiDashboardProps> =
         }}
         onShowToast={onShowToast}
         actorName={currentActorName}
+        onOpenWhatsappModal={(ord, kwitansiNo, incPelimpahan) => {
+          setIsKwitansiModalOpen(false);
+          handleOpenWaKwitansiModal(ord, kwitansiNo, incPelimpahan);
+        }}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        onDispatchCompleted={handleWhatsappDispatchCompleted}
+      />
+
+      {/* Modal Otomatis Kirim Kwitansi Donasi via WhatsApp + Catat List PM */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={isWaModalOpen}
+        onClose={() => {
+          setIsWaModalOpen(false);
+          setSelectedOrderForWa(null);
+        }}
+        kind="kwitansi_donasi"
+        donasiOrder={selectedOrderForWa}
+        kwitansiNumberOverride={waKwitansiOverride}
+        includePelimpahanJasa={waIncludePelimpahan}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        currentActorName={currentActorName || 'Admin Keuangan'}
+        onDispatchCompleted={handleWhatsappDispatchCompleted}
+        onShowToast={onShowToast}
       />
     </div>
   );

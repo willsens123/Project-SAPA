@@ -29,15 +29,24 @@ import {
   ShieldAlert,
   Eye,
   PanelRightOpen,
+  MessageCircle,
 } from 'lucide-react';
+import { DonasiOrder } from '../donasiData';
 import { IdentitasItem } from '../identitasData';
+import { SalurOrder } from '../salurData';
 import {
   IdentitasChangeLog,
   SuspiciousAuditFlag,
   CentralAuditLogEntry,
   KaryawanItem,
+  ListPMItem,
+  DharmaPatronRutinItem,
+  WhatsappDispatchLog,
 } from '../types';
+import { resolveLastContactedForIdentitas } from '../utils/lastContactedHelper';
 import { IdentitasAuditDetailModal, UnifiedAuditLogItem } from './IdentitasAuditDetailModal';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import { ModalRiwayatKontakCustomer } from './ModalRiwayatKontakCustomer';
 import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
 
 interface EditFieldRow {
@@ -54,6 +63,17 @@ interface EditIdentitasViewProps {
   centralAuditLogs?: CentralAuditLogEntry[];
   currentUser?: KaryawanItem | null;
   suspiciousFlags?: SuspiciousAuditFlag[];
+  listPMList?: ListPMItem[];
+  donasiOrders?: DonasiOrder[];
+  salurOrders?: SalurOrder[];
+  dharmaPatronList?: DharmaPatronRutinItem[];
+  currentActorName?: string;
+  onContactDispatchCompleted?: (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    identitasId?: string;
+    codeId?: string;
+  }) => void;
   onBack: () => void;
   onSave: (updatedItem: IdentitasItem, newLogs: IdentitasChangeLog[]) => void;
   onShowToast: (msg: string) => void;
@@ -126,6 +146,12 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   changeLogs,
   centralAuditLogs = [],
   currentUser = null,
+  listPMList = [],
+  donasiOrders = [],
+  salurOrders = [],
+  dharmaPatronList = [],
+  currentActorName = 'Admin Identitas',
+  onContactDispatchCompleted,
   onBack,
   onSave,
   onShowToast,
@@ -135,11 +161,26 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
 }) => {
   // Current selected identity (can switch between identities if needed)
   const [selectedIdentity, setSelectedIdentity] = useState<IdentitasItem>(item);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [isContactHistoryOpen, setIsContactHistoryOpen] = useState(false);
 
   // Sync if item prop updates externally
   React.useEffect(() => {
     setSelectedIdentity(item);
   }, [item]);
+
+  const liveSelectedIdentity = useMemo(() => {
+    return allIdentitasList.find((id) => id.id === selectedIdentity.id) || selectedIdentity;
+  }, [allIdentitasList, selectedIdentity]);
+
+  const liveContactSummary = useMemo(() => {
+    return resolveLastContactedForIdentitas(liveSelectedIdentity, {
+      listPMList,
+      donasiOrders,
+      salurOrders,
+      dharmaPatronList,
+    });
+  }, [liveSelectedIdentity, listPMList, donasiOrders, salurOrders, dharmaPatronList]);
 
   // Detailed Audit Panel / Modal state
   const [auditModalState, setAuditModalState] = useState<{
@@ -516,12 +557,40 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
                   </span>
                 </>
               )}
+              <span className="text-slate-300 dark:text-slate-700">·</span>
+              <button
+                type="button"
+                onClick={() => setIsContactHistoryOpen(true)}
+                className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-[#05828e] transition-colors cursor-pointer tabular-nums"
+                title="Lihat timeline kontak lintas modul"
+              >
+                Last Contacted:{' '}
+                <strong className="font-semibold text-slate-800 dark:text-slate-100">
+                  {liveContactSummary.displayDate}
+                </strong>
+                {liveContactSummary.hasContactHistory && (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {' '}
+                    ({liveContactSummary.relativeLabel || liveContactSummary.channelLabel})
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Right Tools Group */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsWaModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#05828e] hover:bg-[#046c76] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            title="Kirim WhatsApp langsung ke customer ini"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Kirim WA</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setAuditModalState({ isOpen: true, selectedLogId: null })}
@@ -1311,6 +1380,39 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
         initialSelectedLogId={auditModalState.selectedLogId}
         onShowToast={onShowToast}
         onRestoreFieldValue={handleRestoreFieldValue}
+      />
+
+      {/* Modal Riwayat Kontak Cross-Module */}
+      <ModalRiwayatKontakCustomer
+        isOpen={isContactHistoryOpen}
+        onClose={() => setIsContactHistoryOpen(false)}
+        customerName={liveSelectedIdentity.namaLengkap}
+        customerPanggilan={liveSelectedIdentity.namaPanggilan}
+        customerCode={liveSelectedIdentity.codeId}
+        phone={liveSelectedIdentity.nomorHandPhone}
+        avatarInitial={liveSelectedIdentity.avatarInitial}
+        avatarBg={liveSelectedIdentity.avatarBg}
+        summary={liveContactSummary}
+        onSendWhatsappNow={() => setIsWaModalOpen(true)}
+      />
+
+      {/* Modal Kirim WhatsApp Customer */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={isWaModalOpen}
+        onClose={() => setIsWaModalOpen(false)}
+        kind="customer_direct"
+        identitasItem={liveSelectedIdentity}
+        identitasList={allIdentitasList}
+        currentActorName={currentActorName}
+        onDispatchCompleted={(payload) => {
+          onContactDispatchCompleted?.({
+            logEntry: payload.logEntry,
+            listPMItem: payload.listPMItem,
+            identitasId: payload.identitasId || liveSelectedIdentity.id,
+            codeId: payload.codeId || liveSelectedIdentity.codeId,
+          });
+        }}
+        onShowToast={onShowToast}
       />
     </div>
   );

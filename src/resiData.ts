@@ -1,3 +1,5 @@
+import { WhatsappDispatchLog } from './types';
+
 export interface ResiItem {
   id: string;
   tanggal: string; // e.g. "10 Nov 2021"
@@ -9,6 +11,9 @@ export interface ResiItem {
   tarif: number; // e.g. 181500
   kode?: string; // Kode Transaksi S-SALUR e.g. "2021 Store 4451003216"
   dropPoint?: string; // e.g. "LION Jurang"
+  lastWhatsappSentAt?: string;
+  lastWhatsappSentPhone?: string;
+  whatsappSendHistory?: WhatsappDispatchLog[];
 }
 
 export const INITIAL_RESI_LIST: ResiItem[] = [

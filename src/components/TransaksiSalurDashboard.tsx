@@ -20,15 +20,26 @@ import {
   CheckCircle2,
   Truck,
   Trash2,
+  MessageCircle,
 } from 'lucide-react';
 import { SalurOrder, SalurOrderItem } from '../salurData';
-import { MutasiItem, RekeningItem, SayPaidRecord } from '../types';
+import {
+  MutasiItem,
+  RekeningItem,
+  SayPaidRecord,
+  OrganisasiItem,
+  ListPMItem,
+  WhatsappDispatchLog,
+} from '../types';
+import { IdentitasItem } from '../identitasData';
 import { BookCover } from './BookCover';
 import { ModalPrintAlamat } from './ModalPrintAlamat';
 import { ModalTambahkanKodeMutasi } from './ModalTambahkanKodeMutasi';
 import { ModalSayPaid } from './ModalSayPaid';
 import { ModalInputNoResi } from './ModalInputNoResi';
 import { ModalInvoiceSalur } from './ModalInvoiceSalur';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import { formatBillingTimestamp } from '../utils/whatsappReceiptResiHelper';
 import {
   syncStockInOutFromSalurOrder,
   updateStockInOutPrintDate,
@@ -48,6 +59,10 @@ interface TransaksiSalurDashboardProps {
   onEditOrder?: (order: SalurOrder) => void;
   onShowToast?: (msg: string) => void;
   onResiSaved?: (order: SalurOrder, resi: string) => void;
+  identitasList?: IdentitasItem[];
+  organisasiList?: OrganisasiItem[];
+  currentActorName?: string;
+  onLogWhatsappToListPM?: (item: ListPMItem) => void;
 }
 
 export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = ({
@@ -60,6 +75,10 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
   onEditOrder,
   onShowToast = (_msg: string) => {},
   onResiSaved,
+  identitasList = [],
+  organisasiList = [],
+  currentActorName,
+  onLogWhatsappToListPM,
 }) => {
   const [activeTab, setActiveTab] = useState<'Semua' | 'Belum Bayar' | 'Belum Konek Mutasi' | 'Belum Dikirim'>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +136,48 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
     setIsInputResiModalOpen(true);
   };
 
-  const handleSaveNoResi = (orderId: string, resi: string) => {
+  // Modal Kirim Resi via WhatsApp state
+  const [isWaResiModalOpen, setIsWaResiModalOpen] = useState(false);
+  const [selectedOrderForWaResi, setSelectedOrderForWaResi] = useState<SalurOrder | null>(null);
+
+  const handleOpenWaResiModal = (order: SalurOrder) => {
+    setSelectedOrderForWaResi(order);
+    setIsWaResiModalOpen(true);
+  };
+
+  const handleWhatsappDispatchCompleted = ({
+    logEntry,
+    listPMItem,
+    salurOrderId,
+  }: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    salurOrderId?: string;
+  }) => {
+    if (salurOrderId) {
+      const updated = orders.map((o) => {
+        if (o.id !== salurOrderId) return o;
+        const prevHistory = o.whatsappResiHistory || [];
+        return {
+          ...o,
+          lastWhatsappResiSentAt: logEntry.sentAt,
+          lastWhatsappResiSentPhone: logEntry.phone,
+          lastWhatsappResiNumber: logEntry.referenceNumber,
+          whatsappResiHistory: [logEntry, ...prevHistory],
+        };
+      });
+      onUpdateOrders(updated);
+    }
+    if (listPMItem && onLogWhatsappToListPM) {
+      onLogWhatsappToListPM(listPMItem);
+    }
+  };
+
+  const handleSaveNoResi = (
+    orderId: string,
+    resi: string,
+    openWhatsappAfterSave: boolean = false
+  ) => {
     const trimmed = resi.trim();
     const hasResi = trimmed !== '' && trimmed !== '-';
     let targetOrderToSync: SalurOrder | undefined;
@@ -153,6 +213,10 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
       syncStockInOutFromSalurOrder(targetOrderToSync, trimmed, effPrintDate);
       if (onResiSaved) {
         onResiSaved(targetOrderToSync, trimmed);
+      }
+      if (openWhatsappAfterSave) {
+        setSelectedOrderForWaResi(targetOrderToSync);
+        setIsWaResiModalOpen(true);
       }
     } else if (!hasResi) {
       clearResiOnStockInOutForOrder(orderId);
@@ -737,6 +801,22 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                       </div>
+                      {order.ekspedisi.noResi && order.ekspedisi.noResi !== '-' && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWaResiModal(order)}
+                          className="mt-2 w-fit flex items-center gap-1 text-[11px] font-semibold text-[#05828e] hover:text-[#046c76] cursor-pointer transition-colors"
+                          title="Kirim Nomor Resi ke WhatsApp pelanggan & catat ke List PM"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Kirim Resi WA</span>
+                        </button>
+                      )}
+                      {order.lastWhatsappResiSentAt && (
+                        <span className="mt-1 text-[11px] text-emerald-700 font-medium">
+                          WA Resi Terkirim · {formatBillingTimestamp(order.lastWhatsappResiSentAt, true)}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -751,10 +831,10 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
                   {/* Action Footer Bar matching Image 1 */}
                   <div className="p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 bg-white rounded-b-2xl">
                     {/* Left Actions */}
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-5 text-xs text-slate-600 font-medium">
                       <button
                         type="button"
-                        onClick={() => onShowToast(`Membuka obrolan dengan ${order.alamat.recipientName}`)}
+                        onClick={() => handleOpenWaResiModal(order)}
                         className="hover:text-[#008d91] transition-colors cursor-pointer"
                       >
                         Chat Pembeli
@@ -778,6 +858,16 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
                         className="hover:text-[#008d91] transition-colors cursor-pointer"
                       >
                         Edit Pesanan
+                      </button>
+                      <button
+                        type="button"
+                        id={`btn-kirim-resi-wa-${order.id}`}
+                        onClick={() => handleOpenWaResiModal(order)}
+                        className="hover:text-[#046c76] transition-colors cursor-pointer flex items-center gap-1 font-semibold text-[#05828e]"
+                        title="Kirim Nomor Resi via WhatsApp & catat ke List PM"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>Kirim Resi WA</span>
                       </button>
                       <button
                         type="button"
@@ -960,12 +1050,12 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActiveDropdownOrderId(null);
-                                onShowToast(`Membuka obrolan dengan ${order.alamat.recipientName}`);
+                                handleOpenWaResiModal(order);
                               }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 text-left transition-colors cursor-pointer"
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-[#05828e] hover:bg-[#05828e]/10 text-left transition-colors cursor-pointer"
                             >
-                              <MessageSquare className="w-4 h-4 text-slate-400" />
-                              <span>Chat Pembeli</span>
+                              <MessageCircle className="w-4 h-4 text-[#05828e]" />
+                              <span>Kirim Resi via WA</span>
                             </button>
 
                             <div className="my-1 border-t border-slate-100" />
@@ -1051,6 +1141,22 @@ export const TransaksiSalurDashboard: React.FC<TransaksiSalurDashboardProps> = (
           setIsInvoiceModalOpen(false);
           setSelectedOrderForInvoice(null);
         }}
+        onShowToast={onShowToast}
+      />
+
+      {/* Modal Otomatis Kirim Resi S-SALUR via WhatsApp + Catat List PM */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={isWaResiModalOpen}
+        onClose={() => {
+          setIsWaResiModalOpen(false);
+          setSelectedOrderForWaResi(null);
+        }}
+        kind="resi_salur"
+        salurOrder={selectedOrderForWaResi}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        currentActorName={currentActorName || 'Admin S-SALUR'}
+        onDispatchCompleted={handleWhatsappDispatchCompleted}
         onShowToast={onShowToast}
       />
     </div>

@@ -210,11 +210,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onDownloadAllData}
-            title="Unduh & Cadangkan Seluruh Data YPPLN (JSON / CSV)"
+            title="Backup & Pulihkan Seluruh Data YPPLN (JSON / CSV)"
             className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700 hover:border-teal-400 dark:hover:border-teal-600 text-slate-700 dark:text-slate-200 hover:text-[#008993] dark:hover:text-teal-300 shadow-2xs hover:bg-teal-50/50 dark:hover:bg-slate-800 transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-[#008993] dark:text-teal-400" />
-            <span>Unduh Semua Data</span>
+            <span>Backup & Restore</span>
           </button>
         )}
 
@@ -418,7 +418,7 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="flex items-center gap-2">
                     <Download className="w-4 h-4 text-[#008993] dark:text-teal-400" />
-                    Unduh Semua Data (Backup)
+                    Backup & Restore Data
                   </span>
                   <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950 text-[#008993] dark:text-teal-300">
                     JSON / CSV

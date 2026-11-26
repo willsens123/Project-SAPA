@@ -45,6 +45,11 @@ export interface AllApplicationData {
   listPM: any[];
   volunteersSSebar: any[];
   volunteersAJar: any[];
+  stokSalurItems?: any[];
+  gudangSalurData?: any[];
+  stockInOutSalur?: any[];
+  lokasiStokSalur?: any[];
+  jenisPerubahanSalur?: any[];
 }
 
 export interface BuildAllDataParams {
@@ -77,6 +82,11 @@ export interface BuildAllDataParams {
   listPMList?: any[];
   volunteerSSebarList?: any[];
   volunteerAJarList?: any[];
+  stokSalurItems?: any[];
+  gudangSalurData?: any[];
+  stockInOutSalur?: any[];
+  lokasiStokSalur?: any[];
+  jenisPerubahanSalur?: any[];
 }
 
 /**
@@ -112,6 +122,9 @@ export function buildAllApplicationData(params: BuildAllDataParams): AllApplicat
     quickReplies: params.quickReplyList?.length || 0,
     faqs: params.faqList?.length || 0,
     listPM: params.listPMList?.length || 0,
+    stokSalurItems: params.stokSalurItems?.length || 0,
+    gudangSalurData: params.gudangSalurData?.length || 0,
+    stockInOutSalur: params.stockInOutSalur?.length || 0,
   };
 
   const totalRecords = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -158,6 +171,11 @@ export function buildAllApplicationData(params: BuildAllDataParams): AllApplicat
     listPM: params.listPMList || [],
     volunteersSSebar: params.volunteerSSebarList || [],
     volunteersAJar: params.volunteerAJarList || [],
+    stokSalurItems: params.stokSalurItems || [],
+    gudangSalurData: params.gudangSalurData || [],
+    stockInOutSalur: params.stockInOutSalur || [],
+    lokasiStokSalur: params.lokasiStokSalur || [],
+    jenisPerubahanSalur: params.jenisPerubahanSalur || [],
   };
 }
 
@@ -413,11 +431,14 @@ export function triggerBrowserDownload(
 /**
  * Convenience function to download all data as a formatted JSON file
  */
-export function downloadAllDataAsJson(backup: AllApplicationData): string {
+export function downloadAllDataAsJson(
+  backup: AllApplicationData,
+  filenamePrefix: string = 'YPPLN_ERP_Backup_All_Data'
+): string {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
-  const filename = `YPPLN_ERP_Backup_All_Data_${dateStr}_${timeStr}.json`;
+  const filename = `${filenamePrefix}_${dateStr}_${timeStr}.json`;
 
   const jsonString = JSON.stringify(backup, null, 2);
   triggerBrowserDownload(jsonString, filename, 'application/json;charset=utf-8');

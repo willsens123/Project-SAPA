@@ -367,6 +367,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isSSalur: true,
       },
       {
+        id: 'nav-report-penjualan-valuasi-salur',
+        title: 'Rekap Penjualan & Valuasi Stok',
+        subtitle: 'Omzet, Margin & Nilai Gudang',
+        view: 'reportPenjualanValuasiSalur',
+        icon: BarChart3,
+        isSSalur: true,
+      },
+      {
         id: 'nav-stok-item-salur',
         title: 'Stok Item S-SALUR',
         subtitle: 'Stok Item & Gudang',
@@ -744,6 +752,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         icon: FileSpreadsheet,
       },
       {
+        id: 'nav-laporan-proyek-keuangan',
+        title: 'Arus Kas & Laba Rugi Proyek',
+        subtitle: 'P&L & Cash Flow per Proyek SAPA',
+        view: 'laporanProyekKeuangan',
+        icon: BarChart3,
+      },
+      {
         id: 'nav-jurnal-umum',
         title: 'Jurnal Umum & Buku Besar',
         subtitle: 'General Ledger Rekap 5 Modul Otomatis',
@@ -973,6 +988,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           'nav-ongoing-create-item-salur',
           'nav-modal-item-salur',
           'nav-report-bep-salur',
+          'nav-report-penjualan-valuasi-salur',
           'nav-stok-item-salur',
           'nav-lokasi-stok-item-salur',
           'nav-stock-in-out-salur',
@@ -1040,6 +1056,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         badgeText: 'text-emerald-700',
         itemIds: [
           'nav-laporan-keuangan',
+          'nav-laporan-proyek-keuangan',
           'nav-jurnal-umum',
           'nav-mutasi',
           'nav-rincian-mutasi',

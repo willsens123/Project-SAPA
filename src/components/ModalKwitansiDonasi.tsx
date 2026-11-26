@@ -21,6 +21,9 @@ import { DonasiOrder } from '../donasiData';
 import { angkaKeTerbilang, formatRupiah } from '../utils/terbilang';
 import { generateQrDataUrl } from '../utils/qrCodeHelper';
 import { dispatchAuditEvent } from '../utils/auditEventBus';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import { IdentitasItem } from '../identitasData';
+import { ListPMItem, OrganisasiItem, WhatsappDispatchLog } from '../types';
 
 interface ModalKwitansiDonasiProps {
   isOpen: boolean;
@@ -28,6 +31,18 @@ interface ModalKwitansiDonasiProps {
   onClose: () => void;
   onShowToast: (msg: string) => void;
   actorName?: string;
+  onOpenWhatsappModal?: (
+    order: DonasiOrder,
+    kwitansiNumber: string,
+    includePelimpahanJasa: boolean
+  ) => void;
+  identitasList?: IdentitasItem[];
+  organisasiList?: OrganisasiItem[];
+  onDispatchCompleted?: (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    donasiOrderId?: string;
+  }) => void;
 }
 
 export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
@@ -36,6 +51,10 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
   onClose,
   onShowToast,
   actorName,
+  onOpenWhatsappModal,
+  identitasList = [],
+  organisasiList = [],
+  onDispatchCompleted,
 }) => {
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +66,7 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isDownloading, setIsDownloading] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [isInternalWaOpen, setIsInternalWaOpen] = useState(false);
 
   // Auto-generate serial receipt number from order
   useEffect(() => {
@@ -166,27 +186,13 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
     }
   };
 
-  // Handle WhatsApp Share
+  // Handle WhatsApp Share via Automated Modal (no window.open)
   const handleShareWhatsApp = () => {
-    const lines = [
-      `*TANDA TERIMA DONASI RESMI*`,
-      `*YAYASAN PELESTARIAN DAN PENGEMBANGAN LAMRIM NUSANTARA*`,
-      `---------------------------------------`,
-      `No. Kwitansi : ${kwitansiNumber}`,
-      `Tanggal      : ${order.date}`,
-      `Nama Donatur : ${order.namaDonatur.name} (${order.customerId})`,
-      `Jumlah Dana  : *${order.totalDana}*`,
-      `Terbilang    : _${terbilangText}_`,
-      `Program/Item : ${order.items.map((i) => `${i.name} (${i.qtyPrice})`).join(', ')}`,
-      order.pelimpahanJasa?.name ? `Pelimpahan Jasa : ${order.pelimpahanJasa.allNames?.join(', ') || order.pelimpahanJasa.name}` : '',
-      `Status       : *LUNAS (PAID)*`,
-      `---------------------------------------`,
-      `_Anumodana atas kebajikan dan kemurahan hati Anda. Semoga berkah kebajikan ini melimpah bagi semua makhluk._ 🙏`,
-    ].filter(Boolean);
-
-    const message = encodeURIComponent(lines.join('\n'));
-    window.open(`https://wa.me/?text=${message}`, '_blank');
-    onShowToast('Pesan WhatsApp tanda terima siap dikirim');
+    if (onOpenWhatsappModal) {
+      onOpenWhatsappModal(order, kwitansiNumber, includePelimpahanJasa);
+      return;
+    }
+    setIsInternalWaOpen(true);
   };
 
   // Handle Copy text
@@ -500,6 +506,22 @@ export const ModalKwitansiDonasi: React.FC<ModalKwitansiDonasiProps> = ({
           </div>
         </div>
       </div>
+
+      {isInternalWaOpen && (
+        <ModalKirimWhatsappOtomatis
+          isOpen={isInternalWaOpen}
+          onClose={() => setIsInternalWaOpen(false)}
+          kind="kwitansi_donasi"
+          donasiOrder={order}
+          kwitansiNumberOverride={kwitansiNumber}
+          includePelimpahanJasa={includePelimpahanJasa}
+          identitasList={identitasList}
+          organisasiList={organisasiList}
+          currentActorName={actorName || 'Admin Keuangan'}
+          onDispatchCompleted={onDispatchCompleted}
+          onShowToast={onShowToast}
+        />
+      )}
     </div>
   );
 };

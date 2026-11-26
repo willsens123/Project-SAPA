@@ -1,4 +1,4 @@
-import { SayPaidRecord } from './types';
+import { SayPaidRecord, WhatsappDispatchLog } from './types';
 
 export interface DonasiItem {
   id: string;
@@ -39,6 +39,10 @@ export interface DonasiOrder {
   pelimpahanJasa: DonasiPelimpahanJasa;
   totalDana: string;
   notesText?: string;
+  lastWhatsappSentAt?: string;
+  lastWhatsappSentPhone?: string;
+  lastWhatsappKwitansiNumber?: string;
+  whatsappSendHistory?: WhatsappDispatchLog[];
 }
 
 const BASE_DONASI_ORDERS: DonasiOrder[] = [

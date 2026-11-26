@@ -42,6 +42,14 @@ import {
   syncStockInOutOnSalurOrderSaved,
   getStoredStokSalurItems,
   saveStoredStokSalurItems,
+  getStoredGudangSalurData,
+  saveStoredGudangSalurData,
+  getStoredStockInOutSalur,
+  saveStoredStockInOutSalur,
+  getStoredLokasiStokSalur,
+  saveStoredLokasiStokSalur,
+  getStoredJenisPerubahanSalur,
+  saveStoredJenisPerubahanSalur,
   StokSalurItem,
   isMatchingSalurItem,
 } from './stokSalurData';
@@ -188,6 +196,8 @@ import {
   saveKumpulanRekeningToStorage,
 } from './kumpulanRekeningData';
 import { LaporanKeuanganView } from './components/LaporanKeuanganView';
+import { LaporanArusKasLabaRugiProyekView } from './components/LaporanArusKasLabaRugiProyekView';
+import { ReportPenjualanValuasiStokSalurView } from './components/ReportPenjualanValuasiStokSalurView';
 import { CoaManagementView } from './components/CoaManagementView';
 import { CoaAccount, loadCoaList, saveCoaList } from './accountingData';
 import {
@@ -304,7 +314,18 @@ import { JenisGroupFunnelingTable } from './components/JenisGroupFunnelingTable'
 import { AddEditJenisGroupFunnelingModal } from './components/AddEditJenisGroupFunnelingModal';
 import { ModalTambahKeGroupFunnelingExisting, TargetMemberItem } from './components/ModalTambahKeGroupFunnelingExisting';
 import { ModalDownloadAllData } from './components/ModalDownloadAllData';
-import { buildAllApplicationData } from './utils/exportAllDataHelper';
+import {
+  buildAllApplicationData,
+  downloadAllDataAsJson,
+} from './utils/exportAllDataHelper';
+import {
+  BackupModuleKey,
+  BACKUP_MODULE_DEFINITIONS,
+  RestoreBackupExecutionResult,
+  RestoreBackupRequest,
+  mergeModuleArrays,
+  mergeTodoTaskMaps,
+} from './utils/restoreBackupHelper';
 import {
   loadJenisGroupFunneling,
   saveJenisGroupFunneling,
@@ -435,6 +456,7 @@ import {
   getAllProjectTodos,
   getTodosForProject,
   saveTodosForProject,
+  replaceAllProjectTodos,
   PROJECT_TODOS_UPDATED_EVENT,
 } from './todoListData';
 import {
@@ -480,7 +502,12 @@ import {
   AuditAnomalyJobReport,
   LoginActivityRecord,
   LoginAuthMethod,
+  WhatsappDispatchLog,
 } from './types';
+import {
+  formatIndonesianTimestamp,
+  normalizeWhatsappPhone,
+} from './utils/whatsappReceiptResiHelper';
 import { ComplaintView } from './components/ComplaintView';
 import { FormComplaint } from './components/FormComplaint';
 import { getComplaintsFromStorage, saveComplaintsToStorage } from './complaintData';
@@ -2050,6 +2077,17 @@ export default function App() {
       } ke ${enrichedEntry.phone || '-'}`,
       author: actorName,
     });
+
+    recordIdentitasLastContacted({
+      identitasId: patron.identitasId,
+      codeId: patron.noDonatur,
+      nama: patron.namaDonatur,
+      phone: enrichedEntry.phone || patron.nomorHp,
+      channelLabel: 'WA Tagihan Patron',
+      sentAtIso: enrichedEntry.billedAt,
+      actorName,
+      note: `Tagihan ${enrichedEntry.bulanPiutang}`,
+    });
   };
 
   const handleDeleteDharmaPatron = (id: string) => {
@@ -2347,6 +2385,124 @@ export default function App() {
     const updated = mergeListPMItemsByProyekSapa(listPMList, newItems);
     setListPMList(updated);
     saveListPM(updated);
+  };
+
+  const recordIdentitasLastContacted = (params: {
+    identitasId?: string;
+    codeId?: string;
+    nama?: string;
+    phone?: string;
+    channelLabel: string;
+    sentAtIso?: string;
+    actorName?: string;
+    note?: string;
+    logEntry?: WhatsappDispatchLog;
+  }) => {
+    const sentAtIso = params.sentAtIso || new Date().toISOString();
+    const parsedDate = new Date(sentAtIso);
+    const validDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+    const formattedDisplay = formatIndonesianTimestamp(validDate);
+    const normTargetPhone = normalizeWhatsappPhone(params.phone);
+    const normTargetName = (params.nama || '').trim().toLowerCase();
+    const normCode = (params.codeId || '').trim().toLowerCase();
+    const normId = (params.identitasId || '').trim().toLowerCase();
+
+    setIdentitasList((prev) =>
+      prev.map((item) => {
+        const matchById = normId && item.id.toLowerCase() === normId;
+        const matchByCode =
+          normCode && item.codeId && item.codeId.toLowerCase() === normCode;
+        const matchByName =
+          normTargetName &&
+          normTargetName !== '-' &&
+          normTargetName !== 'no name' &&
+          item.namaLengkap.trim().toLowerCase() === normTargetName;
+        const itemPhones = [
+          item.nomorHandPhone,
+          ...(item.alamatList || []).map((a) => a.nomorHp),
+        ].map((p) => normalizeWhatsappPhone(p));
+        const matchByPhone =
+          normTargetPhone && itemPhones.some((p) => p && p === normTargetPhone);
+
+        if (!matchById && !matchByCode && !matchByName && !matchByPhone) {
+          return item;
+        }
+
+        const prevHistory = Array.isArray(item.whatsappContactHistory)
+          ? item.whatsappContactHistory
+          : [];
+        const nextHistory = params.logEntry
+          ? [params.logEntry, ...prevHistory.filter((h) => h.id !== params.logEntry!.id)].slice(
+              0,
+              30
+            )
+          : prevHistory;
+
+        return {
+          ...item,
+          lastContacted: formattedDisplay,
+          lastContactedAt: sentAtIso,
+          lastContactedChannel: params.channelLabel,
+          lastContactedBy: params.actorName || 'Admin YPPLN',
+          lastContactedNote: params.note || item.lastContactedNote,
+          whatsappContactHistory: nextHistory,
+        };
+      })
+    );
+  };
+
+  const handleLogWhatsappToListPM = (newItem: ListPMItem) => {
+    setListPMList((prev) => {
+      const updated = mergeListPMItemsByProyekSapa(prev, [newItem]);
+      saveListPM(updated);
+      return updated;
+    });
+
+    if (newItem.singleTarget) {
+      const lowerProyek = (newItem.proyekSapa || '').toLowerCase();
+      const chLabel = lowerProyek.includes('kwitansi')
+        ? 'WA Kwitansi'
+        : lowerProyek.includes('resi')
+        ? 'WA Resi'
+        : 'WA Customer';
+      recordIdentitasLastContacted({
+        identitasId: newItem.singleTarget.identitasId,
+        codeId: newItem.singleTarget.codeId,
+        nama: newItem.singleTarget.nama,
+        phone: newItem.singleTarget.nomorHp,
+        channelLabel: chLabel,
+        sentAtIso: new Date().toISOString(),
+        actorName: newItem.dihubungiOleh,
+        note: newItem.detailRows?.[0]?.itemTitle || newItem.proyekSapa,
+      });
+    }
+  };
+
+  const handleCustomerWhatsappDispatchCompleted = (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    identitasId?: string;
+    codeId?: string;
+  }) => {
+    if (payload.listPMItem) {
+      setListPMList((prev) => {
+        const updated = mergeListPMItemsByProyekSapa(prev, [payload.listPMItem!]);
+        saveListPM(updated);
+        return updated;
+      });
+    }
+
+    recordIdentitasLastContacted({
+      identitasId: payload.identitasId || payload.logEntry.identitasId,
+      codeId: payload.codeId,
+      nama: payload.logEntry.recipientName,
+      phone: payload.logEntry.phone,
+      channelLabel: 'WA Customer',
+      sentAtIso: payload.logEntry.sentAt,
+      actorName: payload.logEntry.sentBy,
+      note: payload.logEntry.topicLabel || payload.logEntry.referenceNumber,
+      logEntry: payload.logEntry,
+    });
   };
 
   const handleAutoInputOnResiSaved = (order: SalurOrder, resi: string) => {
@@ -5531,8 +5687,14 @@ export default function App() {
       listPMList,
       volunteerSSebarList,
       volunteerAJarList,
+      stokSalurItems: getStoredStokSalurItems(),
+      gudangSalurData: getStoredGudangSalurData(),
+      stockInOutSalur: getStoredStockInOutSalur(),
+      lokasiStokSalur: getStoredLokasiStokSalur(),
+      jenisPerubahanSalur: getStoredJenisPerubahanSalur(),
     });
   }, [
+    isDownloadAllDataOpen,
     currentUser,
     projects,
     jenisProyekList,
@@ -5563,6 +5725,425 @@ export default function App() {
     volunteerSSebarList,
     volunteerAJarList,
   ]);
+
+  const handleRestoreAllDataBackup = async (
+    req: RestoreBackupRequest
+  ): Promise<RestoreBackupExecutionResult> => {
+    const canRestoreAccounts = hasPermission(
+      authenticatedUser,
+      'manageAccountsAndRoles',
+      rbacConfig
+    );
+
+    const freshStokSalurItems = getStoredStokSalurItems();
+    const freshGudangSalurData = getStoredGudangSalurData();
+    const freshStockInOutSalur = getStoredStockInOutSalur();
+    const freshLokasiStokSalur = getStoredLokasiStokSalur();
+    const freshJenisPerubahanSalur = getStoredJenisPerubahanSalur();
+
+    // 1. Auto-backup kondisi saat ini sebelum menerapkan pemulihan
+    let autoBackupFilename = '';
+    try {
+      const preRestoreSnapshot = buildAllApplicationData({
+        currentUser,
+        projects,
+        jenisProyekList,
+        identitasList,
+        changeLogs,
+        organisasiList,
+        mutasiItems,
+        salurOrders,
+        salurItems,
+        donasiOrders,
+        transaksiAjarList,
+        pengeluaranList,
+        posKeuanganList: reconciledPosKeuanganList,
+        coaList,
+        dharmaPatronList,
+        karyawanList,
+        cutiKaryawanList,
+        kumpulanRekeningList,
+        rekeningList,
+        kebutuhanPengeluaranList,
+        posPengeluaranList,
+        posPemasukanList,
+        todoTasks: projectTodos,
+        complaints,
+        quickReplyList,
+        faqList,
+        listPMList,
+        volunteerSSebarList,
+        volunteerAJarList,
+        stokSalurItems: freshStokSalurItems,
+        gudangSalurData: freshGudangSalurData,
+        stockInOutSalur: freshStockInOutSalur,
+        lokasiStokSalur: freshLokasiStokSalur,
+        jenisPerubahanSalur: freshJenisPerubahanSalur,
+      });
+      autoBackupFilename = downloadAllDataAsJson(
+        preRestoreSnapshot,
+        'YPPLN_AutoBackup_Sebelum_Restore'
+      );
+    } catch (backupErr) {
+      console.error('Pre-restore auto-backup failed:', backupErr);
+      return {
+        success: false,
+        autoBackupFilename: '',
+        restoredModuleCount: 0,
+        totalRestoredRecords: 0,
+        cloudSynced: false,
+        mode: req.mode,
+        restoredLabels: [],
+        error: 'Gagal membuat auto-backup pengaman sebelum restore. Proses dibatalkan.',
+      };
+    }
+
+    const cloudSyncPromises: Promise<unknown>[] = [];
+    const queueCloudDoc = (docKey: string, items: any[]) => {
+      if (authenticatedUser) {
+        cloudSyncPromises.push(saveCollectionToCloud(docKey, items, 0));
+      }
+    };
+
+    const resolveNextArray = (
+      moduleKey: BackupModuleKey,
+      currentArr: any[],
+      incomingArr: unknown[]
+    ): any[] => {
+      const safeIncoming = Array.isArray(incomingArr) ? incomingArr : [];
+      if (req.mode === 'overwrite') {
+        return [...safeIncoming];
+      }
+      return mergeModuleArrays(moduleKey, Array.isArray(currentArr) ? currentArr : [], safeIncoming)
+        .merged;
+    };
+
+    const restoredLabels: string[] = [];
+    let totalRestoredRecords = 0;
+
+    for (const moduleKey of req.selectedModules) {
+      const def = BACKUP_MODULE_DEFINITIONS.find((d) => d.key === moduleKey);
+      const rawIncoming = (req.parsedData as any)[moduleKey];
+
+      if (moduleKey === 'todoTasks') {
+        if (!rawIncoming || typeof rawIncoming !== 'object' || Array.isArray(rawIncoming)) continue;
+        const nextMap =
+          req.mode === 'overwrite'
+            ? { ...(rawIncoming as Record<string, TodoTaskItem[]>) }
+            : (mergeTodoTaskMaps(projectTodos, rawIncoming as Record<string, any[]>).merged as Record<
+                string,
+                TodoTaskItem[]
+              >);
+        replaceAllProjectTodos(nextMap);
+        setProjectTodos(nextMap);
+        const count = Object.values(nextMap).reduce(
+          (sum, list) => sum + (Array.isArray(list) ? list.length : 0),
+          0
+        );
+        totalRestoredRecords += count;
+        restoredLabels.push(def?.label || moduleKey);
+        continue;
+      }
+
+      if (!Array.isArray(rawIncoming)) continue;
+
+      switch (moduleKey) {
+        case 'projects': {
+          const next = resolveNextArray(moduleKey, projects, rawIncoming);
+          setProjects(next);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('projects', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'jenisProyek': {
+          const next = resolveNextArray(moduleKey, jenisProyekList, rawIncoming);
+          setJenisProyekList(next);
+          try {
+            localStorage.setItem(JENIS_PROYEK_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'identitas': {
+          const next = resolveNextArray(moduleKey, identitasList, rawIncoming);
+          setIdentitasList(next);
+          try {
+            localStorage.setItem(IDENTITAS_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('identitas', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'identitasChangeLogs': {
+          const next = resolveNextArray(moduleKey, changeLogs, rawIncoming);
+          setChangeLogs(next);
+          try {
+            localStorage.setItem(IDENTITAS_CHANGE_LOGS_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('identitas_change_logs', next.slice(0, 500));
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'organisasi': {
+          const next = resolveNextArray(moduleKey, organisasiList, rawIncoming);
+          setOrganisasiList(next);
+          try {
+            localStorage.setItem(ORGANISASI_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('organisasi', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'volunteersSSebar': {
+          const next = resolveNextArray(moduleKey, volunteerSSebarList, rawIncoming);
+          setVolunteerSSebarList(next);
+          saveVolunteerSSebar(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'volunteersAJar': {
+          const next = resolveNextArray(moduleKey, volunteerAJarList, rawIncoming);
+          setVolunteerAJarList(next);
+          saveVolunteerAJar(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'cutiKaryawan': {
+          const next = resolveNextArray(moduleKey, cutiKaryawanList, rawIncoming);
+          setCutiKaryawanList(next);
+          saveCutiKaryawanList(next);
+          queueCloudDoc('cuti_karyawan', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'karyawan': {
+          if (!canRestoreAccounts) continue;
+          const next = resolveNextArray(moduleKey, karyawanList, rawIncoming);
+          setKaryawanList(next);
+          if (authenticatedUser) {
+            cloudSyncPromises.push(saveMemberAccountsToFirestore(next));
+          }
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'mutasiBank': {
+          const next = resolveNextArray(moduleKey, mutasiItems, rawIncoming);
+          setMutasiItems(next);
+          try {
+            localStorage.setItem(MUTASI_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('mutasi', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'transaksiDonasi': {
+          const next = resolveNextArray(moduleKey, donasiOrders, rawIncoming);
+          setDonasiOrders(next);
+          try {
+            localStorage.setItem(DONASI_ORDERS_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('donasi_orders', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'dharmaPatronRutin': {
+          const next = resolveNextArray(moduleKey, dharmaPatronList, rawIncoming);
+          setDharmaPatronList(next);
+          saveDharmaPatronToStorage(next);
+          queueCloudDoc('dharma_patron_rutin', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'transaksiAjar': {
+          const next = resolveNextArray(moduleKey, transaksiAjarList, rawIncoming);
+          setTransaksiAjarList(next);
+          try {
+            localStorage.setItem('yppln_transaksi_ajar_list', JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('transaksi_ajar', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'pengeluaran': {
+          const next = resolveNextArray(moduleKey, pengeluaranList, rawIncoming);
+          setPengeluaranList(next);
+          savePengeluaranToStorage(next);
+          queueCloudDoc('pengeluaran', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'posKeuangan': {
+          const next = resolveNextArray(moduleKey, posKeuanganList, rawIncoming);
+          setPosKeuanganList(next);
+          savePosKeuanganToStorage(next);
+          queueCloudDoc('pos_keuangan', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'coaAccounts': {
+          const next = resolveNextArray(moduleKey, coaList, rawIncoming);
+          setCoaList(next);
+          saveCoaList(next);
+          queueCloudDoc('coa_accounts', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'kumpulanRekening': {
+          const next = resolveNextArray(moduleKey, kumpulanRekeningList, rawIncoming);
+          setKumpulanRekeningList(next);
+          saveKumpulanRekeningToStorage(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'rekeningList': {
+          const next = resolveNextArray(moduleKey, rekeningList, rawIncoming);
+          setRekeningList(next);
+          try {
+            localStorage.setItem(REKENING_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'kebutuhanPengeluaran': {
+          const next = resolveNextArray(moduleKey, kebutuhanPengeluaranList, rawIncoming);
+          setKebutuhanPengeluaranList(next);
+          saveKebutuhanPengeluaranToStorage(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'posPengeluaran': {
+          const next = resolveNextArray(moduleKey, posPengeluaranList, rawIncoming);
+          setPosPengeluaranList(next);
+          savePosPengeluaranToStorage(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'posPemasukan': {
+          const next = resolveNextArray(moduleKey, posPemasukanList, rawIncoming);
+          setPosPemasukanList(next);
+          savePosPemasukanToStorage(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'transaksiSalur': {
+          const next = resolveNextArray(moduleKey, salurOrders, rawIncoming);
+          setSalurOrders(next);
+          try {
+            localStorage.setItem(SALUR_ORDERS_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          queueCloudDoc('salur_orders', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'salurItems': {
+          const next = resolveNextArray(moduleKey, salurItems, rawIncoming);
+          setSalurItems(next);
+          try {
+            localStorage.setItem(SALUR_ITEMS_STORAGE_KEY, JSON.stringify(next));
+          } catch {}
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'stokSalurItems': {
+          const next = resolveNextArray(moduleKey, freshStokSalurItems, rawIncoming);
+          saveStoredStokSalurItems(next, { skipCloudPush: true });
+          queueCloudDoc('stok_salur_items', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'gudangSalurData': {
+          const next = resolveNextArray(moduleKey, freshGudangSalurData, rawIncoming);
+          saveStoredGudangSalurData(next, { skipCloudPush: true });
+          queueCloudDoc('gudang_salur_data', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'stockInOutSalur': {
+          const next = resolveNextArray(moduleKey, freshStockInOutSalur, rawIncoming);
+          saveStoredStockInOutSalur(next, { skipCloudPush: true });
+          queueCloudDoc('stock_in_out_salur', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'lokasiStokSalur': {
+          const next = resolveNextArray(moduleKey, freshLokasiStokSalur, rawIncoming);
+          saveStoredLokasiStokSalur(next, { skipCloudPush: true });
+          queueCloudDoc('lokasi_stok_salur', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'jenisPerubahanSalur': {
+          const next = resolveNextArray(moduleKey, freshJenisPerubahanSalur, rawIncoming);
+          saveStoredJenisPerubahanSalur(next, { skipCloudPush: true });
+          queueCloudDoc('jenis_perubahan_salur', next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'listPM': {
+          const next = resolveNextArray(moduleKey, listPMList, rawIncoming);
+          setListPMList(next);
+          saveListPM(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'complaints': {
+          const next = resolveNextArray(moduleKey, complaints, rawIncoming);
+          setComplaints(next);
+          saveComplaintsToStorage(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'quickReplies': {
+          const next = resolveNextArray(moduleKey, quickReplyList, rawIncoming);
+          setQuickReplyList(next);
+          saveQuickReplyList(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+        case 'faqs': {
+          const next = resolveNextArray(moduleKey, faqList, rawIncoming);
+          setFaqList(next);
+          saveFaqList(next);
+          totalRestoredRecords += next.length;
+          break;
+        }
+      }
+
+      restoredLabels.push(def?.label || moduleKey);
+    }
+
+    let cloudSynced = false;
+    if (authenticatedUser && cloudSyncPromises.length > 0) {
+      const settled = await Promise.allSettled(cloudSyncPromises);
+      cloudSynced = settled.every((r) => r.status === 'fulfilled');
+    } else if (authenticatedUser) {
+      cloudSynced = true;
+    }
+
+    dispatchAuditEvent({
+      module: 'PROYEK',
+      recordId: req.fileName,
+      recordTitle: 'Restore Backup JSON Penuh',
+      actionType: 'Restore',
+      field: 'Backup & Restore ERP',
+      oldValue: `Auto-backup: ${autoBackupFilename}`,
+      newValue: `${req.mode === 'merge' ? 'Merge' : 'Timpa'} ${restoredLabels.length} modul (${restoredLabels.join(', ')})`,
+      author: formatAuditActorName(authenticatedUser, 'Admin YPPLN'),
+    });
+
+    return {
+      success: true,
+      autoBackupFilename,
+      restoredModuleCount: restoredLabels.length,
+      totalRestoredRecords,
+      cloudSynced,
+      mode: req.mode,
+      restoredLabels,
+    };
+  };
 
   // Filter projects based on search query, divisi, and status (RBAC division-scoped)
   const filteredProjects = scopedProjects.filter((item) => {
@@ -5628,6 +6209,7 @@ export default function App() {
     if (currentView === 'ongoingCreateItemSalur') return 'Ongoing Create Item S-SALUR';
     if (currentView === 'modalItemSalur') return 'Modal Item S-SALUR';
     if (currentView === 'reportBepSalur') return 'Report BEP Item S-SALUR';
+    if (currentView === 'reportPenjualanValuasiSalur') return 'Rekap Penjualan & Valuasi Stok S-SALUR';
     if (currentView === 'stokItemSalur') return 'Stok Item S-SALUR';
     if (currentView === 'lokasiStokItemSalur') return 'Lokasi Stok Item S_SALUR';
     if (currentView === 'stockInOutSalur') return 'Stock In/Out Stok Item S-SALUR';
@@ -5664,6 +6246,7 @@ export default function App() {
     if (currentView === 'mutasi') return 'Mutasi';
     if (currentView === 'rincianMutasi') return 'Rincian Mutasi';
     if (currentView === 'laporanKeuangan') return 'Laporan Keuangan';
+    if (currentView === 'laporanProyekKeuangan') return 'Laporan Arus Kas & Laba Rugi Proyek SAPA';
     if (currentView === 'jurnalUmum') return 'Jurnal Umum & Buku Besar (General Ledger)';
     if (currentView === 'coa') return 'COA (Chart of Accounts)';
     if (currentView === 'posKeuangan') return 'Pos Keuangan';
@@ -5898,6 +6481,8 @@ export default function App() {
                 ? () => setCurrentView('stokItemSalur')
                 : currentView === 'reportBepSalur'
                 ? () => setCurrentView('modalItemSalur')
+                : currentView === 'reportPenjualanValuasiSalur'
+                ? () => setCurrentView('itemSalur')
                 : currentView === 'modalItemSalur' || currentView === 'stokItemSalur'
                 ? () => setCurrentView('itemSalur')
                 : currentView === 'formItemSalur' ||
@@ -6384,6 +6969,13 @@ export default function App() {
           {currentView === 'reportCustomerSalur' && (
             <div className="mt-2 sm:mt-4">
               <ReportCustomerSalurDashboard
+                identitasList={identitasList}
+                listPMList={listPMList}
+                donasiOrders={donasiOrders}
+                salurOrders={salurOrders}
+                dharmaPatronList={dharmaPatronList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin S-SALUR')}
+                onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
                 onShowToast={(msg) => showToast(msg)}
                 onNavigateToTransaksiSalur={() => setCurrentView('transaksiSalur')}
                 onKirimPM={handleKirimPMToForm}
@@ -6518,9 +7110,47 @@ export default function App() {
                 onNavigateToPengeluaran={() => {
                   setCurrentView('pengeluaran');
                 }}
+                onNavigateToLaporanProyekKeuangan={() => {
+                  setCurrentView('laporanProyekKeuangan');
+                }}
               />
             </div>
           )}
+
+          {/* View: Laporan Arus Kas & Laba Rugi Proyek SAPA */}
+          {currentView === 'laporanProyekKeuangan' && (() => {
+            let liveDonasiEvents: ItemDonasiEvent[] = INITIAL_ITEM_DONASI_EVENTS;
+            try {
+              const saved = localStorage.getItem('yppln_item_donasi_events');
+              if (saved) liveDonasiEvents = JSON.parse(saved);
+            } catch {
+              // fallback
+            }
+            let liveAjarEvents: ItemAjarEvent[] = INITIAL_ITEM_AJAR_EVENTS;
+            try {
+              const saved = localStorage.getItem('yppln_item_ajar_events');
+              if (saved) liveAjarEvents = JSON.parse(saved);
+            } catch {
+              // fallback
+            }
+            return (
+              <div className="mt-2 sm:mt-4">
+                <LaporanArusKasLabaRugiProyekView
+                  projects={scopedProjects}
+                  salurOrders={salurOrders}
+                  salurItems={salurItems}
+                  donasiOrders={donasiOrders}
+                  itemDonasiEvents={liveDonasiEvents}
+                  transaksiAjarList={transaksiAjarList}
+                  itemAjarEvents={liveAjarEvents}
+                  mutasiItems={mutasiItems}
+                  pengeluaranList={pengeluaranList}
+                  onShowToast={(msg) => showToast(msg)}
+                  onNavigateToLaporanKeuangan={() => setCurrentView('laporanKeuangan')}
+                />
+              </div>
+            );
+          })()}
 
           {/* View: Menu COA (Chart of Accounts) - Terkoneksi dengan Laporan Keuangan */}
           {currentView === 'coa' && (
@@ -7313,6 +7943,10 @@ export default function App() {
                 }}
                 onShowToast={(msg) => showToast(msg)}
                 onResiSaved={handleAutoInputOnResiSaved}
+                identitasList={identitasList}
+                organisasiList={organisasiList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin S-SALUR')}
+                onLogWhatsappToListPM={handleLogWhatsappToListPM}
               />
             </div>
           )}
@@ -7393,6 +8027,11 @@ export default function App() {
                 agenResiList={agenResiList}
                 onShowToast={(msg) => showToast(msg)}
                 onNavigateToTransaksiSalur={() => setCurrentView('transaksiSalur')}
+                identitasList={identitasList}
+                organisasiList={organisasiList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Logistik')}
+                onUpdateSalurOrders={handleUpdateSalurOrders}
+                onLogWhatsappToListPM={handleLogWhatsappToListPM}
               />
             </div>
           )}
@@ -7782,6 +8421,20 @@ export default function App() {
             </div>
           )}
 
+          {/* View: Rekap Penjualan & Valuasi Stok S-SALUR */}
+          {currentView === 'reportPenjualanValuasiSalur' && (
+            <div className="mt-2 sm:mt-4">
+              <ReportPenjualanValuasiStokSalurView
+                salurItems={salurItems}
+                salurOrders={salurOrders}
+                onNavigateToTransaksiSalur={() => setCurrentView('transaksiSalur')}
+                onNavigateToStokItemSalur={() => setCurrentView('stokItemSalur')}
+                onNavigateToModalItemSalur={() => setCurrentView('modalItemSalur')}
+                onShowToast={(msg) => showToast(msg)}
+              />
+            </div>
+          )}
+
           {/* View: Stok Item S-SALUR matching image.png */}
           {currentView === 'stokItemSalur' && (
             <div className="mt-2 sm:mt-4">
@@ -7896,6 +8549,9 @@ export default function App() {
                 onNavigateToReportPelimpahanJasa={() => setCurrentView('reportNamaPelimpahanJasaDonasi')}
                 onShowToast={(msg) => showToast(msg)}
                 currentActorName={formatAuditActorName(authenticatedUser, 'Admin Keuangan')}
+                identitasList={identitasList}
+                organisasiList={organisasiList}
+                onLogWhatsappToListPM={handleLogWhatsappToListPM}
               />
             </div>
           )}
@@ -8505,6 +9161,12 @@ export default function App() {
                 changeLogs={changeLogs}
                 centralAuditLogs={centralAuditLogs}
                 suspiciousFlags={anomalyReport?.flags || []}
+                listPMList={listPMList}
+                donasiOrders={donasiOrders}
+                salurOrders={salurOrders}
+                dharmaPatronList={dharmaPatronList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Identitas')}
+                onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
                 duplicateCount={totalDuplicateRecordsCount}
                 onOpenMergeDuplicates={() => setCurrentView('mergeDuplicates')}
                 onAddNew={() => {
@@ -8690,6 +9352,12 @@ export default function App() {
                 centralAuditLogs={centralAuditLogs}
                 currentUser={authenticatedUser}
                 suspiciousFlags={anomalyReport?.flags || []}
+                listPMList={listPMList}
+                donasiOrders={donasiOrders}
+                salurOrders={salurOrders}
+                dharmaPatronList={dharmaPatronList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Identitas')}
+                onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
                 onBack={() => {
                   setCurrentView('identitas');
                   setEditingIdentitas(null);
@@ -9337,12 +10005,18 @@ export default function App() {
         }}
       />
 
-      {/* Modal Download All Data (Full Backup JSON / CSV) */}
+      {/* Modal Download All Data (Full Backup JSON / CSV + Restore JSON) */}
       <ModalDownloadAllData
         isOpen={isDownloadAllDataOpen}
         onClose={() => setIsDownloadAllDataOpen(false)}
         allData={allApplicationData}
         onShowToast={(msg) => showToast(msg)}
+        onRestoreBackup={handleRestoreAllDataBackup}
+        canRestoreAccounts={hasPermission(
+          authenticatedUser,
+          'manageAccountsAndRoles',
+          rbacConfig
+        )}
       />
 
       {/* Modal Ganti Password Akun */}

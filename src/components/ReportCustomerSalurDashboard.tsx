@@ -28,10 +28,24 @@ import {
   ExternalLink,
   ListFilter,
   MessageSquare,
+  MessageCircle,
   FolderPlus,
   FolderInput,
 } from 'lucide-react';
+import { DonasiOrder } from '../donasiData';
+import { IdentitasItem } from '../identitasData';
+import { SalurOrder } from '../salurData';
+import { DharmaPatronRutinItem, ListPMItem, WhatsappDispatchLog } from '../types';
+import {
+  ResolvedLastContactedSummary,
+  resolveLastContactedForReportCustomer,
+} from '../utils/lastContactedHelper';
 import { FunnelingActionBar } from './FunnelingActionBar';
+import {
+  CustomerDirectTargetInput,
+  ModalKirimWhatsappOtomatis,
+} from './ModalKirimWhatsappOtomatis';
+import { ModalRiwayatKontakCustomer } from './ModalRiwayatKontakCustomer';
 import {
   INITIAL_SUB_JENIS_REPORT_OPTIONS,
   INITIAL_SALUR_ITEMS_OPTIONS,
@@ -43,6 +57,18 @@ import {
 } from '../reportCustomerSalurData';
 
 interface ReportCustomerSalurDashboardProps {
+  identitasList?: IdentitasItem[];
+  listPMList?: ListPMItem[];
+  donasiOrders?: DonasiOrder[];
+  salurOrders?: SalurOrder[];
+  dharmaPatronList?: DharmaPatronRutinItem[];
+  currentActorName?: string;
+  onContactDispatchCompleted?: (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    identitasId?: string;
+    codeId?: string;
+  }) => void;
   onShowToast: (msg: string) => void;
   onNavigateToTransaksiSalur?: () => void;
   onKirimPM?: (targets: { id: string; nama: string; nomorHp?: string; codeId?: string; identitasId?: string; }[]) => void;
@@ -53,6 +79,13 @@ interface ReportCustomerSalurDashboardProps {
 }
 
 export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboardProps> = ({
+  identitasList = [],
+  listPMList = [],
+  donasiOrders = [],
+  salurOrders = [],
+  dharmaPatronList = [],
+  currentActorName = 'Admin S-SALUR',
+  onContactDispatchCompleted,
   onShowToast,
   onNavigateToTransaksiSalur,
   onKirimPM,
@@ -130,6 +163,28 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
   // Customer Detailed Item Breakdown Modal
   const [selectedCustomerDetail, setSelectedCustomerDetail] =
     useState<CustomerSalurReportItem | null>(null);
+
+  // Direct WhatsApp & Contact History Modals
+  const [waTargetCustomer, setWaTargetCustomer] = useState<CustomerSalurReportItem | null>(null);
+  const [historyTargetCustomer, setHistoryTargetCustomer] =
+    useState<CustomerSalurReportItem | null>(null);
+
+  const customerContactMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { identitasMatch?: IdentitasItem; summary: ResolvedLastContactedSummary }
+    >();
+    const sources = {
+      listPMList,
+      donasiOrders,
+      salurOrders,
+      dharmaPatronList,
+    };
+    customersData.forEach((c) => {
+      map.set(c.id, resolveLastContactedForReportCustomer(c, identitasList, sources));
+    });
+    return map;
+  }, [customersData, identitasList, listPMList, donasiOrders, salurOrders, dharmaPatronList]);
 
   // Add Customer / Transaction Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -419,13 +474,17 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
   const getSelectedTargetItems = (overrideIds?: string[]) => {
     const idsToUse = overrideIds || selectedCustomerIds;
     const targetCusts = customersData.filter((c) => idsToUse.includes(c.id));
-    return targetCusts.map((c) => ({
-      id: c.customerCode || c.id,
-      identitasId: c.customerCode,
-      nama: c.namaLengkap,
-      nomorHp: '-',
-      codeId: c.customerCode,
-    }));
+    return targetCusts.map((c) => {
+      const resolved = customerContactMap.get(c.id);
+      const idMatch = resolved?.identitasMatch;
+      return {
+        id: idMatch?.id || c.customerCode || c.id,
+        identitasId: idMatch?.id || c.customerCode,
+        nama: idMatch?.namaLengkap || c.namaLengkap,
+        nomorHp: idMatch?.nomorHandPhone || resolved?.summary.phone || '-',
+        codeId: idMatch?.codeId || c.customerCode,
+      };
+    });
   };
 
   const handleBulkCreateGroupFunneling = (overrideIds?: string[]) => {
@@ -955,14 +1014,17 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
                     </React.Fragment>
                   ))}
 
-                <th className="py-4 px-2 w-10"></th>
+                <th className="py-4 px-4 text-left font-bold whitespace-nowrap">
+                  Last Contacted?
+                </th>
+                <th className="py-4 px-2 w-20"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
               {filteredCustomers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5 + comparedYears.length * 2}
+                    colSpan={6 + comparedYears.length * 2}
                     className="py-12 text-center text-slate-400"
                   >
                     Tidak ada customer ditemukan untuk filter item atau pemilik yang dipilih.
@@ -973,6 +1035,15 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
                   const metrics = getCustomerMetrics(cust);
                   const isMenuOpen = activeMenuId === cust.id;
                   const isSelected = selectedCustomerIds.includes(cust.id);
+                  const contactInfo =
+                    customerContactMap.get(cust.id) ||
+                    resolveLastContactedForReportCustomer(cust, identitasList, {
+                      listPMList,
+                      donasiOrders,
+                      salurOrders,
+                      dharmaPatronList,
+                    });
+                  const contactSummary = contactInfo.summary;
 
                   return (
                     <tr
@@ -1084,25 +1155,83 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
                           </React.Fragment>
                         ))}
 
-                      {/* 3-Dots Action Menu */}
-                      <td className="py-4 px-2 text-right relative">
+                      {/* Last Contacted? Live Cross-Module Column */}
+                      <td className="py-4 px-4 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveMenuId(isMenuOpen ? null : cust.id);
+                            setHistoryTargetCustomer(cust);
                           }}
-                          className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                          className="text-left group/lc cursor-pointer rounded-lg px-2 py-1 -mx-2 hover:bg-teal-50/70 transition-colors"
+                          title="Klik untuk melihat timeline kontak & kirim WhatsApp"
                         >
-                          <MoreVertical className="w-4 h-4" />
+                          <div className="text-xs sm:text-[13px] font-medium text-slate-800 group-hover/lc:text-[#008d91] tabular-nums leading-tight">
+                            {contactSummary.displayDate}
+                          </div>
+                          <div className="text-[11px] leading-tight mt-0.5 text-slate-500">
+                            {contactSummary.hasContactHistory ? (
+                              <>
+                                {contactSummary.relativeLabel && (
+                                  <span className="font-semibold text-emerald-700">
+                                    {contactSummary.relativeLabel}
+                                    {' · '}
+                                  </span>
+                                )}
+                                <span>{contactSummary.channelLabel}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-400">Belum dikontak</span>
+                            )}
+                          </div>
                         </button>
+                      </td>
+
+                      {/* Quick WA + 3-Dots Action Menu */}
+                      <td className="py-4 px-2 text-right relative whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setWaTargetCustomer(cust);
+                            }}
+                            title={`Kirim WhatsApp ke ${cust.namaLengkap}`}
+                            aria-label={`Kirim WhatsApp ke ${cust.namaLengkap}`}
+                            className="p-1.5 rounded-lg text-[#008d91] hover:bg-teal-50 border border-transparent hover:border-teal-200 transition-colors cursor-pointer"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(isMenuOpen ? null : cust.id);
+                            }}
+                            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </div>
 
                         {/* Dropdown Menu */}
                         {isMenuOpen && (
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute right-2 top-12 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 w-56 z-30 text-xs text-slate-700 animate-in fade-in"
+                            className="absolute right-2 top-12 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 w-60 z-30 text-xs text-slate-700 animate-in fade-in"
                           >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setWaTargetCustomer(cust);
+                              }}
+                              className="w-full text-left px-3.5 py-2 hover:bg-teal-50 text-[#008d91] flex items-center gap-2 cursor-pointer font-semibold"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-[#008d91]" />
+                              <span>Kirim WhatsApp ke Customer</span>
+                            </button>
+                            <div className="my-1 border-t border-slate-100" />
                             <button
                               type="button"
                               onClick={() => {
@@ -1866,6 +1995,69 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
           </div>
         </div>
       )}
+
+      {/* Modal Riwayat Kontak Cross-Module untuk Customer S-SALUR */}
+      {historyTargetCustomer && (
+        <ModalRiwayatKontakCustomer
+          isOpen={!!historyTargetCustomer}
+          onClose={() => setHistoryTargetCustomer(null)}
+          customerName={historyTargetCustomer.namaLengkap}
+          customerPanggilan={historyTargetCustomer.panggilan}
+          customerCode={historyTargetCustomer.customerCode}
+          phone={
+            customerContactMap.get(historyTargetCustomer.id)?.identitasMatch?.nomorHandPhone ||
+            customerContactMap.get(historyTargetCustomer.id)?.summary.phone
+          }
+          avatarInitial={historyTargetCustomer.avatarInitial}
+          avatarBg={historyTargetCustomer.avatarBg}
+          summary={
+            customerContactMap.get(historyTargetCustomer.id)?.summary ||
+            resolveLastContactedForReportCustomer(historyTargetCustomer, identitasList, {
+              listPMList,
+              donasiOrders,
+              salurOrders,
+              dharmaPatronList,
+            }).summary
+          }
+          onSendWhatsappNow={() => setWaTargetCustomer(historyTargetCustomer)}
+        />
+      )}
+
+      {/* Modal Kirim WhatsApp Langsung dari Report Customer S-SALUR */}
+      {(() => {
+        if (!waTargetCustomer) return null;
+        const resolved = customerContactMap.get(waTargetCustomer.id);
+        const customerTargetInput: CustomerDirectTargetInput = {
+          identitasId: resolved?.identitasMatch?.id,
+          codeId: waTargetCustomer.customerCode,
+          nama: waTargetCustomer.namaLengkap,
+          panggilan: waTargetCustomer.panggilan,
+          phone: resolved?.summary.phone,
+          lastContactedDisplay: resolved?.summary.hasContactHistory
+            ? resolved.summary.displayDate
+            : undefined,
+        };
+        return (
+          <ModalKirimWhatsappOtomatis
+            isOpen={true}
+            onClose={() => setWaTargetCustomer(null)}
+            kind="customer_direct"
+            identitasItem={resolved?.identitasMatch || null}
+            customerTarget={customerTargetInput}
+            identitasList={identitasList}
+            currentActorName={currentActorName}
+            onDispatchCompleted={(payload) => {
+              onContactDispatchCompleted?.({
+                logEntry: payload.logEntry,
+                listPMItem: payload.listPMItem,
+                identitasId: payload.identitasId || resolved?.identitasMatch?.id,
+                codeId: payload.codeId || waTargetCustomer.customerCode,
+              });
+            }}
+            onShowToast={onShowToast}
+          />
+        );
+      })()}
     </div>
   );
 };

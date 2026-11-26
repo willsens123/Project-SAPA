@@ -59,6 +59,7 @@ export type AppView =
   | 'report'
   | 'reportCustomerSalur'
   | 'reportBepSalur'
+  | 'reportPenjualanValuasiSalur'
   | 'transaksiSalur'
   | 'posKasirTransaksiSalur'
   | 'listPromoSSalur'
@@ -114,6 +115,7 @@ export type AppView =
   | 'formPengeluaran'
   | 'kumpulanRekening'
   | 'laporanKeuangan'
+  | 'laporanProyekKeuangan'
   | 'jurnalUmum'
   | 'coa'
   | 'karyawan'
@@ -533,6 +535,24 @@ export interface PatronWhatsappBillingLog {
   rekeningLabel?: string;
   messagePreview: string;
   channel: 'whatsapp_open' | 'manual_mark';
+}
+
+export interface WhatsappDispatchLog {
+  id: string;
+  kind: 'kwitansi_donasi' | 'resi_salur' | 'customer_direct';
+  sentAt: string; // ISO timestamp
+  sentBy: string;
+  phone: string;
+  recipientName: string;
+  referenceNumber: string; // No. Kwitansi, No. Resi, atau topik follow-up
+  identitasId?: string;
+  topicLabel?: string;
+  ekspedisi?: string;
+  tone: 'ramah' | 'formal';
+  messagePreview: string;
+  channel: 'whatsapp_open' | 'manual_mark';
+  loggedToListPM: boolean;
+  listPMProyekSapa?: string;
 }
 
 export interface DharmaPatronRutinItem {

@@ -14,6 +14,7 @@ import {
   Truck,
   Check,
   MessageSquareText,
+  MessageCircle,
 } from 'lucide-react';
 import {
   ResiItem,
@@ -23,6 +24,10 @@ import {
 } from '../resiData';
 import { AgenResiItem, loadAgenResiItems } from '../agenResiData';
 import { SalurOrder } from '../salurData';
+import { IdentitasItem } from '../identitasData';
+import { ListPMItem, OrganisasiItem, WhatsappDispatchLog } from '../types';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import { formatBillingTimestamp } from '../utils/whatsappReceiptResiHelper';
 import {
   detectViaFromKode,
   isViaAllowedByRule,
@@ -41,6 +46,11 @@ interface ResiDashboardProps {
   onShowToast: (msg: string) => void;
   onNavigateToTransaksiSalur?: () => void;
   onNavigateToChatAutoSalur?: () => void;
+  identitasList?: IdentitasItem[];
+  organisasiList?: OrganisasiItem[];
+  currentActorName?: string;
+  onUpdateSalurOrders?: (updated: SalurOrder[]) => void;
+  onLogWhatsappToListPM?: (item: ListPMItem) => void;
 }
 
 export const ResiDashboard: React.FC<ResiDashboardProps> = ({
@@ -49,6 +59,11 @@ export const ResiDashboard: React.FC<ResiDashboardProps> = ({
   onShowToast,
   onNavigateToTransaksiSalur,
   onNavigateToChatAutoSalur,
+  identitasList = [],
+  organisasiList = [],
+  currentActorName,
+  onUpdateSalurOrders,
+  onLogWhatsappToListPM,
 }) => {
   const agens = agenResiList && agenResiList.length > 0 ? agenResiList : loadAgenResiItems();
   const [resiList, setResiList] = useState<ResiItem[]>(() => loadResiItems());
@@ -60,6 +75,59 @@ export const ResiDashboard: React.FC<ResiDashboardProps> = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [isWaModalOpen, setIsWaModalOpen] = useState(false);
+  const [selectedResiForWa, setSelectedResiForWa] = useState<ResiItem | null>(null);
+
+  const handleOpenWaResiModal = (item: ResiItem) => {
+    setSelectedResiForWa(item);
+    setIsWaModalOpen(true);
+  };
+
+  const handleWhatsappDispatchCompleted = ({
+    logEntry,
+    listPMItem,
+    salurOrderId,
+    resiItemId,
+  }: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    salurOrderId?: string;
+    resiItemId?: string;
+  }) => {
+    if (resiItemId) {
+      const updatedResiList = resiList.map((r) => {
+        if (r.id !== resiItemId) return r;
+        const prevHistory = r.whatsappSendHistory || [];
+        return {
+          ...r,
+          lastWhatsappSentAt: logEntry.sentAt,
+          lastWhatsappSentPhone: logEntry.phone,
+          whatsappSendHistory: [logEntry, ...prevHistory],
+        };
+      });
+      setResiList(updatedResiList);
+      saveResiItems(updatedResiList);
+    }
+
+    if (salurOrderId && onUpdateSalurOrders && salurOrders.length > 0) {
+      const updatedOrders = salurOrders.map((o) => {
+        if (o.id !== salurOrderId) return o;
+        const prevHistory = o.whatsappResiHistory || [];
+        return {
+          ...o,
+          lastWhatsappResiSentAt: logEntry.sentAt,
+          lastWhatsappResiSentPhone: logEntry.phone,
+          lastWhatsappResiNumber: logEntry.referenceNumber,
+          whatsappResiHistory: [logEntry, ...prevHistory],
+        };
+      });
+      onUpdateSalurOrders(updatedOrders);
+    }
+
+    if (listPMItem && onLogWhatsappToListPM) {
+      onLogWhatsappToListPM(listPMItem);
+    }
+  };
 
   // Link Transaksi S-SALUR Modal State
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -528,7 +596,14 @@ export const ResiDashboard: React.FC<ResiDashboardProps> = ({
 
                     {/* Resi */}
                     <td className="py-4.5 px-3 text-slate-700 font-normal whitespace-nowrap align-top text-[13.5px]">
-                      {isMasked ? '•••••••••••••' : item.resi}
+                      <div className="font-mono tabular-nums">
+                        {isMasked ? '•••••••••••••' : item.resi}
+                      </div>
+                      {!isMasked && item.lastWhatsappSentAt && (
+                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                          WA Terkirim · {formatBillingTimestamp(item.lastWhatsappSentAt, true)}
+                        </div>
+                      )}
                     </td>
 
                     {/* Tujuan */}
@@ -573,59 +648,80 @@ export const ResiDashboard: React.FC<ResiDashboardProps> = ({
 
                     {/* Action Column */}
                     <td className="py-4.5 pr-6 pl-2 text-center align-top relative">
-                      {/* Jessica Chandra (unlinked) does not have dots in screenshot, but we keep it clickable when user has kode or wants options */}
-                      {hasKode ? (
-                        <div className="relative inline-block text-left">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenMenuId(openMenuId === item.id ? null : item.id)
-                            }
-                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Opsi"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
+                      <div className="inline-flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWaResiModal(item)}
+                          className="p-1.5 rounded-lg text-[#05828e] hover:bg-[#05828e]/10 transition-colors cursor-pointer"
+                          title="Kirim No. Resi via WhatsApp & catat ke List PM"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
 
-                          {openMenuId === item.id && (
-                            <div className="absolute right-0 top-8 z-30 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100">
-                              <button
-                                type="button"
-                                onClick={() => handleCopyResi(item.resi)}
-                                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Copy className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Salin No. Resi</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenLinkModal(item)}
-                                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Link2 className="w-3.5 h-3.5 text-[#008d91]" />
-                                <span>Ubah Kode S-SALUR</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditModal(item)}
-                                className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-amber-500" />
-                                <span>Edit Resi</span>
-                              </button>
-                              <div className="border-t border-slate-100 my-1" />
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(item)}
-                                className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                                <span>Hapus Resi</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ) : null}
+                        {hasKode && (
+                          <div className="relative inline-block text-left">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenMenuId(openMenuId === item.id ? null : item.id)
+                              }
+                              className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Opsi"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {openMenuId === item.id && (
+                              <div className="absolute right-0 top-8 z-30 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1 text-xs text-slate-700 animate-in fade-in zoom-in-95 duration-100">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    handleOpenWaResiModal(item);
+                                  }}
+                                  className="w-full text-left px-3 py-2 hover:bg-[#05828e]/10 text-[#05828e] font-semibold flex items-center gap-2 cursor-pointer"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5 text-[#05828e]" />
+                                  <span>Kirim Resi via WA</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyResi(item.resi)}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                  <span>Salin No. Resi</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenLinkModal(item)}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Link2 className="w-3.5 h-3.5 text-[#008d91]" />
+                                  <span>Ubah Kode S-SALUR</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditModal(item)}
+                                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>Edit Resi</span>
+                                </button>
+                                <div className="border-t border-slate-100 my-1" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(item)}
+                                  className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                  <span>Hapus Resi</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -871,6 +967,23 @@ export const ResiDashboard: React.FC<ResiDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Otomatis Kirim Resi via WhatsApp + Catat List PM */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={isWaModalOpen}
+        onClose={() => {
+          setIsWaModalOpen(false);
+          setSelectedResiForWa(null);
+        }}
+        kind="resi_salur"
+        resiItem={selectedResiForWa}
+        salurOrders={salurOrders}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        currentActorName={currentActorName || 'Admin Logistik'}
+        onDispatchCompleted={handleWhatsappDispatchCompleted}
+        onShowToast={onShowToast}
+      />
     </div>
   );
 };

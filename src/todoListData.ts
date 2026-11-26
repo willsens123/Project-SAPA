@@ -477,3 +477,25 @@ export function saveTodosForProject(projectId: string, tasks: TodoTaskItem[]): v
     console.error('Failed to save project todos to localStorage', e);
   }
 }
+
+export function replaceAllProjectTodos(allTodos: Record<string, TodoTaskItem[]>): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allTodos || {}));
+    if (typeof window !== 'undefined') {
+      Promise.resolve().then(() => {
+        Object.entries(allTodos || {}).forEach(([projectId, tasks]) => {
+          if (Array.isArray(tasks)) {
+            window.dispatchEvent(
+              new CustomEvent(PROJECT_TODOS_UPDATED_EVENT, {
+                detail: { projectId, tasks },
+              })
+            );
+          }
+        });
+      });
+    }
+  } catch (e) {
+    console.error('Failed to replace project todos in localStorage', e);
+  }
+}
+

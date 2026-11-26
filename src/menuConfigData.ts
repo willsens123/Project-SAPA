@@ -31,6 +31,7 @@ export const ALL_MENU_IDS = [
   'nav-ongoing-create-item-salur',
   'nav-modal-item-salur',
   'nav-report-bep-salur',
+  'nav-report-penjualan-valuasi-salur',
   'nav-stok-item-salur',
   'nav-lokasi-stok-item-salur',
   'nav-stock-in-out-salur',
@@ -77,6 +78,7 @@ export const ALL_MENU_IDS = [
   'nav-mutasi',
   'nav-rincian-mutasi',
   'nav-laporan-keuangan',
+  'nav-laporan-proyek-keuangan',
   'nav-jurnal-umum',
   'nav-pos-keuangan',
   'nav-pos-pemasukan',
@@ -113,6 +115,7 @@ export const DEFAULT_MAIN_MENU_IDS: string[] = [
   'nav-list-group-funneling',
   'nav-item-salur',
   'nav-ongoing-create-item-salur',
+  'nav-report-penjualan-valuasi-salur',
   'nav-transaksi-donasi',
   'nav-list-dharma-patron-rutin',
   'nav-transaksi-ajar',
@@ -124,6 +127,7 @@ export const DEFAULT_MAIN_MENU_IDS: string[] = [
   'nav-mutasi',
   'nav-rincian-mutasi',
   'nav-laporan-keuangan',
+  'nav-laporan-proyek-keuangan',
   'nav-pos-keuangan',
   'nav-pos-pengeluaran',
   'nav-kelompok-biaya-coa',
@@ -254,9 +258,35 @@ export function loadMenuArrangementConfig(): MenuArrangementConfig {
         }
       }
 
+      // If nav-laporan-proyek-keuangan is newly introduced, place right after nav-laporan-keuangan
+      if (
+        !currentConfigIds.has('nav-laporan-proyek-keuangan') &&
+        !mainMenuFiltered.includes('nav-laporan-proyek-keuangan')
+      ) {
+        const lapIdx = mainMenuFiltered.indexOf('nav-laporan-keuangan');
+        if (lapIdx !== -1) {
+          mainMenuFiltered.splice(lapIdx + 1, 0, 'nav-laporan-proyek-keuangan');
+        } else {
+          mainMenuFiltered.push('nav-laporan-proyek-keuangan');
+        }
+      }
+
+      // If nav-report-penjualan-valuasi-salur is newly introduced, place right after nav-ongoing-create-item-salur
+      if (
+        !currentConfigIds.has('nav-report-penjualan-valuasi-salur') &&
+        !mainMenuFiltered.includes('nav-report-penjualan-valuasi-salur')
+      ) {
+        const ongoingIdx2 = mainMenuFiltered.indexOf('nav-ongoing-create-item-salur');
+        if (ongoingIdx2 !== -1) {
+          mainMenuFiltered.splice(ongoingIdx2 + 1, 0, 'nav-report-penjualan-valuasi-salur');
+        } else {
+          mainMenuFiltered.push('nav-report-penjualan-valuasi-salur');
+        }
+      }
+
       const moreMenuFiltered = [
-        ...parsed.moreMenuIds.filter((id: string) => ALL_MENU_IDS.includes(id) && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening'),
-        ...missingIds.filter((id) => id !== 'nav-home' && id !== 'nav-laporan-keuangan' && id !== 'nav-agen-resi' && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening'),
+        ...parsed.moreMenuIds.filter((id: string) => ALL_MENU_IDS.includes(id) && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-report-penjualan-valuasi-salur'),
+        ...missingIds.filter((id) => id !== 'nav-home' && id !== 'nav-laporan-keuangan' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-agen-resi' && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-report-penjualan-valuasi-salur'),
       ];
 
       return {

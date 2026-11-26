@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   EyeOff,
   Search,
@@ -17,23 +17,47 @@ import {
   FolderPlus,
   FolderInput,
   MessageSquare,
+  MessageCircle,
   Receipt,
   History,
+  ArrowUpDown,
 } from 'lucide-react';
+import { DonasiOrder } from '../donasiData';
 import { IdentitasItem } from '../identitasData';
+import { SalurOrder } from '../salurData';
 import {
   IdentitasChangeLog,
   CentralAuditLogEntry,
   SuspiciousAuditFlag,
+  ListPMItem,
+  DharmaPatronRutinItem,
+  WhatsappDispatchLog,
 } from '../types';
+import {
+  ResolvedLastContactedSummary,
+  resolveLastContactedForIdentitas,
+} from '../utils/lastContactedHelper';
 import { FunnelingActionBar } from './FunnelingActionBar';
 import { IdentitasAuditDetailModal } from './IdentitasAuditDetailModal';
+import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
+import { ModalRiwayatKontakCustomer } from './ModalRiwayatKontakCustomer';
 
 interface IdentitasDashboardProps {
   items: IdentitasItem[];
   changeLogs?: IdentitasChangeLog[];
   centralAuditLogs?: CentralAuditLogEntry[];
   suspiciousFlags?: SuspiciousAuditFlag[];
+  listPMList?: ListPMItem[];
+  donasiOrders?: DonasiOrder[];
+  salurOrders?: SalurOrder[];
+  dharmaPatronList?: DharmaPatronRutinItem[];
+  currentActorName?: string;
+  onContactDispatchCompleted?: (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    identitasId?: string;
+    codeId?: string;
+  }) => void;
   onAddNew: () => void;
   onEditItem?: (item: IdentitasItem) => void;
   onDeleteItem?: (id: string) => void;
@@ -56,6 +80,12 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
   changeLogs = [],
   centralAuditLogs = [],
   suspiciousFlags = [],
+  listPMList = [],
+  donasiOrders = [],
+  salurOrders = [],
+  dharmaPatronList = [],
+  currentActorName = 'Admin Identitas',
+  onContactDispatchCompleted,
   onAddNew,
   onEditItem,
   onDeleteItem,
@@ -76,6 +106,9 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [auditModalItem, setAuditModalItem] = useState<IdentitasItem | null>(null);
+  const [waModalItem, setWaModalItem] = useState<IdentitasItem | null>(null);
+  const [contactHistoryModalItem, setContactHistoryModalItem] = useState<IdentitasItem | null>(null);
+  const [lastContactedSort, setLastContactedSort] = useState<'none' | 'desc' | 'asc'>('none');
 
   // Starred Identitas state
   const [localStarredIds, setLocalStarredIds] = useState<Record<string, boolean>>(() => {
@@ -108,30 +141,60 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
     onShowToast(nextVal ? 'Bintang ditambahkan' : 'Bintang dihapus');
   };
 
-  // Filter items
-  const filteredItems = items.filter((item) => {
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const match =
-        item.namaLengkap.toLowerCase().includes(q) ||
-        item.namaPanggilan.toLowerCase().includes(q) ||
-        (item.codeId && item.codeId.toLowerCase().includes(q)) ||
-        item.organisasi.toLowerCase().includes(q) ||
-        item.nomorHandPhone.includes(q) ||
-        item.pic.toLowerCase().includes(q);
-      if (!match) return false;
-    }
+  const lastContactedMap = useMemo(() => {
+    const map = new Map<string, ResolvedLastContactedSummary>();
+    const sources = {
+      listPMList,
+      donasiOrders,
+      salurOrders,
+      dharmaPatronList,
+    };
+    items.forEach((it) => {
+      map.set(it.id, resolveLastContactedForIdentitas(it, sources));
+    });
+    return map;
+  }, [items, listPMList, donasiOrders, salurOrders, dharmaPatronList]);
 
-    if (selectedStatusFilter !== 'ALL' && item.status !== selectedStatusFilter) {
-      return false;
-    }
+  // Filter and optionally sort items
+  const filteredItems = useMemo(() => {
+    const base = items.filter((item) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const match =
+          item.namaLengkap.toLowerCase().includes(q) ||
+          item.namaPanggilan.toLowerCase().includes(q) ||
+          (item.codeId && item.codeId.toLowerCase().includes(q)) ||
+          item.organisasi.toLowerCase().includes(q) ||
+          item.nomorHandPhone.includes(q) ||
+          item.pic.toLowerCase().includes(q);
+        if (!match) return false;
+      }
 
-    if (selectedRoleFilter !== 'ALL' && item.bhanteLay !== selectedRoleFilter) {
-      return false;
-    }
+      if (selectedStatusFilter !== 'ALL' && item.status !== selectedStatusFilter) {
+        return false;
+      }
 
-    return true;
-  });
+      if (selectedRoleFilter !== 'ALL' && item.bhanteLay !== selectedRoleFilter) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (lastContactedSort === 'none') return base;
+    return [...base].sort((a, b) => {
+      const tsA = lastContactedMap.get(a.id)?.latestTimestampMs || 0;
+      const tsB = lastContactedMap.get(b.id)?.latestTimestampMs || 0;
+      return lastContactedSort === 'desc' ? tsB - tsA : tsA - tsB;
+    });
+  }, [
+    items,
+    searchQuery,
+    selectedStatusFilter,
+    selectedRoleFilter,
+    lastContactedSort,
+    lastContactedMap,
+  ]);
 
   const isAllSelected =
     filteredItems.length > 0 &&
@@ -441,15 +504,41 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
                 <th className="py-4 px-4">HP</th>
                 <th className="py-4 px-4">Status</th>
                 <th className="py-4 px-4 text-center">Cust?</th>
-                <th className="py-4 px-4 whitespace-nowrap">Last Contacted?</th>
+                <th className="py-4 px-4 whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLastContactedSort((prev) =>
+                        prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none'
+                      )
+                    }
+                    className="inline-flex items-center gap-1 hover:text-[#05828e] transition-colors cursor-pointer"
+                    title="Urutkan berdasarkan kontak terakhir"
+                  >
+                    <span>Last Contacted?</span>
+                    <ArrowUpDown
+                      className={`w-3.5 h-3.5 ${
+                        lastContactedSort !== 'none' ? 'text-[#05828e]' : 'text-slate-400'
+                      }`}
+                    />
+                  </button>
+                </th>
                 <th className="py-4 px-4 text-center">PIC</th>
-                <th className="py-4 px-4 w-[50px]"></th>
+                <th className="py-4 px-4 w-[84px]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-[13px] text-slate-700">
               {filteredItems.map((item, idx) => {
                 const isMenuOpen = activeMenuId === item.id;
                 const isSelected = selectedIds.includes(item.id);
+                const contactSummary =
+                  lastContactedMap.get(item.id) ||
+                  resolveLastContactedForIdentitas(item, {
+                    listPMList,
+                    donasiOrders,
+                    salurOrders,
+                    dharmaPatronList,
+                  });
 
                 return (
                   <tr
@@ -582,8 +671,32 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
                     </td>
 
                     {/* Last Contacted? */}
-                    <td className="py-3.5 px-4 text-slate-700 whitespace-nowrap">
-                      {item.lastContacted}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setContactHistoryModalItem(item)}
+                        className="text-left group/lc cursor-pointer rounded-lg px-2 py-1 -mx-2 hover:bg-teal-50/70 transition-colors"
+                        title="Klik untuk melihat riwayat kontak lintas modul & kirim WA"
+                      >
+                        <div className="text-[13px] font-medium text-slate-800 group-hover/lc:text-[#05828e] tabular-nums leading-tight">
+                          {contactSummary.displayDate}
+                        </div>
+                        <div className="text-[11px] leading-tight mt-0.5 text-slate-500">
+                          {contactSummary.hasContactHistory ? (
+                            <>
+                              {contactSummary.relativeLabel && (
+                                <span className="font-semibold text-emerald-700">
+                                  {contactSummary.relativeLabel}
+                                  {' · '}
+                                </span>
+                              )}
+                              <span>{contactSummary.channelLabel}</span>
+                            </>
+                          ) : (
+                            <span className="text-slate-400">Belum dikontak</span>
+                          )}
+                        </div>
+                      </button>
                     </td>
 
                     {/* PIC Button / Badge */}
@@ -599,22 +712,48 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
                       )}
                     </td>
 
-                    {/* 3 dots action menu */}
-                    <td className="py-3.5 px-4 text-right relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveMenuId(isMenuOpen ? null : item.id)
-                        }
-                        title="Opsi"
-                        className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors cursor-pointer"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                    {/* Quick WA + 3 dots action menu */}
+                    <td className="py-3.5 px-4 text-right relative whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWaModalItem(item);
+                          }}
+                          title={`Kirim WhatsApp ke ${item.namaLengkap}`}
+                          aria-label={`Kirim WhatsApp ke ${item.namaLengkap}`}
+                          className="p-1.5 rounded-lg text-[#05828e] hover:bg-teal-50 border border-transparent hover:border-teal-200 transition-colors cursor-pointer"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveMenuId(isMenuOpen ? null : item.id)
+                          }
+                          title="Opsi"
+                          className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors cursor-pointer"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
 
                       {/* Dropdown Menu */}
                       {isMenuOpen && (
-                        <div className="absolute right-6 top-10 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in duration-100 text-left">
+                        <div className="absolute right-6 top-10 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in duration-100 text-left">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setWaModalItem(item);
+                            }}
+                            className="w-full px-3.5 py-2 text-xs text-[#05828e] font-semibold hover:bg-teal-50 flex items-center gap-2 cursor-pointer"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-[#05828e]" />
+                            <span>Kirim WhatsApp Sekarang</span>
+                          </button>
+                          <div className="border-t border-slate-100 my-1" />
                           <button
                             type="button"
                             onClick={() => {
@@ -771,6 +910,49 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
           }
         />
       )}
+
+      {/* Modal Riwayat Kontak Cross-Module */}
+      {contactHistoryModalItem && (
+        <ModalRiwayatKontakCustomer
+          isOpen={!!contactHistoryModalItem}
+          onClose={() => setContactHistoryModalItem(null)}
+          customerName={contactHistoryModalItem.namaLengkap}
+          customerPanggilan={contactHistoryModalItem.namaPanggilan}
+          customerCode={contactHistoryModalItem.codeId}
+          phone={contactHistoryModalItem.nomorHandPhone}
+          avatarInitial={contactHistoryModalItem.avatarInitial}
+          avatarBg={contactHistoryModalItem.avatarBg}
+          summary={
+            lastContactedMap.get(contactHistoryModalItem.id) ||
+            resolveLastContactedForIdentitas(contactHistoryModalItem, {
+              listPMList,
+              donasiOrders,
+              salurOrders,
+              dharmaPatronList,
+            })
+          }
+          onSendWhatsappNow={() => setWaModalItem(contactHistoryModalItem)}
+        />
+      )}
+
+      {/* Modal Kirim WhatsApp Langsung dari Identitas / Customer */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={!!waModalItem}
+        onClose={() => setWaModalItem(null)}
+        kind="customer_direct"
+        identitasItem={waModalItem}
+        identitasList={items}
+        currentActorName={currentActorName}
+        onDispatchCompleted={(payload) => {
+          onContactDispatchCompleted?.({
+            logEntry: payload.logEntry,
+            listPMItem: payload.listPMItem,
+            identitasId: payload.identitasId || waModalItem?.id,
+            codeId: payload.codeId || waModalItem?.codeId,
+          });
+        }}
+        onShowToast={onShowToast}
+      />
     </div>
   );
 };

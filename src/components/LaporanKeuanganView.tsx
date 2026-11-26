@@ -85,6 +85,7 @@ interface LaporanKeuanganViewProps {
   onNavigateToCoa?: () => void;
   onNavigateToMutasi?: (bankAccount: string) => void;
   onNavigateToPengeluaran?: () => void;
+  onNavigateToLaporanProyekKeuangan?: () => void;
 }
 
 export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
@@ -105,6 +106,7 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
   onNavigateToCoa,
   onNavigateToMutasi,
   onNavigateToPengeluaran,
+  onNavigateToLaporanProyekKeuangan,
 }) => {
   // Navigation Tabs: COA, Jurnal, Tabel Mutasi, Buku Besar, Ringkasan Jurnal, ARUS KAS, GRAFIK BULANAN, MANAJEMEN, SUMMARY, SALDO AKHIR, Saldo Per Rekening
   const [activeTab, setActiveTab] = useState<
@@ -1111,6 +1113,16 @@ export const LaporanKeuanganView: React.FC<LaporanKeuanganViewProps> = ({
                   <span>Cetak</span>
                 </button>
               </>
+            )}
+            {onNavigateToLaporanProyekKeuangan && (
+              <button
+                type="button"
+                onClick={onNavigateToLaporanProyekKeuangan}
+                className="bg-white dark:bg-slate-900 border border-[#05828e] dark:border-teal-500 text-[#05828e] dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>Laba Rugi Proyek SAPA</span>
+              </button>
             )}
           </div>
         </div>

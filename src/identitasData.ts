@@ -1,3 +1,5 @@
+import { WhatsappDispatchLog } from './types';
+
 export interface AlamatIdentitas {
   id?: string;
   namaPenerima?: string;
@@ -36,6 +38,11 @@ export interface IdentitasItem {
   status: 'VIP' | 'Blacklist' | '-' | string;
   custDuration: '3 Bulan' | '2 Bulan' | '1 Bulan' | '-' | string;
   lastContacted: string;
+  lastContactedAt?: string;
+  lastContactedChannel?: string;
+  lastContactedBy?: string;
+  lastContactedNote?: string;
+  whatsappContactHistory?: WhatsappDispatchLog[];
   pic: string;
   avatarInitial: string;
   avatarBg: string;
