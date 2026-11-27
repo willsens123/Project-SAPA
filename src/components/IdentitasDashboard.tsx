@@ -277,10 +277,62 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
     }
   };
 
+  const vipCount = useMemo(
+    () => items.filter((it) => it.status === 'VIP').length,
+    [items]
+  );
+  const blacklistCount = useMemo(
+    () => items.filter((it) => it.status === 'Blacklist').length,
+    [items]
+  );
+
   return (
     <div className="w-full">
-      {/* Top Toolbar matching Image 1: EyeOff, Search, Sliders, + Add */}
-      <div className="flex items-center justify-end gap-3.5 mb-5">
+      {/* Top Toolbar: Quick Status Filter + Search, Filter, + Add */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div
+          className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80"
+          role="tablist"
+          aria-label="Filter status identitas"
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('ALL')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'ALL'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Semua ({items.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('VIP')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'VIP'
+                ? 'bg-white text-amber-700 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            VIP ({vipCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('Blacklist')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'Blacklist'
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : blacklistCount > 0
+                ? 'text-rose-700 hover:bg-rose-50'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Blacklist ({blacklistCount})
+          </button>
+        </div>
+
+        <div className="flex items-center justify-end gap-3.5 ml-auto">
         {/* Toggle Search Bar */}
         {isSearchOpen ? (
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-xs animate-in fade-in duration-150">
@@ -450,6 +502,7 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add</span>
         </button>
+        </div>
       </div>
 
       {/* Main Table Container */}
@@ -645,12 +698,12 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
                     {/* Status (VIP / Blacklist / -) */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`font-medium ${
+                        className={`font-semibold ${
                           item.status === 'VIP'
-                            ? 'text-slate-800'
+                            ? 'text-amber-700'
                             : item.status === 'Blacklist'
-                            ? 'text-slate-800'
-                            : 'text-slate-500'
+                            ? 'text-rose-700'
+                            : 'text-slate-500 font-normal'
                         }`}
                       >
                         {item.status}
@@ -919,6 +972,7 @@ export const IdentitasDashboard: React.FC<IdentitasDashboardProps> = ({
           customerName={contactHistoryModalItem.namaLengkap}
           customerPanggilan={contactHistoryModalItem.namaPanggilan}
           customerCode={contactHistoryModalItem.codeId}
+          customerStatus={contactHistoryModalItem.status}
           phone={contactHistoryModalItem.nomorHandPhone}
           avatarInitial={contactHistoryModalItem.avatarInitial}
           avatarBg={contactHistoryModalItem.avatarBg}

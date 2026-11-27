@@ -48,6 +48,7 @@ export type AppView =
   | 'organisasi'
   | 'formOrganisasi'
   | 'editOrganisasi'
+  | 'listBlacklist'
   | 'jenisPanggilan'
   | 'triyana'
   | 'pekerjaan'
@@ -682,6 +683,12 @@ export interface OrganisasiItem {
   pic: string;
   picYppln?: string;
   catatan?: string;
+  lastContacted?: string;
+  lastContactedAt?: string;
+  lastContactedChannel?: string;
+  lastContactedBy?: string;
+  lastContactedNote?: string;
+  whatsappContactHistory?: WhatsappDispatchLog[];
 }
 
 export interface IdentitasChangeLog {

@@ -34,6 +34,7 @@ import {
 import { DonasiOrder } from '../donasiData';
 import { IdentitasItem } from '../identitasData';
 import { SalurOrder } from '../salurData';
+import { TransaksiAjarItem } from '../transaksiAjarData';
 import {
   IdentitasChangeLog,
   SuspiciousAuditFlag,
@@ -42,9 +43,12 @@ import {
   ListPMItem,
   DharmaPatronRutinItem,
   WhatsappDispatchLog,
+  ComplaintItem,
+  OrganisasiItem,
 } from '../types';
-import { resolveLastContactedForIdentitas } from '../utils/lastContactedHelper';
+import { buildIdentitasCrossModuleSummary } from '../utils/identitasCrossModuleHelper';
 import { IdentitasAuditDetailModal, UnifiedAuditLogItem } from './IdentitasAuditDetailModal';
+import { IdentitasCrossModuleSummarySection } from './IdentitasCrossModuleSummarySection';
 import { ModalKirimWhatsappOtomatis } from './ModalKirimWhatsappOtomatis';
 import { ModalRiwayatKontakCustomer } from './ModalRiwayatKontakCustomer';
 import { downloadAuditCsv, formatCsvDateTag } from '../utils/auditCsvExport';
@@ -66,7 +70,10 @@ interface EditIdentitasViewProps {
   listPMList?: ListPMItem[];
   donasiOrders?: DonasiOrder[];
   salurOrders?: SalurOrder[];
+  transaksiAjarList?: TransaksiAjarItem[];
   dharmaPatronList?: DharmaPatronRutinItem[];
+  complaints?: ComplaintItem[];
+  organisasiList?: OrganisasiItem[];
   currentActorName?: string;
   onContactDispatchCompleted?: (payload: {
     logEntry: WhatsappDispatchLog;
@@ -79,6 +86,8 @@ interface EditIdentitasViewProps {
   onShowToast: (msg: string) => void;
   onOpenAddModal?: () => void;
   onNavigateToCentralAudit?: () => void;
+  onNavigateToComplaints?: () => void;
+  onNavigateToListPM?: () => void;
 }
 
 const AVAILABLE_FIELDS: { key: string; label: string; placeholder: string }[] = [
@@ -149,7 +158,10 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   listPMList = [],
   donasiOrders = [],
   salurOrders = [],
+  transaksiAjarList = [],
   dharmaPatronList = [],
+  complaints = [],
+  organisasiList = [],
   currentActorName = 'Admin Identitas',
   onContactDispatchCompleted,
   onBack,
@@ -157,6 +169,8 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
   onShowToast,
   onOpenAddModal,
   onNavigateToCentralAudit,
+  onNavigateToComplaints,
+  onNavigateToListPM,
   suspiciousFlags = [],
 }) => {
   // Current selected identity (can switch between identities if needed)
@@ -173,14 +187,28 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
     return allIdentitasList.find((id) => id.id === selectedIdentity.id) || selectedIdentity;
   }, [allIdentitasList, selectedIdentity]);
 
-  const liveContactSummary = useMemo(() => {
-    return resolveLastContactedForIdentitas(liveSelectedIdentity, {
+  const crossModuleSummary = useMemo(() => {
+    return buildIdentitasCrossModuleSummary(liveSelectedIdentity, {
       listPMList,
       donasiOrders,
       salurOrders,
+      transaksiAjarList,
       dharmaPatronList,
+      complaints,
+      organisasiList,
     });
-  }, [liveSelectedIdentity, listPMList, donasiOrders, salurOrders, dharmaPatronList]);
+  }, [
+    liveSelectedIdentity,
+    listPMList,
+    donasiOrders,
+    salurOrders,
+    transaksiAjarList,
+    dharmaPatronList,
+    complaints,
+    organisasiList,
+  ]);
+
+  const liveContactSummary = crossModuleSummary.lastContacted;
 
   // Detailed Audit Panel / Modal state
   const [auditModalState, setAuditModalState] = useState<{
@@ -549,11 +577,17 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
               <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
                 {selectedIdentity.bhanteLay || 'Lay'}
               </span>
-              {selectedIdentity.status && selectedIdentity.status !== '-' && (
+              {liveSelectedIdentity.status && liveSelectedIdentity.status !== '-' && (
                 <>
                   <span className="text-slate-300 dark:text-slate-700">·</span>
-                  <span className="text-xs font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded">
-                    {selectedIdentity.status}
+                  <span
+                    className={`text-xs font-bold ${
+                      liveSelectedIdentity.status === 'Blacklist'
+                        ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-amber-700 dark:text-amber-300'
+                    }`}
+                  >
+                    {liveSelectedIdentity.status}
                   </span>
                 </>
               )}
@@ -707,6 +741,16 @@ export const EditIdentitasView: React.FC<EditIdentitasViewProps> = ({
           )}
         </div>
       )}
+
+      {/* Cross-Module Summary KPI Strip, Linked Orgs, and Unified PM & Complaint Timeline */}
+      <IdentitasCrossModuleSummarySection
+        identity={liveSelectedIdentity}
+        summary={crossModuleSummary}
+        onOpenContactHistory={() => setIsContactHistoryOpen(true)}
+        onSendWhatsappNow={() => setIsWaModalOpen(true)}
+        onNavigateToComplaints={onNavigateToComplaints}
+        onNavigateToListPM={onNavigateToListPM}
+      />
 
       {/* Main Edit Form Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs p-6 sm:p-8">

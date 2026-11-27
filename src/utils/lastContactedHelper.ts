@@ -3,7 +3,7 @@ import { IdentitasItem } from '../identitasData';
 import { CustomerSalurReportItem } from '../reportCustomerSalurData';
 import { ResiItem } from '../resiData';
 import { SalurOrder } from '../salurData';
-import { DharmaPatronRutinItem, ListPMItem } from '../types';
+import { DharmaPatronRutinItem, ListPMItem, OrganisasiItem } from '../types';
 import { normalizeWhatsappPhone } from './patronWhatsappHelper';
 
 export interface ContactTimelineEvent {
@@ -683,5 +683,135 @@ export function resolveLastContactedForReportCustomer(
       isLiveChannel: top.channel !== 'legacy',
       events,
     },
+  };
+}
+
+export function resolveLastContactedForOrganisasi(
+  org: OrganisasiItem,
+  identitasList: IdentitasItem[] = [],
+  sources: CrossModuleContactSources = {}
+): ResolvedLastContactedSummary {
+  const picIdentitas =
+    identitasList.find(
+      (i) =>
+        (org.picOrgId && i.id === org.picOrgId) ||
+        (org.picOrgCode && i.codeId && normText(i.codeId) === normText(org.picOrgCode))
+    ) || null;
+
+  const orgRawPhone =
+    (org.hp && org.hp.trim() !== '-' ? org.hp.trim() : '') ||
+    (org.picOrgHp && org.picOrgHp.trim() !== '-' ? org.picOrgHp.trim() : '') ||
+    (picIdentitas?.nomorHandPhone && picIdentitas.nomorHandPhone !== '-'
+      ? picIdentitas.nomorHandPhone.trim()
+      : '');
+
+  const events: ContactTimelineEvent[] = [];
+
+  // 1. Organisasi direct WA history & timestamps
+  if (Array.isArray(org.whatsappContactHistory)) {
+    org.whatsappContactHistory.forEach((log) => {
+      const tsMs = parseFlexibleTimestampMs(log.sentAt);
+      if (tsMs > 0) {
+        events.push({
+          id: log.id,
+          timestampMs: tsMs,
+          displayDate: formatContactDisplayDate(tsMs, log.sentAt),
+          isoOrRaw: log.sentAt,
+          channel: log.kind,
+          channelLabel: 'WA Organisasi',
+          phone: log.phone,
+          actor: log.sentBy,
+          detail: log.topicLabel || log.referenceNumber,
+          messagePreview: log.messagePreview,
+        });
+      }
+    });
+  }
+
+  if (org.lastContactedAt) {
+    const tsMs = parseFlexibleTimestampMs(org.lastContactedAt);
+    if (tsMs > 0) {
+      events.push({
+        id: `org-at-${org.id}`,
+        timestampMs: tsMs,
+        displayDate: formatContactDisplayDate(tsMs, org.lastContactedAt),
+        isoOrRaw: org.lastContactedAt,
+        channel: 'customer_direct',
+        channelLabel: org.lastContactedChannel || 'WA Organisasi',
+        phone: orgRawPhone || undefined,
+        actor: org.lastContactedBy,
+        detail: org.lastContactedNote || 'Kontak organisasi tersimpan',
+      });
+    }
+  }
+
+  if (org.lastContacted && org.lastContacted.trim() !== '-') {
+    const tsMs = parseFlexibleTimestampMs(org.lastContacted);
+    events.push({
+      id: `org-legacy-${org.id}`,
+      timestampMs: tsMs,
+      displayDate:
+        tsMs > 0 ? formatContactDisplayDate(tsMs, org.lastContacted) : org.lastContacted.trim(),
+      isoOrRaw: org.lastContacted,
+      channel: org.lastContactedChannel ? 'customer_direct' : 'legacy',
+      channelLabel: org.lastContactedChannel || 'Riwayat Organisasi',
+      phone: orgRawPhone || undefined,
+      actor: org.lastContactedBy,
+      detail: org.lastContactedNote || 'Catatan kontak organisasi',
+    });
+  }
+
+  // 2. Cross-module matches for Organisasi (matching org id/name/phone)
+  const crossEvents = collectContactEventsForPerson(
+    {
+      identitasId: org.id,
+      nama: org.namaOrg,
+      phoneNorm: normalizeWhatsappPhone(org.hp && org.hp !== '-' ? org.hp : ''),
+    },
+    null,
+    sources
+  );
+  events.push(...crossEvents);
+
+  // Deduplicate & sort newest-first
+  const deduped: ContactTimelineEvent[] = [];
+  const seenKeys = new Set<string>();
+  events
+    .sort((a, b) => b.timestampMs - a.timestampMs)
+    .forEach((ev) => {
+      const minuteBucket = Math.floor(ev.timestampMs / 60000);
+      const key = `${minuteBucket}:${ev.channel}:${normText(ev.detail)}`;
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+      deduped.push(ev);
+    });
+
+  const nonLegacy = deduped.filter((e) => e.channel !== 'legacy');
+  const top = nonLegacy[0] || deduped[0];
+
+  if (!top) {
+    return {
+      hasContactHistory: false,
+      latestTimestampMs: 0,
+      displayDate: '-',
+      relativeLabel: '',
+      channelLabel: 'Belum dikontak',
+      isLiveChannel: false,
+      phone: orgRawPhone || undefined,
+      events: [],
+    };
+  }
+
+  return {
+    hasContactHistory: true,
+    latestTimestampMs: top.timestampMs,
+    displayDate: top.displayDate,
+    relativeLabel: formatRelativeContactAge(top.timestampMs),
+    channelLabel: top.channelLabel,
+    actor: top.actor,
+    phone: top.phone || orgRawPhone || undefined,
+    detailSummary: top.detail,
+    isLiveChannel: top.channel !== 'legacy',
+    events: deduped,
   };
 }

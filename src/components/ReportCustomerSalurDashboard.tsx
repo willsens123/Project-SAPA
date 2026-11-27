@@ -1087,8 +1087,17 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
                             <span className="font-bold text-slate-900 text-sm sm:text-base leading-tight">
                               {cust.customerCode} {maskText(cust.namaLengkap)}
                             </span>
-                            <span className="text-xs sm:text-[13px] text-slate-500 font-normal mt-0.5">
-                              {maskText(cust.panggilan)}
+                            <span className="text-xs sm:text-[13px] text-slate-500 font-normal mt-0.5 flex flex-wrap items-center gap-1.5">
+                              <span>{maskText(cust.panggilan)}</span>
+                              {customerContactMap.get(cust.id)?.identitasMatch?.status ===
+                                'Blacklist' && (
+                                <>
+                                  <span aria-hidden="true">·</span>
+                                  <span className="text-[11px] font-semibold text-rose-700">
+                                    Blacklist
+                                  </span>
+                                </>
+                              )}
                             </span>
 
                             {/* In Item Tab: show tags of items owned */}
@@ -2004,6 +2013,9 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
           customerName={historyTargetCustomer.namaLengkap}
           customerPanggilan={historyTargetCustomer.panggilan}
           customerCode={historyTargetCustomer.customerCode}
+          customerStatus={
+            customerContactMap.get(historyTargetCustomer.id)?.identitasMatch?.status
+          }
           phone={
             customerContactMap.get(historyTargetCustomer.id)?.identitasMatch?.nomorHandPhone ||
             customerContactMap.get(historyTargetCustomer.id)?.summary.phone
@@ -2033,6 +2045,7 @@ export const ReportCustomerSalurDashboard: React.FC<ReportCustomerSalurDashboard
           nama: waTargetCustomer.namaLengkap,
           panggilan: waTargetCustomer.panggilan,
           phone: resolved?.summary.phone,
+          status: resolved?.identitasMatch?.status,
           lastContactedDisplay: resolved?.summary.hasContactHistory
             ? resolved.summary.displayDate
             : undefined,

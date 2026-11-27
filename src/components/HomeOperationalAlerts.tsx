@@ -2,16 +2,22 @@ import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUpRight,
+  Bell,
   CheckCircle2,
+  Clock,
   CreditCard,
   ListTodo,
   MessageCircle,
   Package,
+  Send,
+  ShieldAlert,
   Warehouse,
 } from 'lucide-react';
 import {
   AppView,
+  ComplaintItem,
   DharmaPatronRutinItem,
+  ListPMItem,
   OrganisasiItem,
   PatronWhatsappBillingLog,
   ProjectItem,
@@ -29,12 +35,19 @@ import {
 } from '../utils/projectDeadlineUtils';
 import { getPatronBillingStatus } from '../utils/patronWhatsappHelper';
 import { ModalTagihanWhatsappPatron } from './ModalTagihanWhatsappPatron';
+import {
+  buildOperationalReminderDigest,
+  markListPMReminderSent,
+} from '../utils/operationalReminderHelper';
+import { OperationalNotificationTab } from './OperationalNotificationCenterDrawer';
 
 interface HomeOperationalAlertsProps {
   projects: ProjectItem[];
   todoTasks: Record<string, TodoTaskItem[]>;
   dharmaPatronList: DharmaPatronRutinItem[];
   salurItems: SalurProduct[];
+  complaints?: ComplaintItem[];
+  listPMItems?: ListPMItem[];
   identitasList?: IdentitasItem[];
   organisasiList?: OrganisasiItem[];
   rekeningList?: RekeningItem[];
@@ -43,6 +56,9 @@ interface HomeOperationalAlertsProps {
     patron: DharmaPatronRutinItem,
     entry: PatronWhatsappBillingLog
   ) => void;
+  onUpdateComplaint?: (item: ComplaintItem) => void;
+  onSaveListPMItem?: (item: ListPMItem) => void;
+  onOpenOperationalNotifications?: (initialTab?: OperationalNotificationTab) => void;
   onShowToast?: (msg: string) => void;
   onNavigateView: (view: AppView) => void;
   onOpenProjectTodos?: (project: ProjectItem) => void;
@@ -77,16 +93,21 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
   todoTasks,
   dharmaPatronList,
   salurItems,
+  complaints = [],
+  listPMItems = [],
   identitasList = [],
   organisasiList = [],
   rekeningList = [],
   currentAdminName,
   onRecordWhatsappBilling,
+  onUpdateComplaint,
+  onSaveListPMItem,
+  onOpenOperationalNotifications,
   onShowToast,
   onNavigateView,
   onOpenProjectTodos,
 }) => {
-  const [reminderTab, setReminderTab] = useState<'todo' | 'patron'>('todo');
+  const [reminderTab, setReminderTab] = useState<'todo' | 'patron' | 'komplain' | 'pm'>('todo');
   const [stockThreshold, setStockThreshold] = useState<number>(LOW_STOCK_THRESHOLD);
   const [stokSyncTick, setStokSyncTick] = useState(0);
   const [whatsappTargetPatrons, setWhatsappTargetPatrons] = useState<DharmaPatronRutinItem[]>([]);
@@ -235,6 +256,18 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
     return alerts;
   }, [salurItems, stockThreshold, stokSyncTick]);
 
+  const operationalDigest = useMemo(
+    () =>
+      buildOperationalReminderDigest({
+        complaints,
+        listPMList: listPMItems,
+        salurItems,
+        identitasList,
+        stockThreshold,
+      }),
+    [complaints, listPMItems, salurItems, identitasList, stockThreshold, stokSyncTick]
+  );
+
   const outOfStockCount = useMemo(
     () => lowStockItems.filter((item) => item.stock <= 0).length,
     [lowStockItems]
@@ -245,34 +278,58 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
       aria-label="Pengingat Operasional Harian & Peringatan Stok S-SALUR"
       className="grid grid-cols-1 xl:grid-cols-12 gap-5"
     >
-      {/* LEFT PANEL: Pengingat Jatuh Tempo To-Do & Piutang Dharma Patron */}
+      {/* LEFT PANEL: Pengingat Jatuh Tempo To-Do, Komplain Open, List PM & Piutang Patron */}
       <div className="xl:col-span-7 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              {reminderTab === 'todo' ? (
-                <ListTodo className="w-4.5 h-4.5" />
-              ) : (
-                <CreditCard className="w-4.5 h-4.5" />
-              )}
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                {reminderTab === 'todo' ? (
+                  <ListTodo className="w-4.5 h-4.5" />
+                ) : reminderTab === 'komplain' ? (
+                  <AlertTriangle className="w-4.5 h-4.5 text-rose-600 dark:text-rose-400" />
+                ) : reminderTab === 'pm' ? (
+                  <Clock className="w-4.5 h-4.5" />
+                ) : (
+                  <CreditCard className="w-4.5 h-4.5" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                  Pengingat Harian Operasional &amp; Piutang
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums mt-0.5 truncate">
+                  {operationalDigest.complaintAlerts.length} Komplain · {operationalDigest.pmDueAlerts.length} PM · {dueTodoItems.length} To-Do · {patronPiutangItems.length} Patron
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-                Pengingat Jatuh Tempo To-Do &amp; Piutang Patron
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums mt-0.5">
-                {dueTodoItems.length} To-Do jatuh tempo · {patronPiutangItems.length} Patron berpiutang (Rp
-                {totalPiutangNominal.toLocaleString('id-ID')})
-              </p>
-            </div>
+
+            {onOpenOperationalNotifications && (
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenOperationalNotifications(
+                    reminderTab === 'komplain'
+                      ? 'komplain'
+                      : reminderTab === 'pm'
+                      ? 'pm'
+                      : 'semua'
+                  )
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] text-xs font-semibold text-[#05828e] dark:text-teal-400 transition-colors cursor-pointer whitespace-nowrap self-start sm:self-auto shrink-0"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span>Buka Pusat Pengingat</span>
+              </button>
+            )}
           </div>
 
           {/* Segmented Switcher */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700 text-xs self-start sm:self-auto shrink-0">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700 text-xs overflow-x-auto">
             <button
               type="button"
               onClick={() => setReminderTab('todo')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap font-mono tabular-nums ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 font-mono tabular-nums ${
                 reminderTab === 'todo'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -282,8 +339,30 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => setReminderTab('komplain')}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 font-mono tabular-nums ${
+                reminderTab === 'komplain'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              Komplain Open ({operationalDigest.complaintAlerts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setReminderTab('pm')}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 font-mono tabular-nums ${
+                reminderTab === 'pm'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              List PM ({operationalDigest.pmDueAlerts.length})
+            </button>
+            <button
+              type="button"
               onClick={() => setReminderTab('patron')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap font-mono tabular-nums ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 font-mono tabular-nums ${
                 reminderTab === 'patron'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -296,7 +375,173 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
 
         {/* Body Content */}
         <div className="flex-1 divide-y divide-slate-100 dark:divide-slate-800 max-h-[340px] overflow-y-auto">
-          {reminderTab === 'todo' ? (
+          {reminderTab === 'komplain' ? (
+            operationalDigest.complaintAlerts.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  Tidak ada komplain Open atau Diproses
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Seluruh keluhan pelanggan sudah ditindaklanjuti dan berstatus Selesai.
+                </p>
+              </div>
+            ) : (
+              operationalDigest.complaintAlerts.slice(0, 8).map((item) => {
+                const c = item.complaint;
+                const isOpen = item.status === 'Open';
+                return (
+                  <div
+                    key={item.id}
+                    className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-xs">
+                          {c.nama}
+                        </span>
+                        <span
+                          className={`text-xs font-bold ${
+                            isOpen
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-amber-600 dark:text-amber-400'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                        {item.isBlacklisted && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 dark:text-rose-400">
+                            <ShieldAlert className="w-3 h-3" />
+                            <span>Blacklist</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                        <span className="font-mono tabular-nums">{c.tanggal}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{c.jenisKomplain}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="truncate max-w-[240px]">{c.komplain}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isOpen && onUpdateComplaint && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateComplaint({ ...c, status: 'Diproses' });
+                            onShowToast?.(`Komplain "${c.nama}" diubah ke Diproses`);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 text-xs font-semibold text-amber-800 dark:text-amber-300 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Proses
+                        </button>
+                      )}
+                      {onUpdateComplaint && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateComplaint({ ...c, status: 'Selesai' });
+                            onShowToast?.(`Komplain "${c.nama}" ditandai Selesai`);
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#05828e] hover:bg-[#046d77] text-white text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Selesai
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )
+          ) : reminderTab === 'pm' ? (
+            operationalDigest.pmDueAlerts.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                  Tidak ada jadwal List PM yang jatuh tempo atau pending
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Semua broadcast dan pesan personalisasi PM saat ini sudah terkirim.
+                </p>
+              </div>
+            ) : (
+              operationalDigest.pmDueAlerts.slice(0, 8).map((pmItem) => {
+                const statusText = pmItem.isOverdue
+                  ? `Terlambat ${Math.abs(pmItem.diffDays || 0)} hari`
+                  : pmItem.isDueToday
+                  ? 'Jatuh tempo hari ini'
+                  : pmItem.deadlineDisplay;
+                return (
+                  <div
+                    key={pmItem.id}
+                    className="px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-xs">
+                          {pmItem.targetNama}
+                        </span>
+                        <span
+                          className={`text-xs font-bold font-mono tabular-nums ${
+                            pmItem.isOverdue
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : pmItem.isDueToday
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : 'text-[#05828e] dark:text-teal-400'
+                          }`}
+                        >
+                          {statusText}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 font-mono tabular-nums">
+                        <span className="font-sans font-medium text-slate-600 dark:text-slate-300 truncate max-w-[200px]">
+                          {pmItem.proyekSapa} ({pmItem.proyekKode})
+                        </span>
+                        <span aria-hidden="true">·</span>
+                        <span>Progres {pmItem.progressPercent}%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {onSaveListPMItem && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = markListPMReminderSent(pmItem.plan, {
+                              rowId: pmItem.row?.id,
+                              recipientId: pmItem.recipient?.id,
+                              identitasId: pmItem.identitasId,
+                              codeId: pmItem.targetCodeId,
+                              nama: pmItem.targetNama,
+                            });
+                            onSaveListPMItem(updated);
+                            onShowToast?.(
+                              `PM "${pmItem.targetNama}" ditandai terkirim (${updated.progressPercent}%)`
+                            );
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#05828e] hover:bg-[#046d77] text-white text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>Terkirim</span>
+                        </button>
+                      )}
+                      {onOpenOperationalNotifications && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenOperationalNotifications('pm')}
+                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          WA
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )
+          ) : reminderTab === 'todo' ? (
             dueTodoItems.length === 0 ? (
               <div className="px-5 py-10 text-center">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
@@ -457,17 +702,35 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
           <span className="text-slate-500 dark:text-slate-400 font-mono tabular-nums">
             {reminderTab === 'todo'
               ? `${overdueTodoCount} To-Do terlambat`
+              : reminderTab === 'komplain'
+              ? `${operationalDigest.openComplaintCount} Open · ${operationalDigest.processingComplaintCount} Diproses`
+              : reminderTab === 'pm'
+              ? `${operationalDigest.overduePMCount} PM jatuh tempo / mendesak`
               : `Total piutang tercatat: Rp${totalPiutangNominal.toLocaleString('id-ID')}`}
           </span>
           <button
             type="button"
             onClick={() =>
-              onNavigateView(reminderTab === 'todo' ? 'todoList' : 'listDharmaPatronRutin')
+              onNavigateView(
+                reminderTab === 'todo'
+                  ? 'todoList'
+                  : reminderTab === 'komplain'
+                  ? 'complaint'
+                  : reminderTab === 'pm'
+                  ? 'listPM'
+                  : 'listDharmaPatronRutin'
+              )
             }
             className="font-semibold text-[#05828e] dark:text-teal-400 hover:underline inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
           >
             <span>
-              {reminderTab === 'todo' ? 'Kelola Semua To-Do' : 'Buka List Dharma Patron'}
+              {reminderTab === 'todo'
+                ? 'Kelola Semua To-Do'
+                : reminderTab === 'komplain'
+                ? 'Buka Menu Komplain'
+                : reminderTab === 'pm'
+                ? 'Buka List PM'
+                : 'Buka List Dharma Patron'}
             </span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
@@ -560,19 +823,28 @@ export const HomeOperationalAlerts: React.FC<HomeOperationalAlertsProps> = ({
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span
-                      className={`text-sm font-extrabold font-mono tabular-nums block ${
-                        isOut
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : 'text-amber-600 dark:text-amber-400'
-                      }`}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <span
+                        className={`text-sm font-extrabold font-mono tabular-nums block ${
+                          isOut
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-amber-600 dark:text-amber-400'
+                        }`}
+                      >
+                        {item.stock} pcs
+                      </span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        {isOut ? 'Stok Habis' : item.source === 'container' ? 'Kontainer' : 'Katalog'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateView('formStockInOutSalur')}
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#05828e] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-[#05828e] dark:hover:text-teal-400 transition-colors cursor-pointer whitespace-nowrap"
                     >
-                      {item.stock} pcs
-                    </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                      {isOut ? 'Stok Habis' : item.source === 'container' ? 'Kontainer' : 'Katalog'}
-                    </span>
+                      Restok
+                    </button>
                   </div>
                 </div>
               );

@@ -18,11 +18,21 @@ import {
 import { ListPMItem, ListPMDetailRow, TemplatePMItem, OrganisasiItem, KaryawanItem } from '../types';
 import { IdentitasItem, INITIAL_IDENTITAS } from '../identitasData';
 import { INITIAL_ORGANISASI } from '../organisasiData';
-import { FunnelingGroupCard, INITIAL_FUNNELING_GROUPS } from '../funnelingData';
+import {
+  FunnelingGroupCard,
+  loadFunnelingGroups,
+  loadFunnelingMembers,
+} from '../funnelingData';
 import { INITIAL_KARYAWAN } from '../karyawanData';
 import { SalurProduct, INITIAL_BOOKS } from '../salurData';
 import { isTanggalMulaiPMDue } from '../listPMData';
 import { DateRangePickerPopover } from './DateRangePickerPopover';
+import {
+  BlacklistMatchEntry,
+  findBlacklistMatchesForTokens,
+  findBlacklistMembersInFunnelingGroup,
+} from '../utils/identitasCrossModuleHelper';
+import { BlacklistWarningBanner } from './BlacklistWarningBanner';
 
 export interface PmLanjutanFormItem {
   id: string;
@@ -87,7 +97,11 @@ export const FormListPM: React.FC<FormListPMProps> = ({
   // Master data with safe defaults
   const allIdentitas = identitasList && identitasList.length > 0 ? identitasList : INITIAL_IDENTITAS;
   const allOrganisasi = organisasiList && organisasiList.length > 0 ? organisasiList : INITIAL_ORGANISASI;
-  const allFunneling = funnelingGroups && funnelingGroups.length > 0 ? funnelingGroups : INITIAL_FUNNELING_GROUPS;
+  const allFunneling = useMemo(
+    () => (funnelingGroups && funnelingGroups.length > 0 ? funnelingGroups : loadFunnelingGroups()),
+    [funnelingGroups]
+  );
+  const allFunnelingMembers = useMemo(() => loadFunnelingMembers(), []);
   const allKaryawan = karyawanList && karyawanList.length > 0 ? karyawanList : INITIAL_KARYAWAN;
   const allTemplates = templatePMList || [];
   const allItems = salurProducts && salurProducts.length > 0 ? salurProducts : INITIAL_BOOKS;
@@ -341,6 +355,43 @@ export const FormListPM: React.FC<FormListPMProps> = ({
         (f.jenisGroup && f.jenisGroup.toLowerCase().includes(q))
     );
   }, [allFunneling, targetSearchQuery]);
+
+  const funnelingBlacklistMap = useMemo(() => {
+    const map: Record<string, BlacklistMatchEntry[]> = {};
+    allFunneling.forEach((fg) => {
+      map[fg.id] = findBlacklistMembersInFunnelingGroup(fg, allFunnelingMembers, allIdentitas);
+    });
+    return map;
+  }, [allFunneling, allFunnelingMembers, allIdentitas]);
+
+  const targetBlacklistMatches = useMemo(() => {
+    if (!targetNama && !targetId) return [];
+    if (targetType === 'funneling') {
+      const selectedGroup = allFunneling.find((fg) => fg.id === targetId || fg.name === targetNama);
+      return selectedGroup
+        ? funnelingBlacklistMap[selectedGroup.id] || []
+        : [];
+    }
+    return findBlacklistMatchesForTokens(
+      [
+        {
+          roleLabel: targetType === 'organisasi' ? 'Target Organisasi' : 'Target Identitas',
+          values: [targetId, targetNama, targetDetail.replace(/^ID:\s*/i, '')],
+        },
+      ],
+      allIdentitas,
+      allOrganisasi
+    );
+  }, [
+    targetType,
+    targetId,
+    targetNama,
+    targetDetail,
+    allFunneling,
+    funnelingBlacklistMap,
+    allIdentitas,
+    allOrganisasi,
+  ]);
 
   // Filtered Karyawan
   const filteredKaryawan = useMemo(() => {
@@ -1036,6 +1087,15 @@ export const FormListPM: React.FC<FormListPMProps> = ({
                 </div>
               </div>
             </div>
+
+            {targetBlacklistMatches.length > 0 && (
+              <div className="sm:pl-[232px] max-w-2xl">
+                <BlacklistWarningBanner
+                  matches={targetBlacklistMatches}
+                  contextLabel="pengiriman atau penjadwalan List PM"
+                />
+              </div>
+            )}
 
             {/* Field: Dihubungi oleh */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
@@ -2025,6 +2085,15 @@ export const FormListPM: React.FC<FormListPMProps> = ({
               </div>
             </div>
 
+            {targetBlacklistMatches.length > 0 && (
+              <div className="sm:pl-48 max-w-2xl">
+                <BlacklistWarningBanner
+                  matches={targetBlacklistMatches}
+                  contextLabel="pengiriman atau penjadwalan List PM"
+                />
+              </div>
+            )}
+
             {/* 2. Template (only (v) as shown in image.png) */}
             <div className="flex flex-col sm:flex-row sm:items-center">
               <label className="w-48 text-slate-600 text-base font-normal mb-1 sm:mb-0">
@@ -2297,41 +2366,51 @@ export const FormListPM: React.FC<FormListPMProps> = ({
                     Tidak ada Identitas ditemukan.
                   </div>
                 ) : (
-                  filteredIdentitas.map((it) => (
-                    <div
-                      key={it.id}
-                      onClick={() => handleSelectIdentitas(it)}
-                      className="p-3 hover:bg-teal-50/50 rounded-xl cursor-pointer flex items-center justify-between transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#00897b] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                          {it.avatarInitial || it.namaLengkap.charAt(0)}
+                  filteredIdentitas.map((it) => {
+                    const isBlacklist = it.status === 'Blacklist';
+                    return (
+                      <div
+                        key={it.id}
+                        onClick={() => handleSelectIdentitas(it)}
+                        className={`p-3 rounded-xl cursor-pointer flex items-center justify-between transition-colors group ${
+                          isBlacklist ? 'bg-rose-50/70 hover:bg-rose-50' : 'hover:bg-teal-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#00897b] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {it.avatarInitial || it.namaLengkap.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b] flex items-center gap-1.5 flex-wrap">
+                              <span>{it.namaLengkap}</span>
+                              {it.codeId && (
+                                <span className="font-mono text-[11px] font-medium text-slate-500">
+                                  · {it.codeId}
+                                </span>
+                              )}
+                              {isBlacklist && (
+                                <span className="text-[11px] font-bold text-rose-700">
+                                  · Blacklist
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{it.nomorHandPhone || 'Tidak ada no. HP'}</span>
+                              {it.pic && (
+                                <span className="ml-2 text-slate-400">• PIC: {it.pic}</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b]">
-                            {it.namaLengkap}
-                            {it.codeId && (
-                              <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-500 font-mono">
-                                {it.codeId}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{it.nomorHandPhone || 'Tidak ada no. HP'}</span>
-                            {it.pic && (
-                              <span className="ml-2 text-slate-400">• PIC: {it.pic}</span>
-                            )}
-                          </div>
+                        <div className="text-right">
+                          <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
+                            Pilih Target &gt;
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
-                          Pilih Target &gt;
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )
               )}
 
@@ -2341,39 +2420,49 @@ export const FormListPM: React.FC<FormListPMProps> = ({
                     Tidak ada Organisasi ditemukan.
                   </div>
                 ) : (
-                  filteredOrganisasi.map((org) => (
-                    <div
-                      key={org.id}
-                      onClick={() => handleSelectOrganisasi(org)}
-                      className="p-3 hover:bg-teal-50/50 rounded-xl cursor-pointer flex items-center justify-between transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#00897b] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                          {org.avatarInitial || org.namaOrg.charAt(0)}
+                  filteredOrganisasi.map((org) => {
+                    const isBlacklist = org.status === 'Blacklist';
+                    return (
+                      <div
+                        key={org.id}
+                        onClick={() => handleSelectOrganisasi(org)}
+                        className={`p-3 rounded-xl cursor-pointer flex items-center justify-between transition-colors group ${
+                          isBlacklist ? 'bg-rose-50/70 hover:bg-rose-50' : 'hover:bg-teal-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#00897b] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            {org.avatarInitial || org.namaOrg.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b] flex items-center gap-1.5 flex-wrap">
+                              <span>{org.namaOrg}</span>
+                              <span className="text-[11px] text-slate-500 font-normal">
+                                · {org.jenisOrg}
+                              </span>
+                              {isBlacklist && (
+                                <span className="text-[11px] font-bold text-rose-700">
+                                  · Blacklist
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span>{org.hp || 'Tidak ada no. HP'}</span>
+                              {org.picOrgNama && (
+                                <span className="ml-2 text-slate-400">• PIC: {org.picOrgNama}</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b]">
-                            {org.namaOrg}
-                            <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-[10px] text-slate-500 font-normal">
-                              {org.jenisOrg}
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{org.hp || 'Tidak ada no. HP'}</span>
-                            {org.picOrgNama && (
-                              <span className="ml-2 text-slate-400">• PIC: {org.picOrgNama}</span>
-                            )}
-                          </div>
+                        <div className="text-right">
+                          <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
+                            Pilih Target &gt;
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
-                          Pilih Target &gt;
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )
               )}
 
@@ -2383,35 +2472,43 @@ export const FormListPM: React.FC<FormListPMProps> = ({
                     Tidak ada Group Funneling ditemukan.
                   </div>
                 ) : (
-                  filteredFunneling.map((fg) => (
-                    <div
-                      key={fg.id}
-                      onClick={() => handleSelectFunneling(fg)}
-                      className="p-3 hover:bg-teal-50/50 rounded-xl cursor-pointer flex items-center justify-between transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#2295d8] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                          <Users className="w-4 h-4" />
+                  filteredFunneling.map((fg) => {
+                    const groupBlCount = (funnelingBlacklistMap[fg.id] || []).length;
+                    return (
+                      <div
+                        key={fg.id}
+                        onClick={() => handleSelectFunneling(fg)}
+                        className="p-3 hover:bg-teal-50/50 rounded-xl cursor-pointer flex items-center justify-between transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-[#2295d8] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            <Users className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b] flex items-center gap-1.5 flex-wrap">
+                              <span>{fg.name}</span>
+                              {groupBlCount > 0 && (
+                                <span className="text-[11px] font-bold text-rose-700">
+                                  · {groupBlCount} Blacklist
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                              <span>{fg.countLabel || `${fg.count} orang terdaftar`}</span>
+                              {fg.jenisGroup && (
+                                <span className="ml-2 text-slate-400">• {fg.jenisGroup}</span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-xs text-slate-900 group-hover:text-[#00897b]">
-                            {fg.name}
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <span>{fg.countLabel || `${fg.count} orang terdaftar`}</span>
-                            {fg.jenisGroup && (
-                              <span className="ml-2 text-slate-400">• {fg.jenisGroup}</span>
-                            )}
-                          </div>
+                        <div className="text-right">
+                          <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
+                            Pilih Group &gt;
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[11px] font-semibold text-[#00897b] group-hover:underline">
-                          Pilih Group &gt;
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )
               )}
             </div>

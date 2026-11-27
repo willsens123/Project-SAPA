@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   EyeOff,
   Search,
@@ -8,23 +8,50 @@ import {
   X,
   Trash2,
   Edit2,
-  Building2,
-  Phone,
-  UserCheck,
   ExternalLink,
   Check,
   Star,
   FolderPlus,
   FolderInput,
   MessageSquare,
+  MessageCircle,
+  ArrowUpDown,
 } from 'lucide-react';
-import { OrganisasiItem } from '../types';
+import { DonasiOrder } from '../donasiData';
+import {
+  DharmaPatronRutinItem,
+  ListPMItem,
+  OrganisasiItem,
+  WhatsappDispatchLog,
+} from '../types';
 import { IdentitasItem } from '../identitasData';
+import { SalurOrder } from '../salurData';
+import {
+  ResolvedLastContactedSummary,
+  resolveLastContactedForOrganisasi,
+} from '../utils/lastContactedHelper';
 import { FunnelingActionBar } from './FunnelingActionBar';
+import {
+  CustomerDirectTargetInput,
+  ModalKirimWhatsappOtomatis,
+} from './ModalKirimWhatsappOtomatis';
+import { ModalRiwayatKontakCustomer } from './ModalRiwayatKontakCustomer';
 
 interface OrganisasiDashboardProps {
   items: OrganisasiItem[];
   identitasList: IdentitasItem[];
+  listPMList?: ListPMItem[];
+  donasiOrders?: DonasiOrder[];
+  salurOrders?: SalurOrder[];
+  dharmaPatronList?: DharmaPatronRutinItem[];
+  currentActorName?: string;
+  onContactDispatchCompleted?: (payload: {
+    logEntry: WhatsappDispatchLog;
+    listPMItem: ListPMItem | null;
+    identitasId?: string;
+    organisasiId?: string;
+    codeId?: string;
+  }) => void;
   onAddNew: () => void;
   onEditItem?: (item: OrganisasiItem) => void;
   onDeleteItem?: (id: string) => void;
@@ -43,6 +70,12 @@ interface OrganisasiDashboardProps {
 export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
   items,
   identitasList,
+  listPMList = [],
+  donasiOrders = [],
+  salurOrders = [],
+  dharmaPatronList = [],
+  currentActorName = 'Admin Organisasi',
+  onContactDispatchCompleted,
   onAddNew,
   onEditItem,
   onDeleteItem,
@@ -61,6 +94,9 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [detailModalItem, setDetailModalItem] = useState<OrganisasiItem | null>(null);
+  const [waModalItem, setWaModalItem] = useState<OrganisasiItem | null>(null);
+  const [contactHistoryModalItem, setContactHistoryModalItem] = useState<OrganisasiItem | null>(null);
+  const [lastContactedSort, setLastContactedSort] = useState<'none' | 'desc' | 'asc'>('none');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Starred Organisasi state
@@ -125,41 +161,82 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
     };
   };
 
-  // Filter items
-  const filteredItems = items.filter((item) => {
-    const picInfo = getPicOrgInfo(item);
+  const lastContactedMap = useMemo(() => {
+    const map = new Map<string, ResolvedLastContactedSummary>();
+    const sources = {
+      listPMList,
+      donasiOrders,
+      salurOrders,
+      dharmaPatronList,
+    };
+    items.forEach((it) => {
+      map.set(it.id, resolveLastContactedForOrganisasi(it, identitasList, sources));
+    });
+    return map;
+  }, [items, identitasList, listPMList, donasiOrders, salurOrders, dharmaPatronList]);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const match =
-        item.namaOrg.toLowerCase().includes(q) ||
-        item.jenisOrg.toLowerCase().includes(q) ||
-        (item.subOrg && item.subOrg.toLowerCase().includes(q)) ||
-        item.hp.toLowerCase().includes(q) ||
-        item.pic.toLowerCase().includes(q) ||
-        item.status.toLowerCase().includes(q) ||
-        picInfo.name.toLowerCase().includes(q) ||
-        picInfo.code.toLowerCase().includes(q) ||
-        picInfo.subtitle.toLowerCase().includes(q);
-      if (!match) return false;
-    }
+  const vipCount = useMemo(
+    () => items.filter((it) => it.status === 'VIP').length,
+    [items]
+  );
+  const blacklistCount = useMemo(
+    () => items.filter((it) => it.status === 'Blacklist').length,
+    [items]
+  );
 
-    if (selectedStatusFilter !== 'ALL' && item.status !== selectedStatusFilter) {
-      return false;
-    }
+  // Filter and optionally sort items
+  const filteredItems = useMemo(() => {
+    const base = items.filter((item) => {
+      const picInfo = getPicOrgInfo(item);
 
-    if (selectedCustFilter !== 'ALL') {
-      const isCustVal = selectedCustFilter === 'YES';
-      if (item.isCust !== isCustVal) return false;
-    }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const match =
+          item.namaOrg.toLowerCase().includes(q) ||
+          item.jenisOrg.toLowerCase().includes(q) ||
+          (item.subOrg && item.subOrg.toLowerCase().includes(q)) ||
+          item.hp.toLowerCase().includes(q) ||
+          item.pic.toLowerCase().includes(q) ||
+          item.status.toLowerCase().includes(q) ||
+          picInfo.name.toLowerCase().includes(q) ||
+          picInfo.code.toLowerCase().includes(q) ||
+          picInfo.subtitle.toLowerCase().includes(q);
+        if (!match) return false;
+      }
 
-    if (selectedMediaPartnerFilter !== 'ALL') {
-      const isMediaVal = selectedMediaPartnerFilter === 'YES';
-      if (item.mediaPartner !== isMediaVal) return false;
-    }
+      if (selectedStatusFilter !== 'ALL' && item.status !== selectedStatusFilter) {
+        return false;
+      }
 
-    return true;
-  });
+      if (selectedCustFilter !== 'ALL') {
+        const isCustVal = selectedCustFilter === 'YES';
+        if (item.isCust !== isCustVal) return false;
+      }
+
+      if (selectedMediaPartnerFilter !== 'ALL') {
+        const isMediaVal = selectedMediaPartnerFilter === 'YES';
+        if (item.mediaPartner !== isMediaVal) return false;
+      }
+
+      return true;
+    });
+
+    if (lastContactedSort === 'none') return base;
+    return [...base].sort((a, b) => {
+      const tsA = lastContactedMap.get(a.id)?.latestTimestampMs || 0;
+      const tsB = lastContactedMap.get(b.id)?.latestTimestampMs || 0;
+      return lastContactedSort === 'desc' ? tsB - tsA : tsA - tsB;
+    });
+  }, [
+    items,
+    identitasList,
+    searchQuery,
+    selectedStatusFilter,
+    selectedCustFilter,
+    selectedMediaPartnerFilter,
+    lastContactedSort,
+    lastContactedMap,
+  ]);
 
   const isAllSelected =
     filteredItems.length > 0 &&
@@ -249,10 +326,79 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
     }
   };
 
+  const buildOrgWaTarget = (org: OrganisasiItem): CustomerDirectTargetInput => {
+    const pic = getPicOrgInfo(org);
+    const summary =
+      lastContactedMap.get(org.id) ||
+      resolveLastContactedForOrganisasi(org, identitasList, {
+        listPMList,
+        donasiOrders,
+        salurOrders,
+        dharmaPatronList,
+      });
+    const bestPhone =
+      (org.hp && org.hp.trim() !== '-' ? org.hp.trim() : '') ||
+      (pic.phone && pic.phone.trim() !== '-' ? pic.phone.trim() : '');
+    return {
+      organisasiId: org.id,
+      identitasId: pic.id || undefined,
+      codeId: pic.code || org.picOrgCode || undefined,
+      nama: org.namaOrg,
+      panggilan: pic.name && pic.name !== '-' ? `${pic.name} (${org.jenisOrg})` : org.jenisOrg,
+      phone: bestPhone,
+      status: org.status,
+      lastContactedDisplay: summary.hasContactHistory ? summary.displayDate : undefined,
+      existingHistory: org.whatsappContactHistory || [],
+    };
+  };
+
   return (
     <div className="w-full">
-      {/* Top Toolbar matching Image: EyeOff, Search, Sliders, + Add */}
-      <div className="flex items-center justify-end gap-3.5 mb-5">
+      {/* Top Toolbar: Quick Status Filter + Search, Filter, + Add */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div
+          className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80"
+          role="tablist"
+          aria-label="Filter status organisasi"
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('ALL')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'ALL'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Semua ({items.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('VIP')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'VIP'
+                ? 'bg-white text-amber-700 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            VIP ({vipCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('Blacklist')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+              selectedStatusFilter === 'Blacklist'
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : blacklistCount > 0
+                ? 'text-rose-700 hover:bg-rose-50'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Blacklist ({blacklistCount})
+          </button>
+        </div>
+
+        <div className="flex items-center justify-end gap-3.5 ml-auto">
         {/* Toggle Search Bar */}
         {isSearchOpen ? (
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shadow-xs animate-in fade-in duration-150">
@@ -449,6 +595,7 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add</span>
         </button>
+        </div>
       </div>
 
       {/* Main Table Container */}
@@ -505,8 +652,27 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
                 </th>
                 <th className="py-4 px-4 text-center">Status</th>
                 <th className="py-4 px-4 text-center">Cust?</th>
+                <th className="py-4 px-4 whitespace-nowrap">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLastContactedSort((prev) =>
+                        prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none'
+                      )
+                    }
+                    className="inline-flex items-center gap-1 hover:text-[#05828e] transition-colors cursor-pointer"
+                    title="Urutkan berdasarkan kontak terakhir"
+                  >
+                    <span>Last Contacted?</span>
+                    <ArrowUpDown
+                      className={`w-3.5 h-3.5 ${
+                        lastContactedSort !== 'none' ? 'text-[#05828e]' : 'text-slate-400'
+                      }`}
+                    />
+                  </button>
+                </th>
                 <th className="py-4 px-4 text-center">PIC YPPLN</th>
-                <th className="py-4 px-4 w-[50px]"></th>
+                <th className="py-4 px-4 w-[84px]"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-[13px] text-slate-700">
@@ -514,6 +680,14 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
                 const isMenuOpen = activeMenuId === item.id;
                 const isSelected = selectedIds.includes(item.id);
                 const picInfo = getPicOrgInfo(item);
+                const contactSummary =
+                  lastContactedMap.get(item.id) ||
+                  resolveLastContactedForOrganisasi(item, identitasList, {
+                    listPMList,
+                    donasiOrders,
+                    salurOrders,
+                    dharmaPatronList,
+                  });
 
                 return (
                   <tr
@@ -649,12 +823,12 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
                     {/* Status (VIP / Blacklist / -) */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <span
-                        className={`font-medium ${
+                        className={`font-semibold ${
                           item.status === 'VIP'
-                            ? 'text-slate-800'
+                            ? 'text-amber-700'
                             : item.status === 'Blacklist'
-                            ? 'text-slate-800'
-                            : 'text-slate-500'
+                            ? 'text-rose-700'
+                            : 'text-slate-500 font-normal'
                         }`}
                       >
                         {item.status}
@@ -674,6 +848,35 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
                       )}
                     </td>
 
+                    {/* Last Contacted? */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => setContactHistoryModalItem(item)}
+                        className="text-left group/lc cursor-pointer rounded-lg px-2 py-1 -mx-2 hover:bg-teal-50/70 transition-colors"
+                        title="Klik untuk melihat riwayat kontak organisasi & kirim WA"
+                      >
+                        <div className="text-[13px] font-medium text-slate-800 group-hover/lc:text-[#05828e] tabular-nums leading-tight">
+                          {contactSummary.displayDate}
+                        </div>
+                        <div className="text-[11px] leading-tight mt-0.5 text-slate-500">
+                          {contactSummary.hasContactHistory ? (
+                            <>
+                              {contactSummary.relativeLabel && (
+                                <span className="font-semibold text-emerald-700">
+                                  {contactSummary.relativeLabel}
+                                  {' · '}
+                                </span>
+                              )}
+                              <span>{contactSummary.channelLabel}</span>
+                            </>
+                          ) : (
+                            <span className="text-slate-400">Belum dikontak</span>
+                          )}
+                        </div>
+                      </button>
+                    </td>
+
                     {/* PIC YPPLN Badge (Teal pill with name or "-") */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       <span className="inline-block min-w-[76px] py-1 px-3.5 rounded-full text-xs font-semibold bg-[#05828e] text-white shadow-xs">
@@ -681,22 +884,48 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
                       </span>
                     </td>
 
-                    {/* 3 dots action menu */}
-                    <td className="py-3.5 px-4 text-right relative">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveMenuId(isMenuOpen ? null : item.id)
-                        }
-                        title="Opsi"
-                        className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors cursor-pointer"
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+                    {/* Quick WA + 3 dots action menu */}
+                    <td className="py-3.5 px-4 text-right relative whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWaModalItem(item);
+                          }}
+                          title={`Kirim WhatsApp ke ${item.namaOrg}`}
+                          aria-label={`Kirim WhatsApp ke ${item.namaOrg}`}
+                          className="p-1.5 rounded-lg text-[#05828e] hover:bg-teal-50 border border-transparent hover:border-teal-200 transition-colors cursor-pointer"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveMenuId(isMenuOpen ? null : item.id)
+                          }
+                          title="Opsi"
+                          className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors cursor-pointer"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </div>
 
                       {/* Dropdown Menu */}
                       {isMenuOpen && (
-                        <div className="absolute right-6 top-10 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in duration-100 text-left">
+                        <div className="absolute right-6 top-10 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in duration-100 text-left">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setWaModalItem(item);
+                            }}
+                            className="w-full px-3.5 py-2 text-xs text-[#05828e] font-semibold hover:bg-teal-50 flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-[#05828e]" />
+                            <span>Kirim WhatsApp Sekarang</span>
+                          </button>
+                          <div className="my-1 border-t border-slate-100" />
                           <button
                             type="button"
                             onClick={() => {
@@ -786,7 +1015,7 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
 
               {filteredItems.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400 text-sm">
+                  <td colSpan={11} className="py-12 text-center text-slate-400 text-sm">
                     Tidak ada data organisasi yang sesuai dengan pencarian atau filter.
                   </td>
                 </tr>
@@ -913,6 +1142,58 @@ export const OrganisasiDashboard: React.FC<OrganisasiDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Riwayat Kontak Organisasi */}
+      {contactHistoryModalItem && (
+        <ModalRiwayatKontakCustomer
+          isOpen={!!contactHistoryModalItem}
+          onClose={() => setContactHistoryModalItem(null)}
+          customerName={contactHistoryModalItem.namaOrg}
+          customerPanggilan={contactHistoryModalItem.jenisOrg}
+          customerStatus={contactHistoryModalItem.status}
+          phone={
+            contactHistoryModalItem.hp && contactHistoryModalItem.hp !== '-'
+              ? contactHistoryModalItem.hp
+              : getPicOrgInfo(contactHistoryModalItem).phone
+          }
+          avatarInitial={
+            contactHistoryModalItem.avatarInitial ||
+            contactHistoryModalItem.namaOrg.charAt(0).toUpperCase()
+          }
+          avatarBg={contactHistoryModalItem.avatarBg || 'bg-[#10b981]'}
+          summary={
+            lastContactedMap.get(contactHistoryModalItem.id) ||
+            resolveLastContactedForOrganisasi(contactHistoryModalItem, identitasList, {
+              listPMList,
+              donasiOrders,
+              salurOrders,
+              dharmaPatronList,
+            })
+          }
+          onSendWhatsappNow={() => setWaModalItem(contactHistoryModalItem)}
+        />
+      )}
+
+      {/* Modal Kirim WhatsApp Langsung untuk Organisasi */}
+      <ModalKirimWhatsappOtomatis
+        isOpen={!!waModalItem}
+        onClose={() => setWaModalItem(null)}
+        kind="customer_direct"
+        customerTarget={waModalItem ? buildOrgWaTarget(waModalItem) : null}
+        identitasList={identitasList}
+        organisasiList={items}
+        currentActorName={currentActorName}
+        onDispatchCompleted={(payload) => {
+          onContactDispatchCompleted?.({
+            logEntry: payload.logEntry,
+            listPMItem: payload.listPMItem,
+            identitasId: payload.identitasId,
+            organisasiId: payload.organisasiId || waModalItem?.id,
+            codeId: payload.codeId,
+          });
+        }}
+        onShowToast={onShowToast}
+      />
     </div>
   );
 };

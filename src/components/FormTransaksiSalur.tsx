@@ -52,6 +52,8 @@ import {
   getSelectableSalurContainerOptions,
   inspectSalurOrderStock,
 } from '../utils/salurStockDeduction';
+import { findBlacklistMatchesForTokens } from '../utils/identitasCrossModuleHelper';
+import { BlacklistWarningBanner } from './BlacklistWarningBanner';
 
 export interface TransaksiEntityItem {
   id: string;
@@ -340,6 +342,30 @@ export const FormTransaksiSalur: React.FC<FormTransaksiSalurProps> = ({
     }
     return [];
   }, [selectedPenerima, selectedPembeli]);
+
+  const blacklistMatches = useMemo(() => {
+    return findBlacklistMatchesForTokens(
+      [
+        {
+          roleLabel: 'Pembeli',
+          values: [selectedPembeli?.id, selectedPembeli?.code, selectedPembeli?.name, idPembeli],
+        },
+        {
+          roleLabel: 'Penerima',
+          values: [selectedPenerima?.id, selectedPenerima?.code, selectedPenerima?.name, idPenerima],
+        },
+      ],
+      identitasList,
+      organisasiList
+    );
+  }, [
+    selectedPembeli,
+    selectedPenerima,
+    idPembeli,
+    idPenerima,
+    identitasList,
+    organisasiList,
+  ]);
 
   // Identitas ID Alamat Penerima dikosongkan saat dibuka
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
@@ -1267,6 +1293,17 @@ export const FormTransaksiSalur: React.FC<FormTransaksiSalurProps> = ({
             />
           </div>
         </div>
+
+        {blacklistMatches.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div className="md:col-start-4 md:col-span-9 max-w-2xl">
+              <BlacklistWarningBanner
+                matches={blacklistMatches}
+                contextLabel="transaksi S-SALUR"
+              />
+            </div>
+          </div>
+        )}
 
         {/* 6. Identitas ID Alamat Penerima */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">

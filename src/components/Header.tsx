@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History, LogOut, Sun, Moon, KeyRound } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, MoreHorizontal, Check, RefreshCw, Clock, Table, Tags, BarChart3, Users, Menu, Home, Download, History, LogOut, Sun, Moon, KeyRound } from 'lucide-react';
 import { AvatarMascot } from './AvatarMascot';
 import { ANNOUNCEMENT_MESSAGES } from '../data';
 
@@ -24,6 +24,8 @@ interface HeaderProps {
   onOpenChangePassword?: () => void;
   theme?: AppTheme;
   onToggleTheme?: () => void;
+  operationalAlertCount?: number;
+  onOpenOperationalNotifications?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,6 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenChangePassword,
   theme = 'light',
   onToggleTheme,
+  operationalAlertCount = 0,
+  onOpenOperationalNotifications,
 }) => {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
@@ -179,8 +183,33 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* Right Group: Cloud Sync Indicator, Theme Toggle, Download All Data, Clock, Date & Options */}
+      {/* Right Group: Notification Bell, Cloud Sync Indicator, Theme Toggle, Download All Data, Clock, Date & Options */}
       <div className="flex items-center gap-2.5 sm:gap-3.5 self-end md:self-auto">
+        {onOpenOperationalNotifications && (
+          <button
+            id="btn-header-operational-notifications"
+            type="button"
+            onClick={onOpenOperationalNotifications}
+            aria-label={`Buka Pusat Notifikasi & Pengingat Harian (${operationalAlertCount} item aktif)`}
+            title="Pusat Notifikasi & Pengingat Harian Operasional"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700 hover:border-[#05828e] dark:hover:border-teal-500 text-slate-700 dark:text-slate-200 hover:text-[#05828e] dark:hover:text-teal-300 shadow-2xs transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+          >
+            <Bell
+              className={`w-3.5 h-3.5 shrink-0 ${
+                operationalAlertCount > 0
+                  ? 'text-rose-600 dark:text-rose-400'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            />
+            <span className="hidden xl:inline">Pengingat</span>
+            {operationalAlertCount > 0 && (
+              <span className="font-mono tabular-nums text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                {operationalAlertCount}
+              </span>
+            )}
+          </button>
+        )}
+
         <CloudSyncIndicator status={syncStatus} onManualSync={onManualSync} />
 
         {onToggleTheme && (

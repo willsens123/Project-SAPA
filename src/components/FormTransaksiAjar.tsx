@@ -27,6 +27,8 @@ import {
   getUrutanTransaksiPerTahun,
   normalizeVia,
 } from '../utils/kodeTransaksiHelper';
+import { findBlacklistMatchesForTokens } from '../utils/identitasCrossModuleHelper';
+import { BlacklistWarningBanner } from './BlacklistWarningBanner';
 
 export interface SelectedPaketItem {
   id: string;
@@ -291,6 +293,18 @@ export const FormTransaksiAjar: React.FC<FormTransaksiAjarProps> = ({
   const [keterangan, setKeterangan] = useState<string>(() => {
     return initialData?.keterangan || '';
   });
+
+  const blacklistMatches = useMemo(() => {
+    const tokens: Array<{ roleLabel?: string; values: Array<string | undefined | null> }> = [
+      { roleLabel: 'Pembeli', values: [identitasPembeli] },
+    ];
+    penerimaList.forEach((p, idx) => {
+      if (p.identitasId) {
+        tokens.push({ roleLabel: `Penerima #${idx + 1}`, values: [p.identitasId] });
+      }
+    });
+    return findBlacklistMatchesForTokens(tokens, identitasList, organisasiList);
+  }, [identitasPembeli, penerimaList, identitasList, organisasiList]);
 
   // Dropdown states for each Penerima
   const [activePenerimaDropdown, setActivePenerimaDropdown] = useState<string | null>(null);
@@ -835,6 +849,15 @@ export const FormTransaksiAjar: React.FC<FormTransaksiAjarProps> = ({
             />
           </div>
         </div>
+
+        {blacklistMatches.length > 0 && (
+          <div className="sm:pl-64 max-w-3xl">
+            <BlacklistWarningBanner
+              matches={blacklistMatches}
+              contextLabel="transaksi A-AJAR"
+            />
+          </div>
+        )}
 
         {/* Field 4: Pembeli dan Penerima Sama? */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">

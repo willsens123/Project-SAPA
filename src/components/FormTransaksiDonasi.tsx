@@ -31,6 +31,8 @@ import {
   getUrutanTransaksiPerTahun,
   normalizeVia,
 } from '../utils/kodeTransaksiHelper';
+import { findBlacklistMatchesForTokens } from '../utils/identitasCrossModuleHelper';
+import { BlacklistWarningBanner } from './BlacklistWarningBanner';
 
 interface FormSelectedDonasiItem {
   id: string;
@@ -213,6 +215,26 @@ export const FormTransaksiDonasi: React.FC<FormTransaksiDonasiProps> = ({
 
   // Show search button if more than 1 distinct donor name registered for this Identitas ID
   const hasMultipleDonaturs = distinctDonaturNames.length > 1;
+
+  const blacklistMatches = useMemo(() => {
+    return findBlacklistMatchesForTokens(
+      [
+        {
+          roleLabel: 'Donatur / Identitas ID',
+          values: [selectedIdentitasId, selectedIdentitasCode, identitasId, namaDonatur],
+        },
+      ],
+      identitasList,
+      organisasiList
+    );
+  }, [
+    selectedIdentitasId,
+    selectedIdentitasCode,
+    identitasId,
+    namaDonatur,
+    identitasList,
+    organisasiList,
+  ]);
 
   // Helper to find a patron matching current Identitas ID AND a given donor name
   const getMatchedPatronByDonatur = useCallback(
@@ -698,6 +720,17 @@ export const FormTransaksiDonasi: React.FC<FormTransaksiDonasiProps> = ({
             />
           </div>
         </div>
+
+        {blacklistMatches.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div className="md:col-start-4 md:col-span-9 max-w-2xl">
+              <BlacklistWarningBanner
+                matches={blacklistMatches}
+                contextLabel="transaksi D-DONASI"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Row 4: Nama Donatur */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">

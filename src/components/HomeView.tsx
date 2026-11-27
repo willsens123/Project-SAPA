@@ -48,6 +48,7 @@ import {
   DharmaPatronRutinItem,
   PatronWhatsappBillingLog,
   RekeningItem,
+  ComplaintItem,
 } from '../types';
 import { PosKeuanganItem } from '../posKeuanganData';
 import { PosPemasukanGroup } from '../posPemasukanData';
@@ -72,6 +73,7 @@ import {
   NotificationReferenceMode,
 } from './HomeProjectDeadlineNotifications';
 import { HomeOperationalAlerts } from './HomeOperationalAlerts';
+import { OperationalNotificationTab } from './OperationalNotificationCenterDrawer';
 import { HomeAuditRealtimeBanner } from './AuditRealtimeNotification';
 import { LiveAuditNotification } from '../utils/auditNotificationHelper';
 import {
@@ -136,6 +138,10 @@ interface HomeViewProps {
     patron: DharmaPatronRutinItem,
     entry: PatronWhatsappBillingLog
   ) => void;
+  complaints?: ComplaintItem[];
+  onUpdateComplaint?: (item: ComplaintItem) => void;
+  onSaveListPMItem?: (item: ListPMItem) => void;
+  onOpenOperationalNotifications?: (initialTab?: OperationalNotificationTab) => void;
   isDivisionProjectScoped?: boolean;
 }
 
@@ -229,6 +235,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   rekeningList = [],
   currentAdminName,
   onRecordWhatsappBilling,
+  complaints = [],
+  onUpdateComplaint,
+  onSaveListPMItem,
+  onOpenOperationalNotifications,
   isDivisionProjectScoped = false,
 }) => {
   // Modal states
@@ -982,11 +992,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
         todoTasks={todoTasks}
         dharmaPatronList={dharmaPatronList}
         salurItems={salurItems}
+        complaints={complaints}
+        listPMItems={listPMItems}
         identitasList={identitasList}
         organisasiList={organisasiList}
         rekeningList={rekeningList}
         currentAdminName={currentAdminName || currentUser?.namaLengkap || currentUser?.namaPanggilan}
         onRecordWhatsappBilling={onRecordWhatsappBilling}
+        onUpdateComplaint={onUpdateComplaint}
+        onSaveListPMItem={onSaveListPMItem}
+        onOpenOperationalNotifications={onOpenOperationalNotifications}
         onShowToast={onShowToast}
         onNavigateView={onNavigateView}
         onOpenProjectTodos={onOpenProjectTodos}

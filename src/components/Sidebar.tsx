@@ -65,6 +65,7 @@ import {
   CircleDot,
   CheckCircle2,
   LogOut,
+  Ban,
 } from 'lucide-react';
 import { ProjectItem, AppView, KaryawanItem, RbacPolicyConfig } from '../types';
 import {
@@ -94,6 +95,7 @@ interface SidebarProps {
   projects?: ProjectItem[];
   identitasCount?: number;
   organisasiCount?: number;
+  blacklistCount?: number;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
   currentUser?: KaryawanItem | null;
@@ -132,6 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   projects = [],
   identitasCount,
   organisasiCount,
+  blacklistCount,
   isMobileOpen = false,
   onMobileClose,
   currentUser,
@@ -190,6 +193,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         view: 'organisasi',
         icon: Building2,
         badge: organisasiCount,
+      },
+      {
+        id: 'nav-list-blacklist',
+        title: 'List Blacklist',
+        subtitle: 'Identitas & Organisasi Blacklist',
+        view: 'listBlacklist',
+        icon: Ban,
+        badge: blacklistCount,
       },
       {
         id: 'nav-audit-log',
@@ -885,7 +896,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         icon: MessageSquareWarning,
       },
     ],
-    [projects.length, identitasCount, organisasiCount]
+    [projects.length, identitasCount, organisasiCount, blacklistCount]
   );
 
   const checkIsItemActive = (itemView: AppView, curView: AppView): boolean => {
@@ -941,6 +952,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           'nav-home',
           'nav-identitas',
           'nav-organisasi',
+          'nav-list-blacklist',
           'nav-audit-log',
           'nav-todo-list',
           'nav-calendar-todo-list',

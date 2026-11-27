@@ -40,6 +40,8 @@ import {
   getSelectableSalurContainerOptions,
   inspectSalurOrderStock,
 } from '../utils/salurStockDeduction';
+import { findBlacklistMatchesForTokens } from '../utils/identitasCrossModuleHelper';
+import { BlacklistWarningBanner } from './BlacklistWarningBanner';
 
 export interface FormTransaksiSalurHadiahProps {
   project: ProjectItem | null;
@@ -216,12 +218,14 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
       name: it.namaLengkap || 'Penerima',
       phone: it.nomorHandPhone || '0812-000-000',
       type: 'Identitas',
+      status: it.status,
     }));
     const orgItems = organisasiList.map((org, idx) => ({
-      code: `ORG-${idx + 1}`,
+      code: org.picOrgCode || `ORG-${idx + 1}`,
       name: org.namaOrg || 'Organisasi',
       phone: org.hp || '0812-000-000',
       type: 'Organisasi',
+      status: org.status,
     }));
     return [...idItems, ...orgItems];
   }, [identitasList, organisasiList]);
@@ -242,9 +246,23 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
         name: 'Lilo',
         phone: '0812-258-1235',
         type: 'Identitas',
+        status: '-',
       }
     );
   }, [recipientEntities, selectedPenerimaCode]);
+
+  const blacklistMatches = useMemo(() => {
+    return findBlacklistMatchesForTokens(
+      [
+        {
+          roleLabel: 'Penerima Hadiah',
+          values: [selectedRecipient.code, selectedRecipient.name, selectedPenerimaCode],
+        },
+      ],
+      identitasList,
+      organisasiList
+    );
+  }, [selectedRecipient, selectedPenerimaCode, identitasList, organisasiList]);
 
   // Stepper handlers
   const handleQuantityChange = (id: string, delta: number) => {
@@ -562,11 +580,16 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
                         setSelectedPenerimaCode(`${r.code} ${r.name}`);
                         setIsPenerimaOpen(false);
                       }}
-                      className="text-left py-2 px-2 hover:bg-slate-50 flex items-center justify-between transition-colors rounded-lg"
+                      className={`text-left py-2 px-2 hover:bg-slate-50 flex items-center justify-between transition-colors rounded-lg ${
+                        r.status === 'Blacklist' ? 'bg-rose-50/60' : ''
+                      }`}
                     >
                       <div className="flex flex-col">
                         <span className="font-semibold text-xs text-slate-800">
                           {r.code} {r.name}
+                          {r.status === 'Blacklist' && (
+                            <span className="ml-1.5 font-bold text-rose-700">· Blacklist</span>
+                          )}
                         </span>
                         <span className="text-[11px] text-slate-400">{r.phone}</span>
                       </div>
@@ -578,6 +601,17 @@ export const FormTransaksiSalurHadiah: React.FC<FormTransaksiSalurHadiahProps> =
             )}
           </div>
         </div>
+
+        {blacklistMatches.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div className="md:col-start-4 md:col-span-9 max-w-2xl">
+              <BlacklistWarningBanner
+                matches={blacklistMatches}
+                contextLabel="pengiriman hadiah S-SALUR"
+              />
+            </div>
+          </div>
+        )}
 
         {/* 4. Alamat Penerima matching exact Image */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">

@@ -421,6 +421,7 @@ const VIEW_PERMISSION_MAP: Partial<Record<AppView, PermissionKey>> = {
   organisasi: 'viewIdentitas',
   formOrganisasi: 'editIdentitas',
   editOrganisasi: 'viewIdentitas',
+  listBlacklist: 'viewIdentitas',
   jenisPanggilan: 'viewIdentitas',
   triyana: 'viewIdentitas',
   pekerjaan: 'viewIdentitas',

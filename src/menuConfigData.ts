@@ -9,6 +9,7 @@ export const ALL_MENU_IDS = [
   'nav-home',
   'nav-identitas',
   'nav-organisasi',
+  'nav-list-blacklist',
   'nav-todo-list',
   'nav-jenis-non-proyek-todo-list',
   'nav-calendar-todo-list',
@@ -102,6 +103,7 @@ export const DEFAULT_MAIN_MENU_IDS: string[] = [
   'nav-home',
   'nav-identitas',
   'nav-organisasi',
+  'nav-list-blacklist',
   'nav-todo-list',
   'nav-jenis-non-proyek-todo-list',
   'nav-calendar-todo-list',
@@ -284,9 +286,22 @@ export function loadMenuArrangementConfig(): MenuArrangementConfig {
         }
       }
 
+      // If nav-list-blacklist is newly introduced, place right after nav-organisasi
+      if (
+        !currentConfigIds.has('nav-list-blacklist') &&
+        !mainMenuFiltered.includes('nav-list-blacklist')
+      ) {
+        const orgIdx = mainMenuFiltered.indexOf('nav-organisasi');
+        if (orgIdx !== -1) {
+          mainMenuFiltered.splice(orgIdx + 1, 0, 'nav-list-blacklist');
+        } else {
+          mainMenuFiltered.push('nav-list-blacklist');
+        }
+      }
+
       const moreMenuFiltered = [
-        ...parsed.moreMenuIds.filter((id: string) => ALL_MENU_IDS.includes(id) && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-report-penjualan-valuasi-salur'),
-        ...missingIds.filter((id) => id !== 'nav-home' && id !== 'nav-laporan-keuangan' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-agen-resi' && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-report-penjualan-valuasi-salur'),
+        ...parsed.moreMenuIds.filter((id: string) => ALL_MENU_IDS.includes(id) && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-report-penjualan-valuasi-salur' && id !== 'nav-list-blacklist'),
+        ...missingIds.filter((id) => id !== 'nav-home' && id !== 'nav-laporan-keuangan' && id !== 'nav-laporan-proyek-keuangan' && id !== 'nav-agen-resi' && id !== 'nav-ongoing-create-item-salur' && id !== 'nav-rincian-list-pm' && id !== 'nav-jenis-non-proyek-todo-list' && id !== 'nav-complaint' && id !== 'nav-pos-pengeluaran' && id !== 'nav-kelompok-biaya-coa' && id !== 'nav-kebutuhan-pengeluaran' && id !== 'nav-kumpulan-rekening' && id !== 'nav-report-penjualan-valuasi-salur' && id !== 'nav-list-blacklist'),
       ];
 
       return {

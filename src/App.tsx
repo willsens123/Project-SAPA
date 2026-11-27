@@ -12,6 +12,11 @@ import {
 } from './firebase/authAccountService';
 import { AuthPortalView } from './components/AuthPortalView';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
+import {
+  OperationalNotificationCenterDrawer,
+  OperationalNotificationTab,
+} from './components/OperationalNotificationCenterDrawer';
+import { buildOperationalReminderDigest } from './utils/operationalReminderHelper';
 import { useAppTheme } from './utils/themeManager';
 import { TableToolbar } from './components/TableToolbar';
 import { isProjectPersiapanInRange } from './utils/projectPersiapanFilter';
@@ -104,6 +109,7 @@ import {
 import { AuditRealtimeToast } from './components/AuditRealtimeNotification';
 import { MergeDuplicatesView } from './components/MergeDuplicatesView';
 import { OrganisasiDashboard } from './components/OrganisasiDashboard';
+import { ListBlacklistDashboard } from './components/ListBlacklistDashboard';
 import { FormOrganisasi } from './components/FormOrganisasi';
 import { JenisPanggilanTable } from './components/JenisPanggilanTable';
 import { TriyanaTable } from './components/TriyanaTable';
@@ -2451,6 +2457,62 @@ export default function App() {
     );
   };
 
+  const recordOrganisasiLastContacted = (params: {
+    organisasiId?: string;
+    nama?: string;
+    phone?: string;
+    channelLabel: string;
+    sentAtIso?: string;
+    actorName?: string;
+    note?: string;
+    logEntry?: WhatsappDispatchLog;
+  }) => {
+    const sentAtIso = params.sentAtIso || new Date().toISOString();
+    const parsedDate = new Date(sentAtIso);
+    const validDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+    const formattedDisplay = formatIndonesianTimestamp(validDate);
+    const normTargetPhone = normalizeWhatsappPhone(params.phone);
+    const normTargetName = (params.nama || '').trim().toLowerCase();
+    const normOrgId = (params.organisasiId || '').trim().toLowerCase();
+
+    setOrganisasiList((prev) =>
+      prev.map((org) => {
+        const matchById = normOrgId && org.id.toLowerCase() === normOrgId;
+        const matchByName =
+          normTargetName &&
+          normTargetName !== '-' &&
+          org.namaOrg.trim().toLowerCase() === normTargetName;
+        const orgPhone = normalizeWhatsappPhone(org.hp);
+        const matchByPhone =
+          !normOrgId && normTargetPhone && orgPhone && orgPhone === normTargetPhone;
+
+        if (!matchById && !matchByName && !matchByPhone) {
+          return org;
+        }
+
+        const prevHistory = Array.isArray(org.whatsappContactHistory)
+          ? org.whatsappContactHistory
+          : [];
+        const nextHistory = params.logEntry
+          ? [params.logEntry, ...prevHistory.filter((h) => h.id !== params.logEntry!.id)].slice(
+              0,
+              30
+            )
+          : prevHistory;
+
+        return {
+          ...org,
+          lastContacted: formattedDisplay,
+          lastContactedAt: sentAtIso,
+          lastContactedChannel: params.channelLabel,
+          lastContactedBy: params.actorName || 'Admin YPPLN',
+          lastContactedNote: params.note || org.lastContactedNote,
+          whatsappContactHistory: nextHistory,
+        };
+      })
+    );
+  };
+
   const handleLogWhatsappToListPM = (newItem: ListPMItem) => {
     setListPMList((prev) => {
       const updated = mergeListPMItemsByProyekSapa(prev, [newItem]);
@@ -2475,6 +2537,14 @@ export default function App() {
         actorName: newItem.dihubungiOleh,
         note: newItem.detailRows?.[0]?.itemTitle || newItem.proyekSapa,
       });
+      recordOrganisasiLastContacted({
+        nama: newItem.singleTarget.nama,
+        phone: newItem.singleTarget.nomorHp,
+        channelLabel: chLabel,
+        sentAtIso: new Date().toISOString(),
+        actorName: newItem.dihubungiOleh,
+        note: newItem.detailRows?.[0]?.itemTitle || newItem.proyekSapa,
+      });
     }
   };
 
@@ -2482,6 +2552,7 @@ export default function App() {
     logEntry: WhatsappDispatchLog;
     listPMItem: ListPMItem | null;
     identitasId?: string;
+    organisasiId?: string;
     codeId?: string;
   }) => {
     if (payload.listPMItem) {
@@ -2492,17 +2563,32 @@ export default function App() {
       });
     }
 
-    recordIdentitasLastContacted({
-      identitasId: payload.identitasId || payload.logEntry.identitasId,
-      codeId: payload.codeId,
-      nama: payload.logEntry.recipientName,
-      phone: payload.logEntry.phone,
-      channelLabel: 'WA Customer',
-      sentAtIso: payload.logEntry.sentAt,
-      actorName: payload.logEntry.sentBy,
-      note: payload.logEntry.topicLabel || payload.logEntry.referenceNumber,
-      logEntry: payload.logEntry,
-    });
+    if (payload.identitasId || !payload.organisasiId) {
+      recordIdentitasLastContacted({
+        identitasId: payload.identitasId || payload.logEntry.identitasId,
+        codeId: payload.codeId,
+        nama: payload.logEntry.recipientName,
+        phone: payload.logEntry.phone,
+        channelLabel: 'WA Customer',
+        sentAtIso: payload.logEntry.sentAt,
+        actorName: payload.logEntry.sentBy,
+        note: payload.logEntry.topicLabel || payload.logEntry.referenceNumber,
+        logEntry: payload.logEntry,
+      });
+    }
+
+    if (payload.organisasiId) {
+      recordOrganisasiLastContacted({
+        organisasiId: payload.organisasiId,
+        nama: payload.logEntry.recipientName,
+        phone: payload.logEntry.phone,
+        channelLabel: 'WA Organisasi',
+        sentAtIso: payload.logEntry.sentAt,
+        actorName: payload.logEntry.sentBy,
+        note: payload.logEntry.topicLabel || payload.logEntry.referenceNumber,
+        logEntry: payload.logEntry,
+      });
+    }
   };
 
   const handleAutoInputOnResiSaved = (order: SalurOrder, resi: string) => {
@@ -2839,6 +2925,49 @@ export default function App() {
     }
     setComplaints(updated);
     saveComplaintsToStorage(updated);
+  };
+
+  // Pusat Notifikasi & Pengingat Harian Operasional
+  const [isOperationalNotifOpen, setIsOperationalNotifOpen] = useState(false);
+  const [operationalNotifTab, setOperationalNotifTab] =
+    useState<OperationalNotificationTab>('semua');
+  const [operationalStockThreshold, setOperationalStockThreshold] = useState<number>(10);
+  const [operationalStokTick, setOperationalStokTick] = useState(0);
+
+  useEffect(() => {
+    const handleStokUpdated = () => setOperationalStokTick((prev) => prev + 1);
+    window.addEventListener('stok_salur_updated', handleStokUpdated);
+    window.addEventListener('stock_in_out_updated', handleStokUpdated);
+    return () => {
+      window.removeEventListener('stok_salur_updated', handleStokUpdated);
+      window.removeEventListener('stock_in_out_updated', handleStokUpdated);
+    };
+  }, []);
+
+  const operationalDigest = useMemo(
+    () =>
+      buildOperationalReminderDigest({
+        complaints,
+        listPMList,
+        salurItems,
+        identitasList,
+        stockThreshold: operationalStockThreshold,
+      }),
+    [
+      complaints,
+      listPMList,
+      salurItems,
+      identitasList,
+      operationalStockThreshold,
+      operationalStokTick,
+    ]
+  );
+
+  const handleOpenOperationalNotifications = (
+    initialTab: OperationalNotificationTab = 'semua'
+  ) => {
+    setOperationalNotifTab(initialTab);
+    setIsOperationalNotifOpen(true);
   };
 
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
@@ -5148,6 +5277,49 @@ export default function App() {
     );
   };
 
+  const handleRestoreBlacklistStatus = (
+    entityType: 'identitas' | 'organisasi',
+    id: string
+  ) => {
+    if (!requirePermission('editIdentitas', 'memulihkan status Blacklist')) return;
+    const actor = formatAuditActorName(authenticatedUser, 'Admin YPPLN');
+    if (entityType === 'identitas') {
+      const target = identitasList.find((i) => i.id === id);
+      setIdentitasList((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, status: '-' } : it))
+      );
+      dispatchAuditEvent({
+        module: 'IDENTITAS',
+        recordId: target?.codeId || id,
+        recordTitle: target?.namaLengkap || id,
+        actionType: 'Ubah',
+        field: 'Status Blacklist',
+        oldValue: 'Blacklist',
+        newValue: '-',
+        alasan: 'Status dipulihkan dari halaman List Blacklist',
+        author: actor,
+      });
+      showToast(`${target?.namaLengkap || 'Identitas'} dipulihkan dari daftar Blacklist`);
+    } else {
+      const target = organisasiList.find((o) => o.id === id);
+      setOrganisasiList((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, status: '-' } : it))
+      );
+      dispatchAuditEvent({
+        module: 'IDENTITAS',
+        recordId: id,
+        recordTitle: target?.namaOrg || id,
+        actionType: 'Ubah',
+        field: 'Status Blacklist Organisasi',
+        oldValue: 'Blacklist',
+        newValue: '-',
+        alasan: 'Status organisasi dipulihkan dari halaman List Blacklist',
+        author: actor,
+      });
+      showToast(`${target?.namaOrg || 'Organisasi'} dipulihkan dari daftar Blacklist`);
+    }
+  };
+
   // Master: Jenis Panggilan CRUD
   const handleSaveJenisPanggilan = (item: JenisPanggilanItem) => {
     setJenisPanggilanList((prev) => {
@@ -6186,6 +6358,7 @@ export default function App() {
   const getHeaderTitle = () => {
     if (currentView === 'home') return 'Home';
     if (currentView === 'organisasi' || currentView === 'formOrganisasi' || currentView === 'editOrganisasi') return 'Organisasi';
+    if (currentView === 'listBlacklist') return 'List Blacklist';
     if (currentView === 'identitas') return 'Identitas';
     if (currentView === 'formIdentitas') return 'Form Identitas';
     if (currentView === 'editIdentitas') return 'Edit Identitas';
@@ -6414,6 +6587,12 @@ export default function App() {
         projects={scopedProjects}
         identitasCount={identitasList.length}
         organisasiCount={organisasiList.length}
+        blacklistCount={
+          identitasList.filter((i) => (i.status || '').trim().toLowerCase() === 'blacklist')
+            .length +
+          organisasiList.filter((o) => (o.status || '').trim().toLowerCase() === 'blacklist')
+            .length
+        }
         isMobileOpen={isMobileSidebarOpen}
         onMobileClose={() => setIsMobileSidebarOpen(false)}
         currentUser={authenticatedUser}
@@ -6443,6 +6622,8 @@ export default function App() {
             onOpenChangePassword={() => setIsChangePasswordOpen(true)}
             theme={theme}
             onToggleTheme={toggleTheme}
+            operationalAlertCount={operationalDigest.totalUrgentCount}
+            onOpenOperationalNotifications={() => handleOpenOperationalNotifications('semua')}
             onBackToTable={
               currentView === 'formTransaksiAjar'
                 ? () => {
@@ -6676,6 +6857,10 @@ export default function App() {
                 setLiveAuditAlerts((prev) => prev.filter((a) => a.id !== alertId))
               }
               onDismissAllAuditAlerts={() => setLiveAuditAlerts([])}
+              complaints={complaints}
+              onUpdateComplaint={handleUpdateComplaint}
+              onSaveListPMItem={handleSaveListPMItem}
+              onOpenOperationalNotifications={handleOpenOperationalNotifications}
             />
           )}
 
@@ -9355,7 +9540,10 @@ export default function App() {
                 listPMList={listPMList}
                 donasiOrders={donasiOrders}
                 salurOrders={salurOrders}
+                transaksiAjarList={transaksiAjarList}
                 dharmaPatronList={dharmaPatronList}
+                complaints={complaints}
+                organisasiList={organisasiList}
                 currentActorName={formatAuditActorName(authenticatedUser, 'Admin Identitas')}
                 onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
                 onBack={() => {
@@ -9373,6 +9561,8 @@ export default function App() {
                   setCurrentView('formIdentitas');
                 }}
                 onNavigateToCentralAudit={() => handleNavigateView('auditLog')}
+                onNavigateToComplaints={() => handleNavigateView('complaint')}
+                onNavigateToListPM={() => handleNavigateView('listPM')}
               />
             </div>
           )}
@@ -9469,6 +9659,12 @@ export default function App() {
               <OrganisasiDashboard
                 items={organisasiList}
                 identitasList={identitasList}
+                listPMList={listPMList}
+                donasiOrders={donasiOrders}
+                salurOrders={salurOrders}
+                dharmaPatronList={dharmaPatronList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin Organisasi')}
+                onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
                 onAddNew={() => {
                   setEditingOrganisasi(null);
                   setCurrentView('formOrganisasi');
@@ -9490,6 +9686,34 @@ export default function App() {
                 onCreateGroupFunneling={(ids) => handleNavigateToCreateGroupFunneling(ids, 'organisasi')}
                 onTambahKeGroupFunnelingExisting={handleOpenTambahKeGroupFunnelingExisting}
                 onToggleStarItem={handleToggleStarOrganisasi}
+              />
+            </div>
+          )}
+
+          {/* View: List Blacklist */}
+          {currentView === 'listBlacklist' && (
+            <div className="mt-2 sm:mt-4">
+              <ListBlacklistDashboard
+                identitasList={identitasList}
+                organisasiList={organisasiList}
+                listPMList={listPMList}
+                donasiOrders={donasiOrders}
+                salurOrders={salurOrders}
+                dharmaPatronList={dharmaPatronList}
+                currentActorName={formatAuditActorName(authenticatedUser, 'Admin YPPLN')}
+                onContactDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
+                onRestoreStatus={handleRestoreBlacklistStatus}
+                onEditIdentitas={(item) => {
+                  setEditingIdentitas(item);
+                  setCurrentView('editIdentitas');
+                }}
+                onEditOrganisasi={(item) => {
+                  setEditingOrganisasi(item);
+                  setCurrentView('formOrganisasi');
+                }}
+                onNavigateToIdentitas={() => setCurrentView('identitas')}
+                onNavigateToOrganisasi={() => setCurrentView('organisasi')}
+                onShowToast={(msg) => showToast(msg)}
               />
             </div>
           )}
@@ -10040,6 +10264,24 @@ export default function App() {
           });
           showToast('Password akun Anda berhasil diperbarui dan disinkronkan.');
         }}
+      />
+
+      {/* Pusat Notifikasi & Pengingat Harian Operasional */}
+      <OperationalNotificationCenterDrawer
+        isOpen={isOperationalNotifOpen}
+        onClose={() => setIsOperationalNotifOpen(false)}
+        digest={operationalDigest}
+        stockThreshold={operationalStockThreshold}
+        onChangeStockThreshold={setOperationalStockThreshold}
+        initialTab={operationalNotifTab}
+        identitasList={identitasList}
+        organisasiList={organisasiList}
+        currentActorName={formatAuditActorName(authenticatedUser, 'Admin YPPLN')}
+        onUpdateComplaint={handleUpdateComplaint}
+        onSaveListPMItem={handleSaveListPMItem}
+        onCustomerWhatsappDispatchCompleted={handleCustomerWhatsappDispatchCompleted}
+        onNavigateView={handleNavigateView}
+        onShowToast={showToast}
       />
     </div>
   );

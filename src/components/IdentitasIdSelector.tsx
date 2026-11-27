@@ -442,6 +442,10 @@ export const IdentitasIdSelector: React.FC<IdentitasIdSelectorProps> = ({
                     value === `${item.code} ${item.name}` ||
                     value === item.name ||
                     value === item.id;
+                  const itemStatus =
+                    item.rawIdentitas?.status || item.rawOrganisasi?.status || '-';
+                  const isBlacklist = itemStatus === 'Blacklist';
+                  const isVip = itemStatus === 'VIP';
                   // First item or selected item has light cyan card matching image (2).png
                   const isHighlighted = isSelected || idx === 0;
 
@@ -450,7 +454,9 @@ export const IdentitasIdSelector: React.FC<IdentitasIdSelectorProps> = ({
                       key={`${item.type}-${item.id}-${idx}`}
                       onClick={() => handleSelectItem(item)}
                       className={`rounded-2xl p-3 sm:p-3.5 flex items-center gap-3.5 cursor-pointer transition-all ${
-                        isHighlighted
+                        isBlacklist
+                          ? 'bg-rose-50/70 hover:bg-rose-50 border border-rose-200'
+                          : isHighlighted
                           ? 'bg-[#f0f7f9] border border-[#d2ecf2]'
                           : 'bg-white hover:bg-slate-50 border border-transparent'
                       }`}
@@ -463,11 +469,23 @@ export const IdentitasIdSelector: React.FC<IdentitasIdSelectorProps> = ({
                       </div>
 
                       {/* Info lines */}
-                      <div className="flex flex-col min-w-0 truncate">
-                        <span className="font-bold text-slate-900 text-sm sm:text-base leading-snug truncate">
-                          {item.code ? `${item.code} ` : ''}
-                          {item.name}
-                        </span>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-slate-900 text-sm sm:text-base leading-snug truncate">
+                            {item.code ? `${item.code} ` : ''}
+                            {item.name}
+                          </span>
+                          {isBlacklist && (
+                            <span className="text-xs font-bold text-rose-700 shrink-0">
+                              · Blacklist
+                            </span>
+                          )}
+                          {isVip && (
+                            <span className="text-xs font-semibold text-amber-700 shrink-0">
+                              · VIP
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs sm:text-sm text-slate-600 font-normal mt-0.5 truncate">
                           {item.subtitle}
                         </span>

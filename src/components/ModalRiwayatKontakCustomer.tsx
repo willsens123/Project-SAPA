@@ -10,6 +10,7 @@ import {
   HeartHandshake,
   MessageSquare,
   History,
+  ShieldAlert,
 } from 'lucide-react';
 import { ResolvedLastContactedSummary, ContactTimelineEvent } from '../utils/lastContactedHelper';
 
@@ -19,6 +20,7 @@ interface ModalRiwayatKontakCustomerProps {
   customerName: string;
   customerPanggilan?: string;
   customerCode?: string;
+  customerStatus?: string;
   phone?: string;
   avatarInitial?: string;
   avatarBg?: string;
@@ -49,6 +51,7 @@ export const ModalRiwayatKontakCustomer: React.FC<ModalRiwayatKontakCustomerProp
   customerName,
   customerPanggilan,
   customerCode,
+  customerStatus,
   phone,
   avatarInitial,
   avatarBg = 'bg-[#05828e]',
@@ -105,6 +108,16 @@ export const ModalRiwayatKontakCustomer: React.FC<ModalRiwayatKontakCustomerProp
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Blacklist Alert Strip (when applicable) */}
+        {customerStatus === 'Blacklist' && (
+          <div className="px-5 py-2.5 bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900/60 flex items-center gap-2 text-xs text-rose-800 dark:text-rose-200">
+            <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span className="font-semibold">Status Blacklist</span>
+            <span aria-hidden="true">·</span>
+            <span className="text-[11px]">Periksa catatan atau status sebelum menghubungi</span>
+          </div>
+        )}
 
         {/* Last Contacted Highlight Strip */}
         <div className="px-5 py-3.5 bg-teal-50/60 dark:bg-teal-950/30 border-b border-teal-100 dark:border-teal-900/50 flex items-center justify-between gap-3">

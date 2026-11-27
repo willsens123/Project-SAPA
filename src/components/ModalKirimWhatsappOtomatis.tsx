@@ -16,6 +16,7 @@ import {
   Truck,
   ClipboardCheck,
   UserCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { DonasiOrder } from '../donasiData';
 import { IdentitasItem } from '../identitasData';
@@ -46,10 +47,12 @@ import {
 
 export interface CustomerDirectTargetInput {
   identitasId?: string;
+  organisasiId?: string;
   codeId?: string;
   nama: string;
   panggilan?: string;
   phone?: string;
+  status?: string;
   lastContactedDisplay?: string;
   existingHistory?: WhatsappDispatchLog[];
 }
@@ -76,6 +79,7 @@ interface ModalKirimWhatsappOtomatisProps {
     salurOrderId?: string;
     resiItemId?: string;
     identitasId?: string;
+    organisasiId?: string;
     codeId?: string;
   }) => void;
   onShowToast?: (msg: string) => void;
@@ -124,7 +128,7 @@ export const ModalKirimWhatsappOtomatis: React.FC<ModalKirimWhatsappOtomatisProp
       return {
         contact,
         referenceNumber: topicLabel,
-        orderCode: contact.codeId || contact.identitasId || 'CUSTOMER',
+        orderCode: contact.codeId || contact.identitasId || customerTarget?.organisasiId || 'CUSTOMER',
         ekspedisi: undefined,
         subtitle: `${contact.codeId ? `${contact.codeId} · ` : ''}${contact.nama}`,
         itemStockOrDetail: topicLabel,
@@ -133,6 +137,8 @@ export const ModalKirimWhatsappOtomatis: React.FC<ModalKirimWhatsappOtomatisProp
           identitasItem?.whatsappContactHistory || customerTarget?.existingHistory || [],
         lastSentAt: lastLabel,
         linkedSalurOrder: undefined,
+        targetStatus: identitasItem?.status || customerTarget?.status || '-',
+        organisasiId: customerTarget?.organisasiId,
       };
     }
 
@@ -364,6 +370,8 @@ export const ModalKirimWhatsappOtomatis: React.FC<ModalKirimWhatsappOtomatisProp
       salurOrderId: resolvedContext.linkedSalurOrder?.id || salurOrder?.id,
       resiItemId: resiItem?.id,
       identitasId: resolvedContext.contact.identitasId,
+      organisasiId:
+        'organisasiId' in resolvedContext ? resolvedContext.organisasiId : undefined,
       codeId: resolvedContext.contact.codeId,
     });
   };
@@ -469,6 +477,19 @@ export const ModalKirimWhatsappOtomatis: React.FC<ModalKirimWhatsappOtomatisProp
               </span>
             )}
           </div>
+
+          {/* Blacklist Caution Banner */}
+          {'targetStatus' in resolvedContext && resolvedContext.targetStatus === 'Blacklist' && (
+            <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/70 bg-rose-50/80 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200">
+              <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div className="text-[11px] leading-relaxed">
+                <span className="font-bold">Status Blacklist:</span>{' '}
+                <span>
+                  Penerima ini tercatat pada daftar Blacklist. Pastikan konteks pesan dan persetujuan PIC sebelum mengirim WhatsApp.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Topic Selector when contacting directly from Customer / Identitas */}
           {kind === 'customer_direct' && (
